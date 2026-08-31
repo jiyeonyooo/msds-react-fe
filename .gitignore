@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local project instructions and source specifications
+/AGENTS.md
+/docs/
