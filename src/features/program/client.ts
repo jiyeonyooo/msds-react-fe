@@ -1,0 +1,52 @@
+// src/api/client.ts
+
+const BASE_URL = import.meta.env.API_BASE_URL ?? "http://localhost:5173";
+
+export class ApiError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+interface RequestOptions {
+  method?: "GET" | "POST" | "DELETE" | "PATCH";
+  body?: unknown;
+}
+
+// POST 응답의 Location 헤더까지 필요할 때 쓰는 버전
+async function requestWithLocation(path: string, options: RequestOptions = {}): Promise<string | null> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: options.method ?? "GET",
+    headers: { "Content-Type": "application/json" },
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    // 로그인 붙이면 credentials: "include" 또는 Authorization 헤더 추가
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.text());
+  }
+  return res.headers.get("Location");
+}
+
+// 응답 바디(JSON)가 필요할 때 쓰는 버전
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: options.method ?? "GET",
+    headers: { "Content-Type": "application/json" },
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+  });
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.text());
+  }
+  if (res.status === 204) return undefined as T; // No Content
+  return res.json() as Promise<T>;
+}
+
+export const apiClient = {
+  get: <T>(path: string) => request<T>(path),
+  post: <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body }),
+  postForLocation: (path: string, body: unknown) => requestWithLocation(path, { method: "POST", body }),
+  delete: (path: string) => request<void>(path, { method: "DELETE" }),
+};

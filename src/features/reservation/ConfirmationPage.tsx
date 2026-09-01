@@ -5,16 +5,17 @@ import { ApiError, reservationApi } from './api'
 import type { AvailableRoom } from './types'
 
 const won = (v: number) => `${v.toLocaleString('ko-KR')}원`
+const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
 
 export function ConfirmationPage() {
   const q = new URLSearchParams(location.search)
   const roomId = Number(q.get('room_id')); const checkIn = q.get('check_in_date') ?? ''; const checkOut = q.get('check_out_date') ?? ''; const guests = Number(q.get('guest_count'))
-  const invalid = !roomId || !checkIn || !checkOut || guests < 1
+  const invalid = !Number.isInteger(roomId) || roomId < 1 || !checkIn || checkIn < today || !checkOut || checkOut <= checkIn || !Number.isInteger(guests) || guests < 1
   const [room, setRoom] = useState<AvailableRoom | null>(null)
   const [error, setError] = useState(''); const [saving, setSaving] = useState(false)
   useEffect(() => {
     if (invalid) return
-    void reservationApi.availability({ check_in_date: checkIn, check_out_date: checkOut, guest_count: guests }).then((rooms) => { const selected = rooms.find((item) => item.room_id === roomId); if (!selected || !selected.available) setError('선택한 객실은 현재 예약할 수 없습니다.'); else setRoom(selected) }).catch((e: ApiError) => setError(e.message))
+    void reservationApi.availability({ check_in_date: checkIn, check_out_date: checkOut, guest_count: guests }).then((result) => { const selected = result.rooms.find((item) => item.room_id === roomId); if (!selected || !selected.available) setError('선택한 객실은 현재 예약할 수 없습니다.'); else setRoom(selected) }).catch((e: ApiError) => setError(e.message))
   }, [roomId, checkIn, checkOut, guests, invalid])
   async function create() {
     if (!room) return
