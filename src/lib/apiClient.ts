@@ -1,5 +1,5 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
-import { clearAccessToken, getAccessToken } from './authToken'
+import { clearSession, getAccessToken } from '../features/auth/session'
 
 const API_BASE_URL = (import.meta.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
 
@@ -22,7 +22,7 @@ function attachAccessToken(config: InternalAxiosRequestConfig) {
 
 function handleAuthError(error: AxiosError) {
   if (error.response?.status === 401) {
-    clearAccessToken()
+    clearSession()
     window.dispatchEvent(new CustomEvent('msds-auth-expired', { detail: { status: 401 } }))
   }
   return Promise.reject(error)
