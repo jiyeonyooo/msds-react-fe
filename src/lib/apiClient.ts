@@ -1,7 +1,7 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { clearAccessToken, getAccessToken } from './authToken'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+const API_BASE_URL = (import.meta.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
 
 const commonConfig = {
   baseURL: `${API_BASE_URL}/api`,
