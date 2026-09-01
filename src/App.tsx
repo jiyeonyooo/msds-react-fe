@@ -30,10 +30,13 @@ export default function App() {
 }
 function NotFoundPage() {
   return (
-    <main className="page error-page">
-      <p className="eyebrow gold">NOT FOUND</p>
+    <main className="mx-auto max-w-7xl px-6 pt-[58px] pb-[110px] text-center md:pt-[90px]">
+      <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">NOT FOUND</p>
       <h1>페이지를 찾을 수 없습니다.</h1>
-      <a className="primary-button" href="/">
+      <a
+        className="inline-block rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light"
+        href="/"
+      >
         홈으로 돌아가기
       </a>
     </main>
