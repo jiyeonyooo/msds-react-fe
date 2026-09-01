@@ -14,7 +14,6 @@ import { WellnessOverviewPage } from './features/wellness/WellnessOverviewPage'
 import { WellnessCheckPage } from './features/wellness/WellnessCheckPage'
 import { WellnessResultPage } from './features/wellness/WellnessResultPage'
 import { WellnessHistoryPage } from './features/wellness/WellnessHistoryPage'
-import ProgramListPage from './features/program/ProgramListPage'
 import ReviewPage from './features/program/review/ReviewPage'
 import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
@@ -43,7 +42,6 @@ export default function App() {
           <Route path="wellness/result" element={<WellnessResultPage />} />
           <Route path="wellness/result/:checkId" element={<WellnessResultPage />} />
           <Route path="wellness/history" element={<WellnessHistoryPage />} />
-          <Route path="programs" element={<ProgramListPage />} />
           <Route path="reviews" element={<ReviewPage />} />
           {isDevMode && <Route path="__dev/login" element={<DevLoginPage />} />}
           {isDevMode && <Route path="__dev/components" element={<ComponentGallery />} />}
