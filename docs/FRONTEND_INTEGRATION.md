@@ -1,41 +1,42 @@
-# 프런트엔드 연동 및 스타일 가이드
+# Frontend Integration Guide
 
-## 라우팅과 도메인 경계
+## 공용 UI 폴더
 
-| 경로                        | 화면                | 구현                                              |
-| --------------------------- | ------------------- | ------------------------------------------------- |
-| `/`                         | 랜딩                | `src/features/home/HomePage.tsx`                  |
-| `/reservations`             | 예약 가능 객실 조회 | `src/features/reservation/ReservationPage.tsx`    |
-| `/reservations/confirm`     | 예약 확인·생성      | `src/features/reservation/ConfirmationPage.tsx`   |
-| `/my-reservations`          | 내 예약 목록        | `src/features/reservation/MyReservationsPage.tsx` |
-| `/my-reservations/:resv_id` | 예약 상세·취소      | `src/features/reservation/MyReservationsPage.tsx` |
+재사용 가능한 표현 컴포넌트는 `src/components/ui`에 둡니다. 기능별 API 호출, 예약 상태 전이, 예약 상세 카드처럼 도메인 맥락이 필요한 코드는 `src/features`에 유지합니다. 이 분리는 `common`보다 `ui`가 담는 범위를 명확히 표현합니다. 컴포넌트의 치수·상태·공식 소셜 에셋은 Figma Design System 노드에서 확인해 반영했습니다.
 
-예약 API 계약과 타입은 `src/features/reservation/api.ts`, `types.ts`에 둡니다. 화면은 `room_id`만 전송하며, 물리 객실 ID·회원 ID·상태·가격은 생성 요청에 포함하지 않습니다.
+| 컴포넌트 | 용도 | 주요 props | 현재 적용 위치 |
+| --- | --- | --- | --- |
+| `Header` | 글로벌 헤더와 주 메뉴 | 없음 | `AppLayout` |
+| `Logo` | 심볼 포함 로고/워드마크 | `inverse`, `compact` | Header, Footer |
+| `NavItem` | 활성 상태를 표시하는 메뉴 항목 | `label`, `to` | Header |
+| `Footer` | 글로벌 푸터 | 없음 | `AppLayout` |
+| `SocialIcons` | 소셜 아이콘 묶음 | 없음 | Footer |
+| `Button` | 버튼의 일관된 상태/크기/변형 | `variant`, `size`, 표준 button props | 홈, 예약 조회, 예약 확인 |
+| `FormField` / `TextInput` / `Select` | 일반 폼 라벨과 입력 요소 | 표준 input/select props, `error` | 후속 일반 폼 |
+| `BookingField` | 예약 검색 필드 레이아웃 | `label`, `as` | 홈 즉시 예약, 예약 검색 |
+| `StatusBadge` | 예약 가능·마감 및 예약 상태 표기 | `available` 또는 `status` | 예약 가능 객실 카드 |
+| `RoomMediaCard` | 이미지, 객실 유형, 설명, 상세/행동 영역 카드 | `name`, `description`, `imageUrl`, `badge`, `footer` | 예약 가능 객실 목록 |
 
-## Tailwind CSS v4
+## 로고 에셋
 
-Vite는 `@tailwindcss/vite` 플러그인으로 Tailwind v4를 로드합니다. 전역 진입점 `src/index.css`의 `@theme`은 Figma `MSDS / Foundations` 프레임을 반영한 공통 토큰의 단일 원천입니다. 토큰명에는 `msds` 접두사를 붙이지 않습니다.
+`src/assets/ui`의 로고 관련 에셋은 아래 4개 SVG만 유지합니다.
 
-- 폰트: `font-display`(Cormorant Garamond), `font-sans`(Noto Sans KR)
-- 원색: `ivory-50|100|200`, `navy-900|800|700`, `gold-500|300`, `ink-700|500`, `mist-200`, `sage-200`
-- 의미 색상: `bg-canvas`, `bg-surface`, `bg-subtle`, `bg-inverse`, `bg-accent`, `text-primary`, `text-secondary`, `text-muted`, `text-accent`, `border-border-subtle`, `border-border-accent`
-- 타이포그래피 크기: `text-display-hero`, `text-display-section`, `text-heading-1|2|3`, `text-body-large|medium|small`, `text-label`
-- 간격: `xs`, `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`, `section`, `page-margin` (예: `gap-lg`, `px-page-margin`)
-- 형태·그림자: `rounded-sm|md|lg|full`, `shadow-floating`, `shadow-card`
-- 상태 색상: `text-error`, `border-error-border`
+| 파일 | 용도 | 색상 |
+| --- | --- | --- |
+| `primary-logo-light.svg` | 밝은 배경용 Primary Logo | `#0E2239` |
+| `primary-logo-dark.svg` | 어두운 배경용 Primary Logo | `#FBFAF7` |
+| `wordmark-light.svg` | 밝은 배경용 워드마크 | `#0E2239` |
+| `wordmark-dark.svg` | 어두운 배경용 워드마크 | `#FBFAF7` |
 
-`shadow-floating`은 예약 위젯 등 떠 있는 요소에, `shadow-card`는 일반 카드에 사용합니다. 버튼과 입력 필드의 키보드 포커스는 전역 base 레이어에서 `outline-accent`로 통일합니다.
+워드마크는 Figma의 래스터 소스에서 자동 트레이싱해 SVG path로 만들었습니다. Primary Logo는 Figma의 벡터 마크·구분선·대시, 새 워드마크 SVG, 태그라인 텍스트를 조합한 투명 배경 SVG입니다.
 
-새 UI는 먼저 해당 유틸리티를 JSX의 `className`에 조합합니다. `index.css`에는 전역 컴포넌트 선택자를 두지 않고 토큰과 base 보정만 둡니다. 반복되는 시각 규칙만 기능 전용 CSS 또는 `@layer`로 최소화합니다. base 레이어는 접근 가능한 포커스 링과 브라우저 기본 여백만 안전하게 보정하므로, Tailwind preflight로 인한 폼 컨트롤 회귀를 줄입니다.
+## 사용 원칙
 
-## 개발 도구 모드
+- API 응답의 `snake_case` 필드는 `features/*/types.ts`와 API 경계에 유지합니다. UI 컴포넌트는 API 타입이나 요청을 직접 알지 않습니다.
+- `RoomMediaCard`에는 객실 유형(`room_id`)만 표시합니다. 실제 객실 번호 또는 `room_units_id` 선택 UI를 추가하지 않습니다.
+- 예약 취소/생성처럼 도메인 제약이 있는 흐름은 공용 버튼만 사용하고, 검증·서버 오류 처리·리프레시는 예약 feature에서 처리합니다.
+- 새 화면에서는 클래스 문자열을 복사하기보다 먼저 `Button`, 입력 필드, 상태 배지와 카드 조합으로 해결할 수 있는지 확인합니다.
 
-`VITE_DEV_MODE=true`인 개발 환경에서만 DEV 도구와 `/__dev/components` 경로가 표시됩니다. DEV 도구는 제품 토큰과 분리된 다크 툴링 스타일을 `src/dev/dev.css`에 유지하며, 이 전용 파일도 `@reference '../index.css'`와 `@apply`로 Tailwind 유틸리티를 사용합니다. 배포 빌드에는 DEV 라우트와 패널이 등록되지 않습니다.
+## 헤더 정보 구조
 
-## 확인 명령
-
-```sh
-npm run format:check
-npm run lint
-npm run build
-```
+`HOME · ROOMS · RESERVATION · PROGRAM · WELLNESS · ABOUT`을 사용합니다. `ROOMS`는 예약 가능 객실 검색(`/reservations`), `RESERVATION`은 내 예약(`/my-reservations`)으로 연결됩니다. 데스크톱 헤더는 3열 그리드로 구성해 로고는 좌측, 메뉴는 화면 중앙, 로그인 버튼은 우측에 고정합니다. 로그인 전에도 보호된 경로가 인증 흐름으로 전환하도록 기존 라우팅 정책을 유지합니다.
