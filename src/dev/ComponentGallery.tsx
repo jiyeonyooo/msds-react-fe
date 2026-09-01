@@ -1,2 +1,42 @@
 import { Link } from 'react-router-dom'
-export function ComponentGallery() { return <main className="page"><p className="eyebrow gold">DEVELOPMENT ONLY</p><h1>컴포넌트 갤러리</h1><p className="lead">공통 UI의 기본 상태와 비활성 상태를 빠르게 확인합니다.</p><section className="gallery-grid"><article><h2>Buttons</h2><button className="primary-button">예약 확정</button><button className="primary-button" disabled>처리 중</button><button className="danger-button">예약 취소</button></article><article><h2>Status</h2><span className="status available">예약 완료</span><span className="status">취소 완료</span></article><article><h2>Form fields</h2><label className="gallery-field">CHECK-IN<input type="date" defaultValue="2026-09-12" /></label><label className="gallery-field">GUESTS<select defaultValue="2"><option value="1">성인 1명</option><option value="2">성인 2명</option></select></label></article></section><Link className="text-button" to="/">홈으로 돌아가기 →</Link></main> }
+export function ComponentGallery() {
+  return (
+    <main className="page">
+      <p className="eyebrow gold">DEVELOPMENT ONLY</p>
+      <h1>컴포넌트 갤러리</h1>
+      <p className="lead">공통 UI의 기본 상태와 비활성 상태를 빠르게 확인합니다.</p>
+      <section className="gallery-grid">
+        <article>
+          <h2>Buttons</h2>
+          <button className="primary-button">예약 확정</button>
+          <button className="primary-button" disabled>
+            처리 중
+          </button>
+          <button className="danger-button">예약 취소</button>
+        </article>
+        <article>
+          <h2>Status</h2>
+          <span className="status available">예약 완료</span>
+          <span className="status">취소 완료</span>
+        </article>
+        <article>
+          <h2>Form fields</h2>
+          <label className="gallery-field">
+            CHECK-IN
+            <input type="date" defaultValue="2026-09-12" />
+          </label>
+          <label className="gallery-field">
+            GUESTS
+            <select defaultValue="2">
+              <option value="1">성인 1명</option>
+              <option value="2">성인 2명</option>
+            </select>
+          </label>
+        </article>
+      </section>
+      <Link className="text-button" to="/">
+        홈으로 돌아가기 →
+      </Link>
+    </main>
+  )
+}

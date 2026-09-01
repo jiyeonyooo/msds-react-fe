@@ -2,12 +2,12 @@
 
 ## 라우트
 
-| 경로 | 담당 기능 | 진입점 |
-| --- | --- | --- |
-| `/` | 랜딩 페이지 | `src/features/home/HomePage.tsx` |
-| `/reservations` | 예약 가능 객실 조회 | `src/features/reservation/ReservationPage.tsx` |
-| `/my-reservations` | 내 예약 목록 | `src/features/reservation/MyReservationsPage.tsx` |
-| `/my-reservations/:resv_id` | 내 예약 상세·취소 | `src/features/reservation/MyReservationsPage.tsx` |
+| 경로                        | 담당 기능           | 진입점                                            |
+| --------------------------- | ------------------- | ------------------------------------------------- |
+| `/`                         | 랜딩 페이지         | `src/features/home/HomePage.tsx`                  |
+| `/reservations`             | 예약 가능 객실 조회 | `src/features/reservation/ReservationPage.tsx`    |
+| `/my-reservations`          | 내 예약 목록        | `src/features/reservation/MyReservationsPage.tsx` |
+| `/my-reservations/:resv_id` | 내 예약 상세·취소   | `src/features/reservation/MyReservationsPage.tsx` |
 
 ## 팀 작업 경계
 

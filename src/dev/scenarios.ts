@@ -14,5 +14,10 @@ export const devScenarios = [
 ] as const
 export type DevScenario = (typeof devScenarios)[number]['id']
 const key = 'msds.dev.scenario'
-export function getDevScenario(): DevScenario { return (localStorage.getItem(key) as DevScenario | null) ?? 'live' }
-export function setDevScenario(value: DevScenario) { localStorage.setItem(key, value); window.dispatchEvent(new Event('msds-dev-scenario')) }
+export function getDevScenario(): DevScenario {
+  return (localStorage.getItem(key) as DevScenario | null) ?? 'live'
+}
+export function setDevScenario(value: DevScenario) {
+  localStorage.setItem(key, value)
+  window.dispatchEvent(new Event('msds-dev-scenario'))
+}

@@ -1,0 +1,7 @@
+dist
+node_modules
+*.png
+*.svg
+*.lock
+docs/**
+!docs/FRONTEND_INTEGRATION.md
