@@ -1,6 +1,6 @@
 // src/api/program.ts
 import { apiClient } from "./client";
-import type { ProgramResponse, ProgramCreateRequest, ReservationRequest } from "../types/meditation";
+import type { ProgramResponse, ProgramCreateRequest, ReservationRequest } from "./types";
 
 export const getPrograms = () => apiClient.get<ProgramResponse[]>("/meditation/program");
 

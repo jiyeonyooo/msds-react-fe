@@ -8,6 +8,13 @@ import { MyReservationsPage } from './features/reservation/MyReservationsPage'
 import { ConfirmationPage } from './features/reservation/ConfirmationPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
+import { RequireAuth } from './features/auth/RequireAuth'
+import { MyPage } from './features/account/MyPage'
+import { ProfileEditPage } from './features/account/ProfileEditPage'
+import { AccountDeletePage } from './features/account/AccountDeletePage'
+import { InquiryListPage } from './features/inquiry/InquiryListPage'
+import { InquiryNewPage } from './features/inquiry/InquiryNewPage'
+import { InquiryDetailPage } from './features/inquiry/InquiryDetailPage'
 import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
@@ -28,6 +35,54 @@ export default function App() {
           <Route path="my-reservations/:resvId" element={<MyReservationsPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignupPage />} />
+          <Route
+            path="mypage"
+            element={
+              <RequireAuth>
+                <MyPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="mypage/edit"
+            element={
+              <RequireAuth>
+                <ProfileEditPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="mypage/delete"
+            element={
+              <RequireAuth>
+                <AccountDeletePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="inquiries"
+            element={
+              <RequireAuth>
+                <InquiryListPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="inquiries/new"
+            element={
+              <RequireAuth>
+                <InquiryNewPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="inquiries/:inquiryId"
+            element={
+              <RequireAuth>
+                <InquiryDetailPage />
+              </RequireAuth>
+            }
+          />
           {isDevMode && <Route path="__dev/login" element={<DevLoginPage />} />}
           {isDevMode && <Route path="__dev/components" element={<ComponentGallery />} />}
           <Route path="*" element={<NotFoundPage />} />

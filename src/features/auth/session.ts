@@ -1,21 +1,19 @@
+import { clearAccessToken, getAccessToken, setAccessToken } from '../../lib/authToken'
 import type { UserProfile } from './types'
 
 /**
  * 로그인 세션(access token + 내 정보) 보관소.
  *
- * 백엔드는 refresh token 없이 access token만 발급하므로 클라이언트는
- * 토큰을 localStorage에 보관하고 요청마다 Authorization 헤더로 실어 보낸다.
- * 로그아웃은 보관 중인 토큰을 지우는 것으로 완료된다.
+ * 토큰 자체는 공용 모듈 lib/authToken이 관리하고(axios 인터셉터가 같은 값을 사용한다),
+ * 여기서는 화면 표시에 필요한 회원 정보를 함께 묶어 다룬다.
+ * 백엔드는 refresh token 없이 access token만 발급하므로, 로그아웃은 보관 중인 토큰을 지우는 것으로 끝난다.
  */
-const tokenKey = 'msds.auth.token'
 const userKey = 'msds.auth.user'
 const changeEvent = 'msds-auth-session'
 
 export type Session = { accessToken: string; user: UserProfile | null }
 
-export function getAccessToken(): string | null {
-  return localStorage.getItem(tokenKey)
-}
+export { getAccessToken }
 
 export function getSession(): Session | null {
   const accessToken = getAccessToken()
@@ -30,26 +28,27 @@ export function getSession(): Session | null {
 }
 
 export function setSession(accessToken: string, user: UserProfile | null) {
-  localStorage.setItem(tokenKey, accessToken)
+  setAccessToken(accessToken)
   if (user) localStorage.setItem(userKey, JSON.stringify(user))
   else localStorage.removeItem(userKey)
   window.dispatchEvent(new Event(changeEvent))
 }
 
 export function clearSession() {
-  localStorage.removeItem(tokenKey)
+  clearAccessToken()
   localStorage.removeItem(userKey)
   window.dispatchEvent(new Event(changeEvent))
 }
 
-// 세션 변경(로그인/로그아웃, 다른 탭에서의 변경) 구독. 해제 함수를 돌려준다.
+/**
+ * 세션 변경 구독. 해제 함수를 돌려준다.
+ * 자체 이벤트 외에 authToken의 'msds-auth-changed'와 토큰이 만료되어 401이 난
+ * 'msds-auth-expired'(apiClient 인터셉터)도 함께 듣는다.
+ */
 export function subscribeSession(listener: () => void) {
-  addEventListener(changeEvent, listener)
-  addEventListener('storage', listener)
-  return () => {
-    removeEventListener(changeEvent, listener)
-    removeEventListener('storage', listener)
-  }
+  const events = [changeEvent, 'msds-auth-changed', 'msds-auth-expired', 'storage']
+  events.forEach((event) => addEventListener(event, listener))
+  return () => events.forEach((event) => removeEventListener(event, listener))
 }
 
 // 로그인 후 되돌아갈 경로. 401 처리 화면들이 sessionStorage에 남겨 둔 값을 사용한다.

@@ -27,7 +27,7 @@ export function Header() {
   }, [])
   const signedIn = session !== null || devSignedIn
   const action = signedIn
-    ? { to: '/my-reservations', label: 'MY PAGE' }
+    ? { to: '/mypage', label: 'MY PAGE' }
     : { to: '/login', label: 'LOGIN' }
   return (
     <header className="h-[92px] border-b border-border-subtle bg-surface">
