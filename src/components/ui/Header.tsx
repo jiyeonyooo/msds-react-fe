@@ -9,7 +9,7 @@ import { NavItem } from './NavItem'
 
 const links = [
   { label: 'HOME', path: '/' },
-  { label: 'ROOMS', path: '/reservations' },
+  { label: 'ROOMS', path: '/rooms' },
   { label: 'RESERVATION', path: '/my-reservations' },
   { label: 'PROGRAM', path: '/programs' },
   { label: 'WELLNESS', path: '/wellness' },
