@@ -26,3 +26,5 @@ dist-ssr
 # Local project instructions and source specifications
 /AGENTS.md
 /docs/
+!/docs/
+!/docs/FRONTEND_INTEGRATION.md
