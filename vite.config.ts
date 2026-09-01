@@ -7,6 +7,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
     plugins: [react(), tailwindcss()],
+    define: {
+      'import.meta.env.API_BASE_URL': JSON.stringify(env.API_BASE_URL || ''),
+    },
     server: {
       proxy: {
         // 개발 중 /api 요청을 Spring 서버로 넘겨 같은 오리진처럼 다룬다(별도 CORS 설정 불필요).
