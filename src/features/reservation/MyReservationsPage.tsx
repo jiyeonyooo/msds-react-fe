@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { navigate } from '../../lib/navigation'
 import { ApiError, reservationApi } from './api'
 import type { Reservation, ReservationStatus } from './types'
@@ -67,7 +67,7 @@ export function MyReservationsPage() {
           {message}
         </h1>
         <button
-          className="rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light"
+          className="rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700"
           onClick={() => navigate(id ? '/my-reservations' : '/reservations')}
         >
           돌아가기
@@ -82,24 +82,24 @@ export function MyReservationsPage() {
     return (
       <main className="mx-auto max-w-[850px] px-6 pt-[58px] pb-[110px] md:pt-[90px]">
         <button
-          className="mb-[25px] border-0 bg-transparent p-0 text-xs tracking-[0.14em] text-msds-muted"
+          className="mb-[25px] border-0 bg-transparent p-0 text-xs tracking-[0.14em] text-muted"
           onClick={() => navigate('/my-reservations')}
         >
           ← 나의 예약으로
         </button>
-        <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">
+        <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">
           RESERVATION DETAIL
         </p>
         <h1 className="my-2.5 font-display text-[52px] leading-[0.95] tracking-[-0.125rem] md:text-[62px]">
           예약 상세
         </h1>
-        {message && <p className="mt-[14px] text-[13px] text-msds-error">{message}</p>}
+        {message && <p className="mt-[14px] text-[13px] text-error">{message}</p>}
         <ReservationCard reservation={detail} detail />
         {canCancel ? (
-          <section className="mt-6 border-t border-msds-border pt-5 text-xs text-msds-muted">
+          <section className="mt-6 border-t border-border-subtle pt-5 text-xs text-muted">
             <p>취소는 체크인 전날까지 가능합니다.</p>
             <button
-              className="border border-msds-error-border bg-transparent px-[18px] py-3 text-msds-error"
+              className="border border-error-border bg-transparent px-[18px] py-3 text-error"
               onClick={() => void cancel()}
             >
               예약 취소
@@ -107,7 +107,7 @@ export function MyReservationsPage() {
           </section>
         ) : (
           detail.status === 'RESERVED' && (
-            <p className="mt-[14px] text-[13px] text-msds-error">
+            <p className="mt-[14px] text-[13px] text-error">
               체크인 당일 또는 이후에는 예약을 취소할 수 없습니다.
             </p>
           )
@@ -117,12 +117,12 @@ export function MyReservationsPage() {
   }
   return (
     <main className="mx-auto max-w-7xl px-6 pt-[58px] pb-[110px] md:pt-[90px]">
-      <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">MY RESERVATIONS</p>
+      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">MY RESERVATIONS</p>
       <h1 className="my-2.5 font-display text-[52px] leading-[0.95] tracking-[-0.125rem] md:text-[62px]">
         나의 예약
       </h1>
-      <p className="text-sm text-msds-muted">머무름의 일정과 예약 상태를 확인하세요.</p>
-      <div className="mt-10 border-b border-msds-border" role="tablist">
+      <p className="text-sm text-muted">머무름의 일정과 예약 상태를 확인하세요.</p>
+      <div className="mt-10 border-b border-border-subtle" role="tablist">
         {(
           [
             ['ALL', '전체'],
@@ -134,7 +134,7 @@ export function MyReservationsPage() {
             key={value}
             role="tab"
             aria-selected={status === value}
-            className={`mr-6 border-b-2 border-transparent bg-transparent px-2 pb-[13px] text-msds-muted ${status === value ? 'border-msds-gold text-msds-navy' : ''}`}
+            className={`mr-6 border-b-2 border-transparent bg-transparent px-2 pb-[13px] text-muted ${status === value ? 'border-gold-500 text-navy-900' : ''}`}
             onClick={() => setStatus(value)}
           >
             {text}
@@ -142,11 +142,11 @@ export function MyReservationsPage() {
         ))}
       </div>
       {filtered.length === 0 ? (
-        <div className="mt-[30px] border border-dashed border-msds-gold-light px-6 py-[70px] text-center leading-loose text-msds-muted">
+        <div className="mt-[30px] border border-dashed border-gold-300 px-6 py-[70px] text-center leading-loose text-muted">
           예약 내역이 없습니다.
           <br />
           <button
-            className="mt-[18px] rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light"
+            className="mt-[18px] rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700"
             onClick={() => navigate('/reservations')}
           >
             예약하기
@@ -177,7 +177,7 @@ function ReservationCard({
 }) {
   return (
     <article
-      className={`grid grid-cols-[1fr_auto] gap-[18px] border border-msds-border bg-white p-[26px] ${detail ? 'mt-[38px]' : 'hover:border-msds-gold'} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`grid grid-cols-[1fr_auto] gap-[18px] border border-border-subtle bg-white p-[26px] ${detail ? 'mt-[38px]' : 'hover:border-gold-500'} ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
       role={onClick ? 'button' : undefined}
@@ -190,11 +190,11 @@ function ReservationCard({
         </h2>
       </div>
       <span
-        className={`h-fit border px-[7px] py-1 text-[11px] ${reservation.status === 'RESERVED' ? 'border-msds-gold-light text-[#a6874f]' : 'border-msds-border text-[#8f969b]'}`}
+        className={`h-fit border px-[7px] py-1 text-[11px] ${reservation.status === 'RESERVED' ? 'border-gold-300 text-[#a6874f]' : 'border-border-subtle text-[#8f969b]'}`}
       >
         {label(reservation.status)}
       </span>
-      <dl className="col-span-2 grid grid-cols-2 gap-2.5 border-t border-[#eee9e0] pt-4 text-xs [&_dd]:m-0 [&_dd]:text-right [&_dt]:text-msds-muted">
+      <dl className="col-span-2 grid grid-cols-2 gap-2.5 border-t border-[#eee9e0] pt-4 text-xs [&_dd]:m-0 [&_dd]:text-right [&_dt]:text-muted">
         <dt>객실</dt>
         <dd>
           {reservation.room_name}
@@ -207,7 +207,7 @@ function ReservationCard({
         <dt>인원</dt>
         <dd>성인 {reservation.guest_count}명</dd>
         <dt>총 예약 금액</dt>
-        <dd className="text-msds-gold">{won(reservation.total_price)}</dd>
+        <dd className="text-gold-500">{won(reservation.total_price)}</dd>
         {detail && reservation.cancelled_at && (
           <>
             <dt>취소 일시</dt>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { HomePage } from './features/home/HomePage'
 import { ReservationPage } from './features/reservation/ReservationPage'
@@ -31,10 +31,10 @@ export default function App() {
 function NotFoundPage() {
   return (
     <main className="mx-auto max-w-7xl px-6 pt-[58px] pb-[110px] text-center md:pt-[90px]">
-      <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">NOT FOUND</p>
+      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">NOT FOUND</p>
       <h1>페이지를 찾을 수 없습니다.</h1>
       <a
-        className="inline-block rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light"
+        className="inline-block rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700"
         href="/"
       >
         홈으로 돌아가기

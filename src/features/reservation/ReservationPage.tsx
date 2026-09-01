@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react'
+﻿import { type FormEvent, useState } from 'react'
 import { navigate } from '../../lib/navigation'
 import { ApiError, reservationApi } from './api'
 import type { AvailableRoom } from './types'
@@ -26,39 +26,39 @@ export function ReservationPage() {
   }
   return (
     <main className="mx-auto max-w-7xl px-6 pt-[58px] pb-[110px] md:pt-[90px]">
-      <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">MAKE A RESERVATION</p>
+      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">MAKE A RESERVATION</p>
       <h1 className="my-2.5 font-display text-[52px] leading-[0.95] tracking-[-0.125rem] md:text-[62px]">
         예약하기
       </h1>
-      <p className="text-sm text-msds-muted">원하시는 머무름의 시간과 인원을 선택해 주세요.</p>
+      <p className="text-sm text-muted">원하시는 머무름의 시간과 인원을 선택해 주세요.</p>
       <form
-        className="mt-[38px] grid grid-cols-1 gap-3 border border-msds-border bg-white p-[26px] md:grid-cols-[1fr_1fr_1fr_auto]"
+        className="mt-[38px] grid grid-cols-1 gap-3 border border-border-subtle bg-white p-[26px] md:grid-cols-[1fr_1fr_1fr_auto]"
         onSubmit={search}
       >
-        <label className="grid gap-[5px] border border-msds-border px-4 py-3 text-[10px] tracking-[0.12em] text-msds-muted">
+        <label className="grid gap-[5px] border border-border-subtle px-4 py-3 text-[10px] tracking-[0.12em] text-muted">
           CHECK-IN
           <input
-            className="min-w-0 border-0 bg-transparent text-sm text-msds-navy"
+            className="min-w-0 border-0 bg-transparent text-sm text-navy-900"
             type="date"
             min={today}
             value={form.check_in_date}
             onChange={(e) => setForm({ ...form, check_in_date: e.target.value })}
           />
         </label>
-        <label className="grid gap-[5px] border border-msds-border px-4 py-3 text-[10px] tracking-[0.12em] text-msds-muted">
+        <label className="grid gap-[5px] border border-border-subtle px-4 py-3 text-[10px] tracking-[0.12em] text-muted">
           CHECK-OUT
           <input
-            className="min-w-0 border-0 bg-transparent text-sm text-msds-navy"
+            className="min-w-0 border-0 bg-transparent text-sm text-navy-900"
             type="date"
             min={form.check_in_date}
             value={form.check_out_date}
             onChange={(e) => setForm({ ...form, check_out_date: e.target.value })}
           />
         </label>
-        <label className="grid gap-[5px] border border-msds-border px-4 py-3 text-[10px] tracking-[0.12em] text-msds-muted">
+        <label className="grid gap-[5px] border border-border-subtle px-4 py-3 text-[10px] tracking-[0.12em] text-muted">
           GUESTS
           <select
-            className="min-w-0 border-0 bg-transparent text-sm text-msds-navy"
+            className="min-w-0 border-0 bg-transparent text-sm text-navy-900"
             value={form.guest_count}
             onChange={(e) => setForm({ ...form, guest_count: Number(e.target.value) })}
           >
@@ -70,27 +70,27 @@ export function ReservationPage() {
           </select>
         </label>
         <button
-          className="rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light disabled:cursor-not-allowed disabled:bg-[#bdbbb6]"
+          className="rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:bg-[#bdbbb6]"
           disabled={loading}
         >
           {loading ? '조회 중…' : '예약 가능 객실 보기'}
         </button>
       </form>
       {error && (
-        <p className="mt-[14px] text-[13px] text-msds-error" role="alert">
+        <p className="mt-[14px] text-[13px] text-error" role="alert">
           {error}
         </p>
       )}
       {rooms?.length === 0 && (
-        <div className="mt-[30px] border border-dashed border-msds-gold-light px-6 py-[70px] text-center leading-loose text-msds-muted">
+        <div className="mt-[30px] border border-dashed border-gold-300 px-6 py-[70px] text-center leading-loose text-muted">
           예약 가능한 객실 유형이 없습니다. 다른 날짜를 선택해 주세요.
         </div>
       )}
       {rooms && rooms.length > 0 && (
         <section className="mt-[72px]">
-          <div className="mb-7 flex items-end justify-between border-b border-msds-gold-light max-md:block">
+          <div className="mb-7 flex items-end justify-between border-b border-gold-300 max-md:block">
             <div>
-              <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">
+              <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">
                 AVAILABILITY
               </p>
               <h2 className="my-[22px] font-display text-[34px] leading-[1.15] tracking-[0.3px]">
@@ -102,22 +102,22 @@ export function ReservationPage() {
           </div>
           <div className="grid grid-cols-1 gap-[14px] md:grid-cols-3 md:gap-5">
             {rooms.map((room) => (
-              <article className="border border-msds-border bg-white" key={room.room_id}>
+              <article className="border border-border-subtle bg-white" key={room.room_id}>
                 <div
                   className="h-[180px] bg-[linear-gradient(135deg,#d4c29c,#f1ece3_45%,#355069)] bg-cover bg-center"
                   style={room.image_url ? { backgroundImage: `url(${room.image_url})` } : undefined}
                 />
                 <div className="p-[26px]">
                   <span
-                    className={`float-right border px-[7px] py-1 text-[11px] ${room.available ? 'border-msds-gold-light text-[#a6874f]' : 'border-msds-border text-[#8f969b]'}`}
+                    className={`float-right border px-[7px] py-1 text-[11px] ${room.available ? 'border-gold-300 text-[#a6874f]' : 'border-border-subtle text-[#8f969b]'}`}
                   >
                     {room.available ? '예약 가능' : '예약 마감'}
                   </span>
                   <h3 className="my-3 font-display text-[29px] font-medium">{room.room_name}</h3>
-                  <p className="min-h-[34px] text-xs text-msds-muted">
+                  <p className="min-h-[34px] text-xs text-muted">
                     {room.description ?? '고요한 휴식을 위한 객실입니다.'}
                   </p>
-                  <dl className="grid grid-cols-2 gap-2.5 border-t border-[#eee9e0] pt-4 text-xs [&_dd]:m-0 [&_dd]:text-right [&_dt]:text-msds-muted">
+                  <dl className="grid grid-cols-2 gap-2.5 border-t border-[#eee9e0] pt-4 text-xs [&_dd]:m-0 [&_dd]:text-right [&_dt]:text-muted">
                     <dt>최대 인원</dt>
                     <dd>{room.max_guest_count}명</dd>
                     <dt>숙박 일수</dt>
@@ -125,14 +125,14 @@ export function ReservationPage() {
                     <dt>1박 기준가</dt>
                     <dd>{won(room.base_price)}</dd>
                     <dt>총 예약 금액</dt>
-                    <dd className="m-0 text-right text-msds-gold">{won(room.total_price)}</dd>
+                    <dd className="m-0 text-right text-gold-500">{won(room.total_price)}</dd>
                   </dl>
                   <div className="mt-[18px] flex items-center justify-between">
-                    <small className="text-[11px] text-msds-muted">
+                    <small className="text-[11px] text-muted">
                       남은 객실 {room.remaining_count}개
                     </small>
                     <button
-                      className="rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light disabled:cursor-not-allowed disabled:bg-[#bdbbb6]"
+                      className="rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:bg-[#bdbbb6]"
                       disabled={!room.available}
                       onClick={() =>
                         navigate(
@@ -150,7 +150,7 @@ export function ReservationPage() {
         </section>
       )}
       {!loading && !error && rooms === null && (
-        <p className="my-[45px] text-sm text-msds-muted">
+        <p className="my-[45px] text-sm text-muted">
           날짜와 인원을 입력하면 예약 가능한 객실 유형을 안내합니다.
         </p>
       )}

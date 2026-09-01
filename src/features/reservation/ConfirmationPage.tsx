@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { navigate } from '../../lib/navigation'
 import { ApiError, reservationApi } from './api'
 import type { AvailableRoom } from './types'
@@ -51,18 +51,18 @@ export function ConfirmationPage() {
   return (
     <main className="mx-auto max-w-[850px] px-6 pt-[58px] pb-[110px] md:pt-[90px]">
       <button
-        className="mb-[25px] border-0 bg-transparent p-0 text-xs tracking-[0.14em] text-msds-muted"
+        className="mb-[25px] border-0 bg-transparent p-0 text-xs tracking-[0.14em] text-muted"
         onClick={() => navigate('/reservations')}
       >
         ← 객실 목록으로
       </button>
-      <p className="text-[11px] font-medium tracking-[0.17em] text-msds-gold">CONFIRM YOUR STAY</p>
+      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">CONFIRM YOUR STAY</p>
       <h1>예약을 확인해 주세요</h1>
       {displayError ? (
         <>
-          <p className="mt-[14px] text-[13px] text-msds-error">{displayError}</p>
+          <p className="mt-[14px] text-[13px] text-error">{displayError}</p>
           <button
-            className="rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light"
+            className="rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700"
             onClick={() => navigate('/reservations')}
           >
             예약 다시 조회
@@ -71,13 +71,13 @@ export function ConfirmationPage() {
       ) : !room ? (
         <p>예약 정보를 불러오는 중입니다…</p>
       ) : (
-        <section className="mt-[38px] grid grid-cols-[1fr_auto] gap-[18px] border border-msds-border bg-white p-[26px]">
+        <section className="mt-[38px] grid grid-cols-[1fr_auto] gap-[18px] border border-border-subtle bg-white p-[26px]">
           <div>
             <span className="text-[11px] font-medium tracking-[0.17em]">SELECTED ROOM TYPE</span>
             <h2 className="my-[7px] font-display text-[23px] font-medium">{room.room_name}</h2>
             <p>{room.description}</p>
           </div>
-          <dl className="col-span-2 grid grid-cols-2 gap-2.5 border-t border-[#eee9e0] pt-4 text-xs [&_dd]:m-0 [&_dd]:text-right [&_dt]:text-msds-muted">
+          <dl className="col-span-2 grid grid-cols-2 gap-2.5 border-t border-[#eee9e0] pt-4 text-xs [&_dd]:m-0 [&_dd]:text-right [&_dt]:text-muted">
             <dt>체크인</dt>
             <dd>{checkIn}</dd>
             <dt>체크아웃</dt>
@@ -89,11 +89,11 @@ export function ConfirmationPage() {
             <dt>1박 기준가</dt>
             <dd>{won(room.base_price)}</dd>
             <dt>총 예약 금액</dt>
-            <dd className="text-msds-gold">{won(room.total_price)}</dd>
+            <dd className="text-gold-500">{won(room.total_price)}</dd>
           </dl>
           <p>예약이 확정되면 이용 가능한 개별 객실은 서버에서 배정합니다.</p>
           <button
-            className="rounded-msds bg-msds-navy px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-msds-navy-light disabled:cursor-not-allowed disabled:bg-[#bdbbb6]"
+            className="rounded-sm bg-navy-900 px-6 py-[13px] text-xs tracking-[0.06em] text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:bg-[#bdbbb6]"
             disabled={saving}
             onClick={() => void create()}
           >
