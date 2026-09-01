@@ -14,13 +14,17 @@
 
 ## Tailwind CSS v4
 
-Vite는 `@tailwindcss/vite` 플러그인으로 Tailwind v4를 로드합니다. 전역 진입점 `src/index.css`의 `@theme`이 MSDS 공통 토큰의 단일 원천입니다.
+Vite는 `@tailwindcss/vite` 플러그인으로 Tailwind v4를 로드합니다. 전역 진입점 `src/index.css`의 `@theme`은 Figma `MSDS / Foundations` 프레임을 반영한 공통 토큰의 단일 원천입니다. 토큰명에는 `msds` 접두사를 붙이지 않습니다.
 
-- 폰트: `font-display`, `font-sans`
-- 브랜드: `bg-msds-navy`, `text-msds-gold`, `border-msds-border`
-- 표면·문구: `bg-msds-canvas`, `bg-msds-surface`, `text-msds-muted`, `text-msds-copy`
-- 상태: `text-msds-error`, `border-msds-error-border`
-- 형태: `rounded-msds`, `rounded-panel`, `shadow-panel`
+- 폰트: `font-display`(Cormorant Garamond), `font-sans`(Noto Sans KR)
+- 원색: `ivory-50|100|200`, `navy-900|800|700`, `gold-500|300`, `ink-700|500`, `mist-200`, `sage-200`
+- 의미 색상: `bg-canvas`, `bg-surface`, `bg-subtle`, `bg-inverse`, `bg-accent`, `text-primary`, `text-secondary`, `text-muted`, `text-accent`, `border-border-subtle`, `border-border-accent`
+- 타이포그래피 크기: `text-display-hero`, `text-display-section`, `text-heading-1|2|3`, `text-body-large|medium|small`, `text-label`
+- 간격: `xs`, `sm`, `md`, `lg`, `xl`, `2xl`, `3xl`, `section`, `page-margin` (예: `gap-lg`, `px-page-margin`)
+- 형태·그림자: `rounded-sm|md|lg|full`, `shadow-floating`, `shadow-card`
+- 상태 색상: `text-error`, `border-error-border`
+
+`shadow-floating`은 예약 위젯 등 떠 있는 요소에, `shadow-card`는 일반 카드에 사용합니다. 버튼과 입력 필드의 키보드 포커스는 전역 base 레이어에서 `outline-accent`로 통일합니다.
 
 새 UI는 먼저 해당 유틸리티를 JSX의 `className`에 조합합니다. `index.css`에는 전역 컴포넌트 선택자를 두지 않고 토큰과 base 보정만 둡니다. 반복되는 시각 규칙만 기능 전용 CSS 또는 `@layer`로 최소화합니다. base 레이어는 접근 가능한 포커스 링과 브라우저 기본 여백만 안전하게 보정하므로, Tailwind preflight로 인한 폼 컨트롤 회귀를 줄입니다.
 
