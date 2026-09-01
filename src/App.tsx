@@ -1,6 +1,8 @@
 ﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { HomePage } from './features/home/HomePage'
+import { FacilityPage } from './features/facility/FacilityPage'
+import ProgramListPage from './features/program/ProgramListPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
 import { RoomDetailPage } from './features/rooms/RoomDetailPage'
 import { ReservationPage } from './features/reservation/ReservationPage'
@@ -20,6 +22,8 @@ export default function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="facility" element={<FacilityPage />} />
+          <Route path="programs" element={<ProgramListPage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="rooms/:roomId" element={<RoomDetailPage />} />
           <Route path="reservations" element={<ReservationPage />} />
