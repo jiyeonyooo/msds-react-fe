@@ -2,7 +2,7 @@
 
 ## 공용 UI 폴더
 
-재사용 가능한 표현 컴포넌트는 `src/components/ui`에 둡니다. 기능별 API 호출, 예약 상태 전이, 예약 상세 카드처럼 도메인 맥락이 필요한 코드는 `src/features`에 유지합니다. 이 분리는 `common`보다 `ui`가 담는 범위를 명확히 표현합니다. 컴포넌트의 치수·상태·공식 로고 및 소셜 에셋은 Figma Design System 노드에서 확인해 반영했습니다.
+재사용 가능한 표현 컴포넌트는 `src/components/ui`에 둡니다. 기능별 API 호출, 예약 상태 전이, 예약 상세 카드처럼 도메인 맥락이 필요한 코드는 `src/features`에 유지합니다. 이 분리는 `common`보다 `ui`가 담는 범위를 명확히 표현합니다. 컴포넌트의 치수·상태·공식 소셜 에셋은 Figma Design System 노드에서 확인해 반영했습니다.
 
 | 컴포넌트 | 용도 | 주요 props | 현재 적용 위치 |
 | --- | --- | --- | --- |
@@ -17,6 +17,19 @@
 | `StatusBadge` | 예약 가능·마감 및 예약 상태 표기 | `available` 또는 `status` | 예약 가능 객실 카드 |
 | `RoomMediaCard` | 이미지, 객실 유형, 설명, 상세/행동 영역 카드 | `name`, `description`, `imageUrl`, `badge`, `footer` | 예약 가능 객실 목록 |
 
+## 로고 에셋
+
+`src/assets/ui`의 로고 관련 에셋은 아래 4개 SVG만 유지합니다.
+
+| 파일 | 용도 | 색상 |
+| --- | --- | --- |
+| `primary-logo-light.svg` | 밝은 배경용 Primary Logo | `#0E2239` |
+| `primary-logo-dark.svg` | 어두운 배경용 Primary Logo | `#FBFAF7` |
+| `wordmark-light.svg` | 밝은 배경용 워드마크 | `#0E2239` |
+| `wordmark-dark.svg` | 어두운 배경용 워드마크 | `#FBFAF7` |
+
+워드마크는 Figma의 래스터 소스에서 자동 트레이싱해 SVG path로 만들었습니다. Primary Logo는 Figma의 벡터 마크·구분선·대시, 새 워드마크 SVG, 태그라인 텍스트를 조합한 투명 배경 SVG입니다.
+
 ## 사용 원칙
 
 - API 응답의 `snake_case` 필드는 `features/*/types.ts`와 API 경계에 유지합니다. UI 컴포넌트는 API 타입이나 요청을 직접 알지 않습니다.
@@ -26,4 +39,4 @@
 
 ## 헤더 정보 구조
 
-`HOME · ROOMS · RESERVATION · PROGRAM · WELLNESS · ABOUT`을 사용합니다. `ROOMS`는 예약 가능 객실 검색(`/reservations`), `RESERVATION`은 내 예약(`/my-reservations`)으로 연결됩니다. 로그인 전에도 보호된 경로가 인증 흐름으로 전환하도록 기존 라우팅 정책을 유지합니다.
+`HOME · ROOMS · RESERVATION · PROGRAM · WELLNESS · ABOUT`을 사용합니다. `ROOMS`는 예약 가능 객실 검색(`/reservations`), `RESERVATION`은 내 예약(`/my-reservations`)으로 연결됩니다. 데스크톱 헤더는 3열 그리드로 구성해 로고는 좌측, 메뉴는 화면 중앙, 로그인 버튼은 우측에 고정합니다. 로그인 전에도 보호된 경로가 인증 흐름으로 전환하도록 기존 라우팅 정책을 유지합니다.
