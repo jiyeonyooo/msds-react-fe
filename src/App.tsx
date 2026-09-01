@@ -4,6 +4,8 @@ import { HomePage } from './features/home/HomePage'
 import { ReservationPage } from './features/reservation/ReservationPage'
 import { MyReservationsPage } from './features/reservation/MyReservationsPage'
 import { ConfirmationPage } from './features/reservation/ConfirmationPage'
+import { LoginPage } from './features/auth/LoginPage'
+import { SignupPage } from './features/auth/SignupPage'
 import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
@@ -20,7 +22,9 @@ export default function App() {
           <Route path="reservations/confirm" element={<ConfirmationPage />} />
           <Route path="my-reservations" element={<MyReservationsPage />} />
           <Route path="my-reservations/:resvId" element={<MyReservationsPage />} />
-          {isDevMode && <Route path="login" element={<DevLoginPage />} />}
+          <Route path="login" element={<LoginPage />} />
+          <Route path="signup" element={<SignupPage />} />
+          {isDevMode && <Route path="__dev/login" element={<DevLoginPage />} />}
           {isDevMode && <Route path="__dev/components" element={<ComponentGallery />} />}
           <Route path="*" element={<NotFoundPage />} />
         </Route>

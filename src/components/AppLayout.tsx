@@ -2,6 +2,8 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { getDevAuthState } from '../dev/auth'
 import { isDevMode } from '../dev/scenarios'
+import { signOut } from '../features/auth/api'
+import { useSession } from '../features/auth/useSession'
 
 const links = [
   { label: 'HOME', path: '/' },
@@ -11,12 +13,15 @@ const links = [
   { label: 'ABOUT', path: '/about' },
 ]
 export function AppLayout() {
-  const [signedIn, setSignedIn] = useState(isDevMode && getDevAuthState() === 'member')
+  // 실제 로그인 세션이 우선이고, DEV 도구의 인증 상태 전환도 함께 인정한다.
+  const session = useSession()
+  const [devSignedIn, setDevSignedIn] = useState(isDevMode && getDevAuthState() === 'member')
   useEffect(() => {
-    const update = () => setSignedIn(getDevAuthState() === 'member')
+    const update = () => setDevSignedIn(getDevAuthState() === 'member')
     addEventListener('msds-dev-auth', update)
     return () => removeEventListener('msds-dev-auth', update)
   }, [])
+  const signedIn = session !== null || devSignedIn
   const action = signedIn
     ? { to: '/my-reservations', label: 'MY RESERVATION' }
     : { to: '/login', label: 'LOGIN' }
@@ -44,12 +49,26 @@ export function AppLayout() {
               </NavLink>
             ))}
           </nav>
-          <NavLink
-            className="rounded-sm bg-navy-900 px-3 py-2.5 text-[0.625rem] tracking-[0.06em] text-white transition hover:bg-navy-700 md:px-6 md:py-3 md:text-xs"
-            to={action.to}
-          >
-            {action.label}
-          </NavLink>
+          <div className="flex items-center gap-3">
+            {session?.user && (
+              <span className="hidden text-xs text-muted md:inline">{session.user.name}님</span>
+            )}
+            <NavLink
+              className="rounded-sm bg-navy-900 px-3 py-2.5 text-[0.625rem] tracking-[0.06em] text-white transition hover:bg-navy-700 md:px-6 md:py-3 md:text-xs"
+              to={action.to}
+            >
+              {action.label}
+            </NavLink>
+            {session && (
+              <button
+                className="border-0 bg-transparent p-0 text-[0.625rem] tracking-[0.06em] text-muted md:text-xs"
+                onClick={() => void signOut()}
+                type="button"
+              >
+                LOGOUT
+              </button>
+            )}
+          </div>
         </div>
       </header>
       <Outlet />
