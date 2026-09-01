@@ -1,5 +1,7 @@
+import axios from 'axios'
 import { getDevAuthState } from '../../dev/auth'
 import { getDevScenario, isDevMode } from '../../dev/scenarios'
+import { authApiClient } from '../../lib/apiClient'
 import type {
   ApiEnvelope,
   AvailabilityRequest,
@@ -66,24 +68,37 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
       )
     return mocked.data as T
   }
-  const response = await fetch(`/api${url}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-    ...init,
-  })
-  const raw = await response.text()
-  let body: ApiEnvelope<T & { errors?: ApiError['errors'] }>
+  let response
   try {
-    body = JSON.parse(raw) as ApiEnvelope<T & { errors?: ApiError['errors'] }>
-  } catch {
+    response = await authApiClient.request<ApiEnvelope<T & { errors?: ApiError['errors'] }>>({
+      url,
+      method: init?.method ?? 'GET',
+      headers: init?.headers as Record<string, string> | undefined,
+      data: init?.body,
+    })
+  } catch (error) {
+    if (axios.isAxiosError<ApiEnvelope<T & { errors?: ApiError['errors'] }>>(error)) {
+      const body = error.response?.data
+      if (error.response && body && typeof body === 'object' && 'code' in body) {
+        throw new ApiError(
+          error.response.status,
+          body.code,
+          body.message,
+          body.data?.errors ?? [],
+        )
+      }
+      throw new ApiError(0, 'API_NETWORK_ERROR', 'API 서버에 연결할 수 없습니다.')
+    }
+    throw error
+  }
+  const body = response.data
+  if (!body || typeof body !== 'object' || !('code' in body)) {
     throw new ApiError(
       response.status,
       'API_INVALID_RESPONSE',
       'API 서버 응답을 확인할 수 없습니다. 백엔드 연결 또는 개발 시나리오를 확인해 주세요.',
     )
   }
-  if (!response.ok)
-    throw new ApiError(response.status, body.code, body.message, body.data?.errors ?? [])
   return body.data
 }
 async function devResponse<T>(url: string, init?: RequestInit): Promise<MockResult<T>> {

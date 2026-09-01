@@ -1,6 +1,8 @@
 ﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { HomePage } from './features/home/HomePage'
+import { RoomsPage } from './features/rooms/RoomsPage'
+import { RoomDetailPage } from './features/rooms/RoomDetailPage'
 import { ReservationPage } from './features/reservation/ReservationPage'
 import { MyReservationsPage } from './features/reservation/MyReservationsPage'
 import { ConfirmationPage } from './features/reservation/ConfirmationPage'
@@ -18,6 +20,8 @@ export default function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="rooms" element={<RoomsPage />} />
+          <Route path="rooms/:roomId" element={<RoomDetailPage />} />
           <Route path="reservations" element={<ReservationPage />} />
           <Route path="reservations/confirm" element={<ConfirmationPage />} />
           <Route path="my-reservations" element={<MyReservationsPage />} />
