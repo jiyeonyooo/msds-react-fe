@@ -77,6 +77,12 @@ export async function adminReservationMock<T>(
     )
     return { handled: true, data: { resv_list: content, page_num: 0, page_size: 10, total_elements: content.length, total_pages: content.length ? 1 : 0 } satisfies AdminReservationPage as T }
   }
+  if (method === 'PATCH' && path.endsWith('/restore')) {
+    const reservation = reservations.find((item) => path.endsWith(`/${item.resv_id}/restore`))
+    if (!reservation) return fail(404, 'RESV_NOT_FOUND', '예약 정보를 찾을 수 없습니다.')
+    const data: AdminCancellationResult = { resv_id: reservation.resv_id, resv_number: reservation.resv_number, resv_status: 'RESERVED', cancelled_at: null }
+    return { handled: true, data: data as T }
+  }
   if (method === 'PATCH') {
     const reservation = reservations.find((item) => path.endsWith(`/${item.resv_id}/status`))
     if (!reservation) return fail(404, 'RESV_NOT_FOUND', '예약 정보를 찾을 수 없습니다.')
