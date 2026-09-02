@@ -19,6 +19,29 @@ export type AdminRoomRequest = {
 
 export type AdminRoomUpdateRequest = Partial<AdminRoomRequest>
 
+export type EquipmentCategory =
+  | 'ELECTRONICS'
+  | 'FURNITURE'
+  | 'BATHROOM'
+  | 'BEDDING'
+  | 'KITCHEN'
+  | 'CONVENIENCE'
+  | 'WELLNESS'
+
+export type RoomEquipmentOption = {
+  equipmentId: number
+  name: string
+  category: EquipmentCategory
+  description: string | null
+  iconUrl: string | null
+}
+
+export type RoomEquipmentSelection = {
+  equipmentId: number
+  quantity: number
+  note?: string
+}
+
 export type AdminFacility = {
   facilityId: number
   name: string

@@ -7,6 +7,8 @@ import type {
   AdminRoom,
   AdminRoomRequest,
   AdminRoomUpdateRequest,
+  RoomEquipmentOption,
+  RoomEquipmentSelection,
 } from './types'
 
 export const adminRoomsApi = {
@@ -22,6 +24,18 @@ export const adminRoomsApi = {
   async update(roomId: number, request: AdminRoomUpdateRequest) {
     return (
       await call<AdminRoom>(() => authApiClient.patch(`/admin/rooms/${roomId}`, request))
+    ).data
+  },
+  async listEquipments() {
+    return (
+      await call<RoomEquipmentOption[]>(() => authApiClient.get('/admin/room-equipments'))
+    ).data
+  },
+  async updateEquipments(roomId: number, equipments: RoomEquipmentSelection[]) {
+    return (
+      await call<AdminRoom>(() =>
+        authApiClient.patch(`/admin/rooms/${roomId}/equipments`, { equipments }),
+      )
     ).data
   },
 }
