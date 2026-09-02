@@ -1,5 +1,3 @@
-import type { FieldErrors } from './types'
-
 /**
  * 폼 입력 검증 규칙.
  *
@@ -64,8 +62,4 @@ export function formatPhoneNumber(value: string): string {
   if (digits.length < 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`
   if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
-}
-
-export function hasError(errors: FieldErrors): boolean {
-  return Object.values(errors).some(Boolean)
 }
