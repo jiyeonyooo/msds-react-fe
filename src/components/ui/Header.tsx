@@ -8,6 +8,7 @@ import { Logo } from './Logo'
 import { NavItem } from './NavItem'
 
 const links = [
+  { label: 'HOME', path: '/' },
   { label: 'PROGRAM', path: '/programs' },
   { label: 'WELLNESS', path: '/wellness' },
   { label: 'ABOUT', path: '/facility' },

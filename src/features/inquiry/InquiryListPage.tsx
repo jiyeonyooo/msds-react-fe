@@ -21,15 +21,15 @@ export function InquiryListPage() {
   return (
     <AccountLayout
       description="머무름에 대해 남기신 문의와 답변을 한 곳에서 확인하실 수 있습니다."
-      eyebrow="MY INQUIRIES"
+      eyebrow="MEMBER SUPPORT"
       hero={<HeroAction badge="NEW" label="새 문의 작성" to="/inquiries/new" />}
-      title="내 문의"
+      title="문의 내역"
     >
       <article className="rounded-xl border border-border-subtle bg-white px-8 py-7">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="flex-1">
             <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              Inquiry List
+              문의 내역
             </h2>
             <p className="text-[10px] tracking-[0.08em] text-muted">
               답변이 등록되면 상태가 ANSWERED로 바뀝니다.

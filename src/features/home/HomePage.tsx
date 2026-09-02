@@ -100,6 +100,7 @@ export function HomePage() {
     checkOut: dateAfter(12),
     guests: 2,
   })
+  const [roomPage, setRoomPage] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -127,15 +128,19 @@ export function HomePage() {
   }, [])
 
   const roomImages = [oceanSuiteImage, oceanSuiteImage, courtyardImage]
-  const displayedRooms = roomData.length
-    ? roomData.slice(0, 3).map((room, index) => ({
+  const availableRooms = roomData.length
+    ? roomData.map((room, index) => ({
         roomId: room.roomId,
         name: room.name,
         details: room.description ?? `${room.standardGuests} guests · 최대 ${room.maxGuests}명`,
         price: `${won.format(room.basePrice)} / night`,
-        image: room.mainImageUrl || roomImages[index],
+        image: room.mainImageUrl || roomImages[index % roomImages.length],
       }))
     : fallbackRooms
+  const displayedRooms = Array.from({ length: Math.min(3, availableRooms.length) }, (_, index) =>
+    availableRooms[(roomPage + index) % availableRooms.length],
+  )
+  const roomPageCount = Math.max(availableRooms.length, 1)
 
   const searchAvailability = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -150,7 +155,7 @@ export function HomePage() {
   return (
     <main>
       <section
-        className="relative min-h-[780px] bg-cover bg-center"
+        className="relative min-h-[760px] bg-cover bg-center"
         style={{ backgroundImage: `url(${heroImage})` }}
       >
         <div className="mx-auto max-w-[1120px] px-6 pt-20 md:pt-[105px]">
@@ -235,7 +240,7 @@ export function HomePage() {
         </form>
       </section>
 
-      <section className="bg-canvas py-20 md:h-[660px] md:py-[70px]">
+      <section className="bg-canvas py-20 md:h-[520px] md:py-[40px]">
         <div className="mx-auto grid max-w-[1088px] items-center gap-14 px-6 md:grid-cols-[470px_500px] md:justify-between md:px-0">
           <div>
             <span className="block h-0.5 w-[54px] bg-gold-500" />
@@ -256,13 +261,13 @@ export function HomePage() {
           </div>
           <img
             alt="고요한 해 질 녘 바다"
-            className="h-[420px] w-full rounded-t-[250px] object-cover md:h-[520px]"
+            className="h-[420px] w-full rounded-t-[250px] object-cover md:h-[440px]"
             src={coastImage}
           />
         </div>
       </section>
 
-      <section className="bg-white py-8 md:h-[340px] md:py-[35px]">
+      <section className="bg-white py-8 md:h-[300px] md:py-[15px]">
         <div className="mx-auto grid max-w-[1220px] md:grid-cols-[1fr_1px_1fr_1px_1fr] md:items-center">
           {features.map((feature, index) => (
             <div className="contents" key={feature.title}>
@@ -290,7 +295,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="bg-canvas py-20 md:h-[760px] md:py-[92px]">
+      <section className="relative bg-canvas py-20 md:h-[600px] md:py-[85px]">
         <div className="mx-auto grid max-w-[1240px] gap-14 px-6 md:grid-cols-[520px_640px] md:items-center md:justify-between md:px-0">
           <RoomCard
             className="h-[430px]"
@@ -302,6 +307,11 @@ export function HomePage() {
             roomId={'roomId' in displayedRooms[0] ? displayedRooms[0].roomId : undefined}
           />
           <div>
+            <div className="mb-3 flex items-center justify-end gap-3" aria-label="홈 객실 페이지">
+              <button className="grid size-[34px] place-items-center rounded-full border border-[#dcd2c4] font-display text-xl" onClick={() => setRoomPage((roomPage - 1 + roomPageCount) % roomPageCount)} type="button" aria-label="이전 객실">‹</button>
+              <span className="text-[11px] font-medium tracking-[0.1em]">{String(roomPage + 1).padStart(2, '0')} / {String(roomPageCount).padStart(2, '0')}</span>
+              <button className="grid size-[34px] place-items-center rounded-full border border-[#dcd2c4] font-display text-xl" onClick={() => setRoomPage((roomPage + 1) % roomPageCount)} type="button" aria-label="다음 객실">›</button>
+            </div>
             <span className="block h-0.5 w-[54px] bg-gold-500" />
             <h2 className="mt-[18px] font-display text-[44px] font-medium leading-[52px]">
               OUR ROOMS
@@ -328,11 +338,11 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="bg-subtle py-20 md:h-[680px] md:py-[72px]">
+      <section className="bg-subtle py-20 md:h-[540px] md:py-[50px]">
         <div className="mx-auto grid max-w-[1240px] gap-14 px-6 md:grid-cols-[620px_550px] md:items-center md:justify-between md:px-0">
           <img
             alt="햇살이 드는 명상 정원"
-            className="h-[420px] w-full rounded-xl object-cover md:h-[520px]"
+            className="h-[420px] w-full rounded-sm object-cover md:h-[440px]"
             src={courtyardImage}
           />
           <div>

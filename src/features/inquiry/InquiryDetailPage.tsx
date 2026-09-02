@@ -41,7 +41,7 @@ export function InquiryDetailPage() {
                 {inquiry.title}
               </h2>
               <p className="text-xs text-muted">
-                {inquiry.authorEmail} · 작성 {inquiry.createdAt}
+                {inquiry.authorEmail.split('@')[0]} · {inquiry.createdAt}
               </p>
             </div>
             <span className="h-px w-full bg-border-subtle" />

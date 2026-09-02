@@ -5,17 +5,24 @@ import { Logo } from '../ui'
 
 const navigation = [
   { label: '대시보드', to: '/admin' },
-  { label: '고객 관리', disabled: true },
+  { label: '고객 관리', to: '/admin/members' },
   { label: '문의 관리', to: '/admin/inquiries' },
+  { label: '객실 관리', to: '/admin/rooms' },
+  { label: '시설 관리', to: '/admin/facilities' },
   { label: '프로그램 관리', to: '/admin/programs' },
-  { label: '웰니스 통계', disabled: true },
+  { label: '웰니스 통계', to: '/admin/wellness' },
   { label: '조용함 관리', to: '/admin/quietness' },
 ] as const
 
 function sectionTitle(pathname: string) {
   if (pathname.includes('/inquiries/')) return '문의 상세'
   if (pathname.startsWith('/admin/inquiries')) return '문의 관리'
+  if (pathname.includes('/members/')) return '회원 상세'
+  if (pathname.startsWith('/admin/members')) return '고객 관리'
+  if (pathname.startsWith('/admin/rooms')) return '객실 관리'
+  if (pathname.startsWith('/admin/facilities')) return '시설 관리'
   if (pathname.startsWith('/admin/programs')) return '프로그램 관리'
+  if (pathname.startsWith('/admin/wellness')) return '웰니스 통계'
   if (pathname.startsWith('/admin/quietness')) return '조용함 관리'
   return '대시보드'
 }
@@ -58,37 +65,27 @@ export function AdminLayout() {
   const initial = session.user.name.trim().charAt(0).toUpperCase() || 'A'
 
   return (
-    <div className="min-h-screen bg-subtle lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="bg-navy-900 px-5 py-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
-        <div className="flex h-[150px] items-center justify-center overflow-hidden">
+    <div className="min-h-screen bg-subtle lg:grid lg:grid-cols-[260px_minmax(0,1fr)]">
+      <aside className="bg-navy-900 px-5 py-7 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        <div className="flex h-[142px] items-center justify-center overflow-hidden">
           <Logo inverse />
         </div>
         <nav
           className="mt-5 flex gap-2 overflow-x-auto lg:mt-0 lg:block lg:space-y-2"
           aria-label="관리자 메뉴"
         >
-          {navigation.map((item) =>
-            'to' in item ? (
-              <NavLink
-                className={({ isActive }) =>
-                  `block h-12 shrink-0 rounded-sm border-l-2 px-4 py-[13px] text-sm transition ${isActive ? 'border-gold-500 bg-white text-navy-900' : 'border-transparent text-white hover:bg-white/5'}`
-                }
-                end={item.to === '/admin'}
-                key={item.label}
-                to={item.to}
-              >
-                {item.label}
-              </NavLink>
-            ) : (
-              <span
-                aria-disabled="true"
-                className="block h-12 shrink-0 border-l-2 border-transparent px-4 py-[13px] text-sm text-white/45"
-                key={item.label}
-              >
-                {item.label}
-              </span>
-            ),
-          )}
+          {navigation.map((item) => (
+            <NavLink
+              className={({ isActive }) =>
+                `block h-12 shrink-0 rounded-sm border-l-2 px-4 py-[13px] text-sm transition ${isActive ? 'border-gold-500 bg-white text-navy-900' : 'border-transparent text-white hover:bg-white/5'}`
+              }
+              end={item.to === '/admin'}
+              key={item.label}
+              to={item.to}
+            >
+              {item.label}
+            </NavLink>
+          ))}
           <button
             className="block h-12 w-full border-l-2 border-transparent px-4 text-left text-sm text-white hover:bg-white/5"
             onClick={() => void signOut()}
@@ -103,7 +100,7 @@ export function AdminLayout() {
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="flex h-20 items-center justify-between bg-white px-6 lg:px-12">
+        <header className="flex h-20 items-center justify-between border-b border-border-subtle bg-white px-6 lg:px-12">
           <div>
             <p className="text-[10px] font-medium tracking-[0.16em] text-gold-500">MSDS ADMIN</p>
             <p className="mt-1 text-sm font-medium text-navy-900">

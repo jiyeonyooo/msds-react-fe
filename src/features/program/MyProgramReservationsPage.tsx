@@ -81,11 +81,11 @@ export default function MyProgramReservationsPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-6 pt-[58px] pb-[110px] md:pt-[90px]">
-      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">MY RESERVATIONS</p>
+      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">MY PROGRAMS</p>
       <h1 className="my-2.5 font-display text-[52px] leading-[0.95] tracking-[-0.125rem] md:text-[62px]">
-        나의 예약
+        나의 명상 프로그램
       </h1>
-      <p className="text-sm text-muted">머무름의 일정과 프로그램 신청 상태를 확인하세요.</p>
+      <p className="text-sm text-muted">신청한 명상 프로그램과 현재 상태를 확인하세요.</p>
 
       <div className="mt-9 grid max-w-md grid-cols-2 rounded-sm border border-[#cfc7ba] bg-white p-1">
         <Link

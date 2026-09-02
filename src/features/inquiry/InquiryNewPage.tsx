@@ -66,9 +66,9 @@ export function InquiryNewPage() {
   return (
     <AccountLayout
       description="머무름과 프로그램에 대해 궁금한 점을 남겨 주시면 확인 후 답변을 드립니다."
-      eyebrow="NEW INQUIRY"
+      eyebrow="MEMBER SUPPORT"
       hero={<HeroAction badge="LIST" label="목록으로 돌아가기" to="/inquiries" />}
-      title="문의 작성"
+      title="새 문의 작성"
     >
       <form
         className="grid gap-[18px] rounded-xl border border-border-subtle bg-white p-9"
@@ -78,7 +78,7 @@ export function InquiryNewPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="flex-1">
             <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              Write an Inquiry
+              문의 작성
             </h2>
             <p className="text-xs leading-5 text-secondary">
               답변은 마이페이지의 내 문의에서 확인하실 수 있습니다.
