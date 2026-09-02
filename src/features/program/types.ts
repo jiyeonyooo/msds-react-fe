@@ -55,8 +55,10 @@ export interface ProgramApplicationResponse {
 
 export interface ReviewResponse {
   id: number
+  programReservationId: number
+  userId: number
   programName: string
-  memberName: string // 백엔드 필드명 그대로 유지. userName으로 바뀌면 여기도 수정 필요
+  userName: string
   content: string
   createdAt: string // LocalDateTime은 JSON에서 ISO 문자열로 옴 (예: "2026-09-01T10:30:00")
 }
