@@ -9,32 +9,94 @@ import type {
   AdminMemberStats,
 } from './memberTypes'
 
-/**
- * 관리자 회원 관리 API.
- * 검색·필터·페이징은 모두 서버가 처리하므로 화면은 파라미터만 그대로 전달한다.
- * 접근 제어는 서버의 /api/admin/** (ROLE_ADMIN)에서 처리한다.
- */
+type AdminUserWire = {
+  userId: number
+  email: string
+  name: string
+  phoneNumber: string
+  role: string
+  createdAt: string
+}
+
+type AdminUserDetailWire = AdminUserWire & { updatedAt: string | null }
+
+type AdminUserPageWire = {
+  content: AdminUserWire[]
+  pageNumber: number
+  pageSize: number
+  totalElements: number
+  totalPages: number
+  userCount: number
+  adminCount: number
+}
+
+function toRole(role: string): AdminMemberRole {
+  return role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER'
+}
+
+function toMember(user: AdminUserWire) {
+  return {
+    user_id: user.userId,
+    email: user.email,
+    name: user.name,
+    phone_number: user.phoneNumber,
+    role: toRole(user.role),
+    reservation_count: 0,
+    inquiry_count: 0,
+    created_at: user.createdAt,
+  }
+}
+
+/** 현재 백엔드의 관리자 회원 목록·상세 계약을 화면 모델로 변환한다. */
 export const adminMemberApi = {
-  // 회원 목록. role/keyword는 값이 있을 때만 붙인다.
-  list: (filters: AdminMemberFilters) =>
-    call<AdminMemberPage>(() => authApiClient.get('/admin/users', { params: filters })),
+  list: async (filters: AdminMemberFilters) => {
+    const response = await call<AdminUserPageWire>(() => authApiClient.get('/admin/users', {
+      params: {
+        role: filters.role,
+        keyword: filters.keyword,
+        page: filters.page_num,
+        size: filters.page_size,
+      },
+    }))
+    const data: AdminMemberPage = {
+      user_list: response.data.content.map(toMember),
+      page_num: response.data.pageNumber,
+      page_size: response.data.pageSize,
+      total_elements: response.data.totalElements,
+      total_pages: response.data.totalPages,
+    }
+    return { ...response, data }
+  },
 
-  // 대시보드용 회원 집계
-  stats: () => call<AdminMemberStats>(() => authApiClient.get('/admin/users/stats')),
+  stats: async () => {
+    const response = await call<AdminUserPageWire>(() => authApiClient.get('/admin/users', {
+      params: { page: 0, size: 1 },
+    }))
+    const data: AdminMemberStats = {
+      total_users: response.data.totalElements,
+      admin_users: response.data.adminCount,
+      general_users: response.data.userCount,
+      new_users_today: 0,
+      new_users_last_7_days: 0,
+    }
+    return { ...response, data }
+  },
 
-  // 회원 상세(예약·문의 건수 포함)
-  detail: (userId: string) =>
-    call<AdminMemberDetail>(() => authApiClient.get(`/admin/users/${userId}`)),
+  detail: async (userId: string) => {
+    const response = await call<AdminUserDetailWire>(() => authApiClient.get(`/admin/users/${userId}`))
+    const data: AdminMemberDetail = {
+      ...toMember(response.data),
+      updated_at: response.data.updatedAt ?? response.data.createdAt,
+    }
+    return { ...response, data }
+  },
 
-  // 회원의 예약·문의 이력
-  activity: (userId: string) =>
-    call<AdminMemberActivity>(() => authApiClient.get(`/admin/users/${userId}/activity`)),
-
-  // 이름·전화번호 정정. 값이 있는 필드만 반영된다.
-  update: (userId: string, data: { name?: string; phoneNumber?: string }) =>
-    call<AdminMemberDetail>(() => authApiClient.patch(`/admin/users/${userId}`, data)),
-
-  // 권한 변경. 본인 계정과 마지막 관리자는 서버가 400으로 거른다.
-  changeRole: (userId: string, role: AdminMemberRole) =>
-    call<AdminMemberDetail>(() => authApiClient.patch(`/admin/users/${userId}/role`, { role })),
+  activity: async (userId: string) => {
+    const data: AdminMemberActivity = {
+      user_id: Number(userId),
+      reservations: [],
+      inquiries: [],
+    }
+    return { code: 'OK', message: '활동 이력 API 준비 중입니다.', data }
+  },
 }

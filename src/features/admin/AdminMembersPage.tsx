@@ -113,8 +113,8 @@ function AdminMemberListPage() {
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard label="전체 회원" value={stats?.total_users} />
       <SummaryCard label="관리자" value={stats?.admin_users} />
-      <SummaryCard emphasis label="오늘 가입" value={stats?.new_users_today} />
-      <SummaryCard label="최근 7일 가입" value={stats?.new_users_last_7_days} />
+      <SummaryCard emphasis label="오늘 가입 · 준비 중" />
+      <SummaryCard label="최근 7일 가입 · 준비 중" />
     </div>
     <form className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm" onSubmit={submitSearch} noValidate>
       <div className="flex flex-wrap items-center gap-3">
@@ -187,11 +187,8 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
   const [activity, setActivity] = useState<AdminMemberActivity | null>(null)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
-  const [notice, setNotice] = useState('')
   const [form, setForm] = useState({ name: '', phoneNumber: '' })
-  const [saving, setSaving] = useState(false)
   const [role, setRole] = useState<AdminMemberRole>('USER')
-  const [changingRole, setChangingRole] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setMessage('')
@@ -214,42 +211,6 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
   useEffect(() => { void Promise.resolve().then(load) }, [load])
 
   const phoneValid = /^\d{3}-\d{3,4}-\d{4}$/.test(form.phoneNumber.trim())
-  const profileChanged = Boolean(member) && (form.name.trim() !== member?.name || form.phoneNumber.trim() !== member?.phone_number)
-
-  function handleError(error: unknown, fallback: string) {
-    const apiError = error as ApiError
-    if (apiError.status === 401) { setReturnPath(`/admin/members/${userId}`); navigate('/login', { replace: true }); return }
-    // 본인 계정·마지막 관리자 같은 안전장치 위반은 서버가 400과 함께 이유를 내려준다.
-    setMessage(apiError.status === 403 ? '권한이 없습니다.' : apiError.status === 404 ? '회원을 찾을 수 없습니다.' : errorMessage(error, fallback))
-  }
-
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!member || !profileChanged || !phoneValid) return
-    setSaving(true); setMessage(''); setNotice('')
-    try {
-      const response = await adminMemberApi.update(userId, { name: form.name.trim(), phoneNumber: form.phoneNumber.trim() })
-      setMember(response.data)
-      setForm({ name: response.data.name, phoneNumber: response.data.phone_number })
-      setNotice(response.message || '회원 정보가 수정되었습니다.')
-    } catch (error) { handleError(error, '회원 정보 수정에 실패했습니다.') }
-    finally { setSaving(false) }
-  }
-
-  async function saveRole() {
-    if (!member || role === member.role) return
-    setChangingRole(true); setMessage(''); setNotice('')
-    try {
-      const response = await adminMemberApi.changeRole(userId, role)
-      setMember(response.data)
-      setRole(response.data.role)
-      setNotice(response.message || '회원 권한이 변경되었습니다.')
-    } catch (error) {
-      handleError(error, '권한 변경에 실패했습니다.')
-      setRole(member.role) // 실패하면 선택값을 원래 권한으로 되돌린다
-    }
-    finally { setChangingRole(false) }
-  }
 
   if (loading) return <p className="py-16 text-center text-sm text-slate-600">회원 정보를 불러오는 중입니다.</p>
   if (!member) return <section>
@@ -260,11 +221,10 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
   return <section>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/members">← 회원 목록</Link>
-      <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">PATCH /api/admin/users/{member.user_id}</code>
+      <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">GET /api/admin/users/{member.user_id}</code>
     </div>
-    <PageHeading description="회원 정보를 정정하고 권한을 변경합니다. 예약·문의 이력도 함께 확인할 수 있습니다." title="회원 상세" />
+    <PageHeading description="회원 기본 정보를 조회합니다. 수정·권한 변경·활동 이력은 백엔드 API 준비 후 연결됩니다." title="회원 상세" />
     {message && <p className="mb-4 rounded-sm border border-error-border bg-[#fffaf8] px-4 py-3 text-sm text-error" role="alert">{message}</p>}
-    {notice && <p className="mb-4 rounded-sm border border-[#d7c59e] bg-[#fffdf6] px-4 py-3 text-sm text-[#5f4b28]" role="status">{notice}</p>}
     <div className="grid items-start gap-6 lg:grid-cols-[1.45fr_1fr]">
       <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <header className="flex items-center justify-between gap-4 border-b border-slate-200 bg-slate-50 px-7 py-5">
@@ -282,23 +242,23 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
             <dd className="m-0 text-slate-800">{value}</dd>
           </div>)}
         </dl>
-        <form className="grid gap-3 border-t border-slate-200 bg-slate-50 px-7 py-6" onSubmit={saveProfile} noValidate>
+        <form className="grid gap-3 border-t border-slate-200 bg-slate-50 px-7 py-6" onSubmit={(event) => event.preventDefault()} noValidate>
           <p className="text-[10px] font-semibold tracking-[0.13em] text-[#a77f3b]">EDIT PROFILE</p>
           <p className="text-sm font-semibold text-[#172b44]">회원 정보 정정</p>
-          <p className="text-[11px] leading-[1.55] text-slate-600">회원이 직접 수정하지 못하는 상황에서 운영팀이 대신 고칠 때만 사용합니다. 이메일과 비밀번호는 바꿀 수 없습니다.</p>
+          <p className="text-[11px] leading-[1.55] text-slate-600">현재 백엔드에 수정 API가 없어 조회만 제공합니다. 이메일과 비밀번호는 화면에 노출하거나 변경하지 않습니다.</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1.5 text-xs font-medium text-slate-700">이름
-              <input className="h-[44px] rounded-sm border border-slate-300 bg-white px-3 text-sm font-normal" onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} value={form.name} />
+              <input className="h-[44px] rounded-sm border border-slate-300 bg-slate-100 px-3 text-sm font-normal" disabled onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} value={form.name} />
             </label>
             <label className="grid gap-1.5 text-xs font-medium text-slate-700">전화번호
-              <input aria-invalid={!phoneValid} className="h-[44px] rounded-sm border border-slate-300 bg-white px-3 text-sm font-normal" onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))} placeholder="010-1234-5678" value={form.phoneNumber} />
+              <input aria-invalid={!phoneValid} className="h-[44px] rounded-sm border border-slate-300 bg-slate-100 px-3 text-sm font-normal" disabled onChange={(event) => setForm((current) => ({ ...current, phoneNumber: event.target.value }))} placeholder="010-1234-5678" value={form.phoneNumber} />
             </label>
           </div>
           <div className="flex items-center justify-between gap-3">
             <p className={`text-[11px] ${phoneValid ? 'text-slate-500' : 'text-error'}`} role={phoneValid ? undefined : 'alert'}>
-              {phoneValid ? '변경한 값만 반영됩니다.' : '올바른 전화번호 형식(010-1234-5678)이 아닙니다.'}
+              {phoneValid ? '회원 정보 수정 API 준비 중입니다.' : '등록된 전화번호 형식을 확인해 주세요.'}
             </p>
-            <Button disabled={saving || !profileChanged || !phoneValid} size="sm" type="submit">{saving ? '저장 중' : '정보 저장'}</Button>
+            <Button disabled size="sm" type="submit">수정 API 준비 중</Button>
           </div>
         </form>
       </article>
@@ -308,10 +268,10 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
           <span className="rounded-full border border-[#d7c59e] px-2.5 py-1 text-[10px] font-medium text-[#a77f3b]">주의</span>
         </header>
         <div className="grid gap-3 px-6 py-6">
-          <p className="text-[11px] leading-[1.55] text-slate-600">관리자로 승격하면 모든 운영 화면에 접근할 수 있습니다. 변경된 권한은 해당 회원이 <strong className="font-medium text-[#172b44]">다시 로그인한 뒤</strong>부터 적용됩니다.</p>
+          <p className="text-[11px] leading-[1.55] text-slate-600">현재 권한을 조회할 수 있습니다. 권한 변경 API가 정의되기 전까지 선택과 저장 기능은 비활성화합니다.</p>
           <div className="grid gap-2" role="radiogroup" aria-label="회원 권한">
             {(['USER', 'ADMIN'] as AdminMemberRole[]).map((value) => <label className={`flex cursor-pointer items-center gap-3 rounded-md border px-4 py-3 text-sm transition ${role === value ? 'border-[#b79a67] bg-[#fffdf6] text-[#172b44]' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`} key={value}>
-              <input checked={role === value} className="accent-[#172b44]" name="role" onChange={() => setRole(value)} type="radio" value={value} />
+              <input checked={role === value} className="accent-[#172b44]" disabled name="role" onChange={() => setRole(value)} type="radio" value={value} />
               <span className="font-medium">{roleLabels[value]}</span>
               {member.role === value && <span className="ml-auto text-[11px] text-slate-500">현재</span>}
             </label>)}
@@ -319,16 +279,16 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
         </div>
         <div className="grid gap-1.5 border-y border-slate-200 bg-slate-50 px-6 py-5">
           <p className="text-[9px] font-semibold tracking-[0.14em] text-[#a77f3b]">SAFEGUARDS</p>
-          <p className="text-xs font-semibold text-[#172b44]">막혀 있는 변경</p>
-          <p className="text-[11px] leading-[1.6] text-slate-600">본인 계정의 권한은 바꿀 수 없고, 마지막 남은 관리자는 일반 회원으로 내릴 수 없습니다.</p>
+          <p className="text-xs font-semibold text-[#172b44]">API 준비 중</p>
+          <p className="text-[11px] leading-[1.6] text-slate-600">백엔드 계약이 추가되면 본인 계정과 마지막 관리자 보호 정책을 함께 적용합니다.</p>
         </div>
         <div className="flex justify-end gap-3 px-6 py-5">
-          <Button disabled={changingRole || role === member.role} variant="secondary" onClick={() => setRole(member.role)}>되돌리기</Button>
-          <Button disabled={changingRole || role === member.role} onClick={() => void saveRole()}>{changingRole ? '변경 중' : '권한 변경'}</Button>
+          <Button disabled variant="secondary" onClick={() => setRole(member.role)}>되돌리기</Button>
+          <Button disabled>권한 변경 준비 중</Button>
         </div>
       </article>
     </div>
-    {activity && <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
+    {activity && (activity.reservations.length > 0 || activity.inquiries.length > 0) ? <div className="mt-6 grid items-start gap-6 lg:grid-cols-2">
       <ActivityPanel count={activity.reservations.length} title="예약 이력">
         {activity.reservations.map((reservation) => <li className="border-b border-slate-100 px-6 py-4 last:border-b-0" key={reservation.resv_id}>
           <div className="flex items-center justify-between gap-3">
@@ -348,7 +308,7 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
           <p className="mt-1.5 text-xs text-slate-500">작성 {formatDateTime(inquiry.created_at)}{inquiry.answered_at ? ` · 답변 ${formatDateTime(inquiry.answered_at)}` : ''}</p>
         </li>)}
       </ActivityPanel>
-    </div>}
+    </div> : <MessageBox message="예약·문의 활동 이력 API는 준비 중입니다." />}
   </section>
 }
 

@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/ui'
+import { signOut } from '../auth/api'
 
 const menu = [
-  { label: '마이페이지', to: '/mypage', end: true },
-  { label: '정보 수정', to: '/mypage/edit', end: false },
-  { label: '내 문의', to: '/inquiries', end: false },
-  { label: '회원 탈퇴', to: '/mypage/delete', end: false },
+  { label: '회원정보', to: '/mypage', end: false },
+  { label: '문의 내역', to: '/inquiries', end: false },
+  { label: '마음 기록', to: '/wellness/history', end: false },
 ]
 
 type AccountLayoutProps = {
@@ -22,6 +22,7 @@ type AccountLayoutProps = {
  * 위쪽 네이비 히어로와 왼쪽 계정 사이드바, 오른쪽 본문으로 구성한다.
  */
 export function AccountLayout({ eyebrow, title, description, hero, children }: AccountLayoutProps) {
+  const navigate = useNavigate()
   return (
     <div>
       <section className="flex flex-col gap-8 bg-navy-900 px-6 py-12 lg:flex-row lg:items-start lg:gap-16 lg:px-[100px] lg:pt-[68px] lg:pb-[58px]">
@@ -65,12 +66,19 @@ export function AccountLayout({ eyebrow, title, description, hero, children }: A
               </NavLink>
             ))}
           </nav>
+          <button
+            className="mt-1 flex h-12 w-full items-center px-4 text-left text-sm text-secondary transition hover:bg-subtle/60"
+            onClick={() => void signOut().then(() => navigate('/'))}
+            type="button"
+          >
+            로그아웃
+          </button>
           <div className="grid gap-2 pt-[18px]">
             <p className="text-[10px] font-medium tracking-[0.12em] text-gold-500">
-              PRIVACY NOTICE
+              PRIVATE &amp; MINDFUL
             </p>
             <p className="text-xs leading-5 text-muted">
-              회원 정보는 예약 확인과 문의 응대에만 사용하며, 탈퇴 시 즉시 삭제됩니다.
+              마음 기록은 의료 진단이 아닌 개인 웰니스 기록으로 관리됩니다.
             </p>
           </div>
         </aside>

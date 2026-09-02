@@ -77,13 +77,13 @@ export function MyPage() {
           </div>
         </div>
       }
-      title="회원 정보"
+      title="나의 고요를 이어가세요"
     >
       <article className="rounded-xl border border-border-subtle bg-white px-8 py-7">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="flex-1">
             <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              Member Information
+              회원정보
             </h2>
             <p className="text-[10px] tracking-[0.08em] text-muted">
               예약 확인과 문의 응대에 사용되는 기본 정보입니다.

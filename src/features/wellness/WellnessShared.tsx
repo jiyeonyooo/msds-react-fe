@@ -18,14 +18,14 @@ export function ScoreDisc({
   note?: string
 }) {
   return (
-    <div className="flex aspect-square w-full max-w-[420px] flex-col items-center justify-center rounded-full bg-navy-900 px-10 text-center text-white">
+    <div className="flex size-[300px] shrink-0 flex-col items-center justify-center overflow-hidden rounded-full bg-navy-900 px-8 py-9 text-center text-white sm:size-[340px] md:size-[360px]">
       <SectionLabel>{eyebrow}</SectionLabel>
-      <strong className="mt-7 font-display text-[84px] font-normal leading-none">
+      <strong className="mt-4 font-display text-[68px] font-normal leading-[0.9] sm:text-[76px]">
         {score ?? '—'}
       </strong>
-      <span className="mt-2 text-sm text-white/60">마음 부담도 / 100</span>
-      <b className="mt-4 text-2xl">{label}</b>
-      {note && <span className="mt-5 text-xs text-gold-300">{note}</span>}
+      <span className="mt-2 text-[13px] text-white/60">마음 부담도 / 100</span>
+      <b className="mt-3 text-xl sm:text-2xl">{label}</b>
+      {note && <span className="mt-3 max-w-[230px] text-[11px] leading-4 text-gold-300">{note}</span>}
     </div>
   )
 }

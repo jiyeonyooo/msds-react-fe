@@ -1,4 +1,4 @@
-import { type FormEvent, type ReactNode, useState } from 'react'
+import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
 import {
   BookingField,
   Button,
@@ -13,11 +13,13 @@ import { useReservationAvailability } from './hooks'
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
+const query = new URLSearchParams(window.location.search)
 const initialForm: AvailabilityRequest = {
-  check_in_date: today,
-  check_out_date: '',
-  guest_count: 2,
+  check_in_date: query.get('check_in_date') || today,
+  check_out_date: query.get('check_out_date') || '',
+  guest_count: Number(query.get('guest_count')) || 2,
 }
+const searchFromQuery = Boolean(query.get('check_in_date') && query.get('check_out_date'))
 
 export function ReservationPage() {
   const [form, setForm] = useState(initialForm)
@@ -30,6 +32,9 @@ export function ReservationPage() {
     setMessage,
     search: searchAvailability,
   } = useReservationAvailability()
+  useEffect(() => {
+    if (searchFromQuery) void searchAvailability(initialForm)
+  }, [searchAvailability])
   const update = <K extends keyof AvailabilityRequest>(key: K, value: AvailabilityRequest[K]) => {
     setForm((current) => ({ ...current, [key]: value }))
     setErrors((current) => ({ ...current, [key]: '' }))
