@@ -4,6 +4,7 @@ import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
 import ProgramListPage from './features/program/ProgramListPage'
 import ProgramDetailPage from './features/program/ProgramDetailPage'
+import MyProgramReservationsPage from './features/program/MyProgramReservationsPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
 import { RoomDetailPage } from './features/rooms/RoomDetailPage'
 import { ReservationPage } from './features/reservation/ReservationPage'
@@ -20,6 +21,10 @@ import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
 import { isDevMode } from './dev/scenarios'
+import { AdminLayout } from './components/admin/AdminLayout'
+import { AdminDashboardPage } from './features/program/admin/AdminDashboardPage'
+import { AdminProgramPage } from './features/program/admin/AdminProgramPage'
+import { AdminProgramApplicantsPage } from './features/program/admin/AdminProgramApplicantsPage'
 import './index.css'
 export default function App() {
   return (
@@ -37,6 +42,7 @@ export default function App() {
           <Route path="reservations/confirm" element={<ConfirmationPage />} />
           <Route path="my-reservations" element={<MyReservationsPage />} />
           <Route path="my-reservations/:resvId" element={<MyReservationsPage />} />
+          <Route path="my-programs" element={<MyProgramReservationsPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignupPage />} />
           <Route path="wellness" element={<WellnessOverviewPage />} />
@@ -48,6 +54,11 @@ export default function App() {
           {isDevMode && <Route path="__dev/login" element={<DevLoginPage />} />}
           {isDevMode && <Route path="__dev/components" element={<ComponentGallery />} />}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboardPage />} />
+          <Route path="programs" element={<AdminProgramPage />} />
+          <Route path="programs/:programId/applications" element={<AdminProgramApplicantsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

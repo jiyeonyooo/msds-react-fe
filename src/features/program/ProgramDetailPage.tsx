@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui'
 import { ApiError } from './client'
-import { getPrograms, reserveProgram } from './program'
+import { getProgram, getPrograms, reserveProgram } from './program'
 import { getProgramPresentation, instructorMark } from './programPresentation'
 import type { ProgramResponse } from './types'
 
@@ -35,14 +35,9 @@ export default function ProgramDetailPage() {
     let active = true
     if (invalidId) return () => undefined
 
-    getPrograms()
-      .then((programs) => {
+    Promise.all([getProgram(id), getPrograms()])
+      .then(([selected, programs]) => {
         if (!active) return
-        const selected = programs.find((item) => item.id === id)
-        if (!selected) {
-          setError('해당 프로그램을 찾을 수 없습니다.')
-          return
-        }
         setProgram(selected)
         setRelated(programs.filter((item) => item.id !== id).slice(0, 3))
       })
@@ -72,9 +67,7 @@ export default function ProgramDetailPage() {
     setNotice('')
     try {
       await reserveProgram({ programId: program.id, quantity: 1 })
-      const refreshedPrograms = await getPrograms()
-      const refreshed = refreshedPrograms.find((item) => item.id === program.id)
-      if (refreshed) setProgram(refreshed)
+      setProgram(await getProgram(program.id))
       setNotice('프로그램 신청이 완료되었습니다. 마이페이지에서 신청 내역을 확인해 주세요.')
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
