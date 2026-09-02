@@ -54,11 +54,11 @@ export function LoginPage() {
 
     setPending(true)
     try {
-      await signIn({ email: form.email.trim(), password: form.password })
+      const profile = await signIn({ email: form.email.trim(), password: form.password })
       if (remember) localStorage.setItem(rememberKey, form.email.trim())
       else localStorage.removeItem(rememberKey)
       // 로그인에 성공하면 원래 가려던 화면, 없으면 홈으로 보낸다.
-      navigate(takeReturnPath('/'), { replace: true })
+      navigate(takeReturnPath(profile?.role === 'ADMIN' ? '/admin' : '/'), { replace: true })
     } catch (error) {
       const apiError = error as ApiError
       if (apiError.fieldErrors && Object.keys(apiError.fieldErrors).length > 0)

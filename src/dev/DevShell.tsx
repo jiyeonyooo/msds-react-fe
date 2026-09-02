@@ -5,6 +5,13 @@ import { devScenarios, getDevScenario, setDevScenario, type DevScenario } from '
 import './dev.css'
 
 const routes = [
+  { path: '/admin', label: 'ADMIN HOME' },
+  { path: '/admin/reservations', label: 'ADMIN · RESERVATIONS' },
+  { path: '/admin/programs', label: 'ADMIN · PROGRAMS' },
+  { path: '/admin/rooms', label: 'ADMIN · ROOMS' },
+  { path: '/admin/wellness', label: 'ADMIN · WELLNESS' },
+  { path: '/admin/quietness', label: 'ADMIN · QUIETNESS' },
+  { path: '/admin/inquiries', label: 'ADMIN · INQUIRIES' },
   { path: '/', label: '홈' },
   { path: '/reservations', label: '예약 조회' },
   { path: '/my-reservations', label: '내 예약' },
@@ -83,7 +90,7 @@ export function DevShell() {
           ×
         </button>
       </header>
-      <section>
+      <section className="dev-routes">
         <h2>ROUTES</h2>
         {routes.map((route) => (
           <button
@@ -109,6 +116,7 @@ export function DevShell() {
         >
           <option value="guest">비로그인</option>
           <option value="member">로그인됨</option>
+          <option value="admin">ADMIN</option>
         </select>
       </section>
       <section>
