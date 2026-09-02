@@ -35,6 +35,7 @@ import { AdminFeaturePlaceholderPage, AdminForbiddenPage, AdminHomePage } from '
 import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
 import { AdminInquiriesPage } from './features/admin/AdminInquiriesPage'
+import { AdminMembersPage } from './features/admin/AdminMembersPage'
 import './index.css'
 export default function App() {
   return (
@@ -129,6 +130,8 @@ export default function App() {
           <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
           <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
           <Route path="quietness" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="members" element={<AdminMembersPage />} />
+          <Route path="members/:userId" element={<AdminMembersPage />} />
           <Route path="inquiries" element={<AdminInquiriesPage />} />
           <Route path="inquiries/:inquiryId" element={<AdminInquiriesPage />} />
           <Route path="*" element={<Navigate replace to="/admin" />} />
