@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Button, StatusBadge } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
 import { setReturnPath } from '../auth/session'
+import { AdminPageIntro, AdminPanel } from './AdminOperationsUi'
 import { adminMemberApi } from './memberApi'
 import type { AdminMember, AdminMemberDetail, AdminMemberReservations } from './memberTypes'
 
@@ -153,13 +154,43 @@ function AdminMemberDetailPage({ memberId }: { memberId: string }) {
 
   if (loading) return <Loading label="회원 정보와 예약 내역을 불러오는 중입니다." />
   if (!member) return <section><PageHeading title="회원 상세" description="회원 정보와 예약 내역을 확인합니다." /><MessageBox message={message || '회원 정보를 찾을 수 없습니다.'}><Link className="mt-4 inline-block underline underline-offset-4" to="/admin/members">회원 목록으로 돌아가기</Link></MessageBox></section>
-  return <section className="max-w-5xl">
-    <Link className="text-sm text-[#172b44] underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b08d4d]" to="/admin/members">← 회원 목록</Link>
-    <PageHeading title={`${member.name} 회원 상세`} description="회원 기본 정보와 객실 예약 내역입니다." />
+  return <section className="mx-auto max-w-[1084px] rounded-xl bg-[#f8f5ef] p-5 md:p-8">
+    <AdminPageIntro
+      action={<Link className="rounded-sm border border-gold-300 bg-white px-4 py-2.5 text-[10px] font-medium text-navy-900 hover:bg-ivory-100" to="/admin/members">회원 목록</Link>}
+      badgeDescription="회원 · 예약 · 삭제 API 연결"
+      badgeTitle="BACKEND INTEGRATION"
+      description="회원의 기본 정보와 객실 예약 이력을 확인하고 계정을 안전하게 관리합니다."
+      eyebrow="MEMBER OPERATIONS"
+      title="회원 상세 및 계정 관리"
+    />
     {message && <p className="mb-4 text-sm text-error" role="alert">{message}</p>}
-    <article className="w-full max-w-[672px] rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between gap-4"><h3 className="text-base font-semibold text-[#172b44]">회원 정보</h3><Button className="!min-h-9 px-3 py-1.5" onClick={() => setConfirmingDeletion(true)} size="sm" variant="danger">회원 삭제</Button></div><dl className="mt-5 grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-2">{[['이름', member.name], ['이메일', member.email], ['전화번호', member.phone_number], ['권한', member.role], ['가입일', formatDate(member.created_at)], ['최근 수정', formatDate(member.updated_at)]].map(([label, value]) => <div className="min-w-0" key={label}><dt className="text-xs font-medium text-slate-500">{label}</dt><dd className="mt-1 break-all text-sm text-slate-800">{value}</dd></div>)}</dl></article>
+    <div className="grid gap-6 lg:grid-cols-[1.65fr_1fr]">
+      <AdminPanel className="border-gold-300" endpoint="GET /api/admin/members/{memberId}" title="회원 기본 정보">
+        <div className="mb-5 flex items-center gap-4 rounded-md bg-navy-900 p-5 text-white">
+          <div className="grid h-12 w-12 place-items-center rounded-full border border-gold-300 text-lg text-gold-300">{member.name.slice(0, 1)}</div>
+          <div className="min-w-0 flex-1"><strong className="block truncate text-base font-medium">{member.name}</strong><span className="mt-1 block truncate text-[10px] text-slate-300">{member.email}</span></div>
+          <span className="rounded-full border border-gold-300 px-3 py-1.5 text-[9px] text-gold-300">{member.role}</span>
+        </div>
+        <dl className="grid gap-x-6 md:grid-cols-2">
+          {[
+            ['회원 번호', String(member.member_id)], ['이름', member.name], ['이메일', member.email],
+            ['전화번호', member.phone_number], ['권한', member.role], ['가입일', formatDate(member.created_at)],
+            ['최근 수정', formatDate(member.updated_at)], ['데이터 기준', 'AdminMemberDetail'],
+          ].map(([label, value]) => <div className="border-b border-ivory-200 py-4" key={label}><dt className="text-[9px] text-ink-500">{label}</dt><dd className="mt-1.5 break-all text-xs text-navy-900">{value}</dd></div>)}
+        </dl>
+        <p className="mt-5 rounded-sm bg-ivory-100 px-4 py-3 text-[10px] leading-5 text-ink-500">운영에 필요한 기본 정보만 표시하며 비밀번호와 인증 정보는 조회하지 않습니다.</p>
+      </AdminPanel>
+      <AdminPanel endpoint="DELETE /api/admin/members/{memberId}" title="계정 관리">
+        <div className="space-y-5">
+          <label className="block text-[10px] font-medium text-ink-700">계정 상태<select className="admin-field" disabled value="ACTIVE"><option value="ACTIVE">활성 회원</option></select><span className="mt-2 block text-[9px] leading-4 text-ink-500">상태 변경 API가 없어 현재는 조회만 제공합니다.</span></label>
+          <label className="block text-[10px] font-medium text-ink-700">권한<select className="admin-field" disabled value={member.role}><option value={member.role}>{member.role}</option></select><span className="mt-2 block text-[9px] leading-4 text-ink-500">권한 변경은 운영 정책이 정의된 뒤 연결합니다.</span></label>
+          <div className="rounded-md bg-ivory-100 p-4"><p className="text-[9px] font-medium tracking-[0.12em] text-gold-500">POLICY SAFETY</p><ul className="mt-3 space-y-2 text-[10px] leading-5 text-ink-500"><li>• 인증 정보는 화면에 노출하지 않습니다.</li><li>• 삭제 전 예약 이력을 함께 확인합니다.</li><li>• 삭제 작업은 재확인을 거칩니다.</li></ul></div>
+          <Button className="w-full" onClick={() => setConfirmingDeletion(true)} variant="danger">회원 삭제</Button>
+        </div>
+      </AdminPanel>
+    </div>
     <section className="mt-7" aria-labelledby="member-reservations"><div className="flex items-end justify-between gap-3"><div><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">RESERVATIONS</p><h3 className="mt-1 text-xl font-semibold text-[#172b44]" id="member-reservations">예약 내역</h3></div><p className="text-sm text-slate-600">총 {reservations?.total_elements.toLocaleString('ko-KR') ?? 0}건</p></div>
-      {!reservations || reservations.resv_list.length === 0 ? <MessageBox message="예약 내역이 없습니다." /> : <div className="mt-3 overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm"><table className="w-full min-w-[760px] text-center text-sm"><thead className="bg-slate-50 text-xs text-slate-600"><tr><th className="px-5 py-3 font-medium">예약번호</th><th className="px-5 py-3 font-medium">객실</th><th className="px-5 py-3 font-medium">숙박 기간</th><th className="px-5 py-3 font-medium">금액</th><th className="px-5 py-3 font-medium">상태</th></tr></thead><tbody>{reservations.resv_list.map((reservation) => <tr aria-label={`${reservation.resv_number} 예약 상세 보기`} className="admin-interactive-row cursor-pointer border-t border-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#b08d4d]" key={reservation.resv_id} onClick={() => navigate(`/admin/reservations/${reservation.resv_id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(`/admin/reservations/${reservation.resv_id}`) } }} role="link" tabIndex={0}><td className="bg-white px-5 py-4 font-medium text-[#172b44]">{reservation.resv_number}</td><td className="bg-white px-5 py-4">{reservation.room_name}</td><td className="bg-white px-5 py-4 whitespace-nowrap">{reservation.check_in_date} ~ {reservation.check_out_date}</td><td className="bg-white px-5 py-4">{won(reservation.total_price)}</td><td className="bg-white px-5 py-4"><StatusBadge status={reservation.resv_status} /></td></tr>)}</tbody></table></div>}
+      {!reservations || reservations.resv_list.length === 0 ? <MessageBox message="예약 내역이 없습니다." /> : <div className="mt-3 overflow-x-auto rounded-lg border border-ivory-200 bg-white"><table className="w-full min-w-[760px] text-center text-sm"><thead className="bg-ivory-100 text-xs text-ink-500"><tr><th className="px-5 py-3 font-medium">예약번호</th><th className="px-5 py-3 font-medium">객실</th><th className="px-5 py-3 font-medium">숙박 기간</th><th className="px-5 py-3 font-medium">금액</th><th className="px-5 py-3 font-medium">상태</th></tr></thead><tbody>{reservations.resv_list.map((reservation) => <tr aria-label={`${reservation.resv_number} 예약 상세 보기`} className="admin-interactive-row cursor-pointer border-t border-ivory-200" key={reservation.resv_id} onClick={() => navigate(`/admin/reservations/${reservation.resv_id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(`/admin/reservations/${reservation.resv_id}`) } }} role="link" tabIndex={0}><td className="bg-white px-5 py-4 font-medium text-navy-900">{reservation.resv_number}</td><td className="bg-white px-5 py-4">{reservation.room_name}</td><td className="bg-white px-5 py-4 whitespace-nowrap">{reservation.check_in_date} ~ {reservation.check_out_date}</td><td className="bg-white px-5 py-4">{won(reservation.total_price)}</td><td className="bg-white px-5 py-4"><StatusBadge status={reservation.resv_status} /></td></tr>)}</tbody></table></div>}
     </section>
     {confirmingDeletion && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="member-delete-description" aria-labelledby="member-delete-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="member-delete-title">회원을 삭제하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="member-delete-description"><strong>{member.name}</strong> 회원을 삭제합니다. 삭제 후에는 되돌릴 수 없습니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={deleting} onClick={() => setConfirmingDeletion(false)} variant="secondary">닫기</Button><Button disabled={deleting} onClick={() => void removeMember()} variant="danger">{deleting ? '삭제 처리 중' : '회원 삭제'}</Button></div></section></div>}
   </section>

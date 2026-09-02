@@ -39,7 +39,6 @@ import { AdminInquiryListPage } from './features/inquiry/admin/AdminInquiryListP
 import { AdminInquiryDetailPage } from './features/inquiry/admin/AdminInquiryDetailPage'
 import { AdminQuietnessPage } from './features/quietness/admin/AdminQuietnessPage'
 import {
-  AdminFeaturePlaceholderPage,
   AdminForbiddenPage,
   AdminHomePage,
 } from './features/admin/AdminPages'
@@ -47,6 +46,8 @@ import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
 import { AdminWellnessStatisticsPage } from './features/wellness/admin/AdminWellnessStatisticsPage'
 import { AdminMembersPage } from './features/admin/AdminMembersPage'
+import { AdminRoomManagementPage } from './features/rooms/admin/AdminRoomManagementPage'
+import { AdminFacilityManagementPage } from './features/rooms/admin/AdminFacilityManagementPage'
 import './index.css'
 export default function App() {
   return (
@@ -143,7 +144,8 @@ export default function App() {
           <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
           <Route path="programs" element={<AdminProgramPage />} />
           <Route path="programs/:programId/applications" element={<AdminProgramApplicantsPage />} />
-          <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="rooms" element={<AdminRoomManagementPage />} />
+          <Route path="facilities" element={<AdminFacilityManagementPage />} />
           <Route path="wellness" element={<AdminWellnessStatisticsPage />} />
           <Route path="quietness" element={<AdminQuietnessPage />} />
           <Route path="inquiries" element={<AdminInquiryListPage />} />
