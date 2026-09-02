@@ -2,7 +2,15 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Button } from '../../../components/ui/Button'
 import { ApiError } from '../../../lib/apiError'
 import { adminQuietnessApi } from './api'
-import type { NoiseDevice, NoiseDeviceStatus, QuietSpace, QuietSpaceType } from './types'
+import type {
+  NoiseDevice,
+  NoiseDeviceStatus,
+  QuietSpace,
+  QuietSpaceType,
+  QuietnessLevel,
+  QuietnessThreshold,
+  QuietnessThresholdUpdateRequest,
+} from './types'
 
 const guesthouseId = 1
 
@@ -27,6 +35,13 @@ const statusStyles: Record<NoiseDeviceStatus, string> = {
   DISCONNECTED: 'border-gold-300 bg-ivory-100 text-[#806d48]',
 }
 
+const thresholdLabels: Record<Exclude<QuietnessLevel, 'VERY_LOUD'>, string> = {
+  VERY_QUIET: '매우 조용',
+  QUIET: '조용',
+  NORMAL: '보통',
+  LOUD: '시끄러움',
+}
+
 function errorMessage(error: unknown) {
   return error instanceof ApiError ? error.message : '요청을 처리하지 못했습니다.'
 }
@@ -47,6 +62,7 @@ function formatDate(value: string | null) {
 export function AdminQuietnessPage() {
   const [spaces, setSpaces] = useState<QuietSpace[]>([])
   const [devices, setDevices] = useState<NoiseDevice[]>([])
+  const [thresholds, setThresholds] = useState<QuietnessThreshold[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -57,11 +73,13 @@ export function AdminQuietnessPage() {
     Promise.all([
       adminQuietnessApi.getSpaces(guesthouseId),
       adminQuietnessApi.getDevices(guesthouseId),
+      adminQuietnessApi.getThresholds(guesthouseId),
     ])
-      .then(([nextSpaces, nextDevices]) => {
+      .then(([nextSpaces, nextDevices, nextThresholds]) => {
         if (cancelled) return
         setSpaces(nextSpaces)
         setDevices(nextDevices)
+        setThresholds(nextThresholds)
       })
       .catch((requestError: unknown) => {
         if (!cancelled) setError(errorMessage(requestError))
@@ -280,7 +298,12 @@ export function AdminQuietnessPage() {
             onError={fail}
             onSuccess={(deviceName) => notify(`${deviceName} 측정값을 등록했습니다.`)}
           />
-          <ThresholdCard />
+          <ThresholdCard
+            onChange={setThresholds}
+            onError={fail}
+            onSuccess={() => notify('조용함 기준값을 변경했습니다.')}
+            thresholds={thresholds}
+          />
         </section>
       </div>
 
@@ -421,23 +444,86 @@ function MeasurementCard({
   )
 }
 
-function ThresholdCard() {
+function ThresholdCard({
+  thresholds,
+  onChange,
+  onError,
+  onSuccess,
+}: {
+  thresholds: QuietnessThreshold[]
+  onChange: (thresholds: QuietnessThreshold[]) => void
+  onError: (error: unknown) => void
+  onSuccess: () => void
+}) {
+  const [submitting, setSubmitting] = useState(false)
+  const editableThresholds = thresholds.filter(
+    (threshold): threshold is QuietnessThreshold & {
+      level: Exclude<QuietnessLevel, 'VERY_LOUD'>
+      maxDecibel: number
+    } => threshold.level !== 'VERY_LOUD' && threshold.maxDecibel !== null,
+  )
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const request: QuietnessThresholdUpdateRequest = {
+      veryQuietMax: Number(form.get('VERY_QUIET')),
+      quietMax: Number(form.get('QUIET')),
+      normalMax: Number(form.get('NORMAL')),
+      loudMax: Number(form.get('LOUD')),
+    }
+    setSubmitting(true)
+    try {
+      const updated = await adminQuietnessApi.updateThresholds(guesthouseId, request)
+      onChange(updated)
+      onSuccess()
+    } catch (requestError) {
+      onError(requestError)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   return (
     <article className="flex min-h-[290px] flex-col bg-navy-900 p-6 text-white">
-      <p className="text-[9px] font-medium tracking-[0.16em] text-gold-300">DEFINITION REQUIRED</p>
+      <p className="text-[9px] font-medium tracking-[0.16em] text-gold-300">LIVE POLICY</p>
       <h2 className="mt-2 font-display text-[26px] font-semibold">조용함 기준값 관리</h2>
-      <p className="mt-5 text-xs leading-6 text-white/70">
-        관리자 기준값 조회·수정 API가 아직 정의되지 않았습니다. API 연결 이후 단계별 데시벨 기준을
-        편집할 수 있습니다.
+      <p className="mt-3 text-[10px] leading-5 text-white/65">
+        각 단계의 최대 데시벨을 입력하면 다음 단계의 시작값은 자동으로 이어집니다.
       </p>
-      <p className="mt-5 text-[9px] leading-5 tracking-[0.06em] text-gold-300">
-        VERY_QUIET · QUIET · NORMAL
-        <br />
-        LOUD · VERY_LOUD
-      </p>
-      <Button className="mt-auto w-full" disabled>
-        API 정의 후 편집 활성화
-      </Button>
+      {editableThresholds.length === 4 ? (
+        <form className="mt-4 grid grid-cols-2 gap-3" onSubmit={submit}>
+          {editableThresholds.map((threshold) => (
+            <label
+              className="text-[9px] font-medium tracking-[0.05em] text-gold-300"
+              key={threshold.level}
+            >
+              {thresholdLabels[threshold.level]}
+              <span className="mt-1 flex items-center border border-white/20 bg-white/5 px-3">
+                <input
+                  className="h-9 min-w-0 flex-1 bg-transparent text-xs text-white outline-none"
+                  defaultValue={threshold.maxDecibel}
+                  key={`${threshold.level}-${threshold.maxDecibel}`}
+                  max="999.98"
+                  min="0"
+                  name={threshold.level}
+                  required
+                  step="0.01"
+                  type="number"
+                />
+                <span className="text-[9px] text-white/45">dB</span>
+              </span>
+            </label>
+          ))}
+          <Button className="col-span-2 mt-1 w-full" disabled={submitting} type="submit">
+            {submitting ? '저장 중...' : '기준값 저장'}
+          </Button>
+        </form>
+      ) : (
+        <p className="mt-auto border border-white/15 px-4 py-5 text-center text-xs text-white/60">
+          기준값을 불러오는 중입니다.
+        </p>
+      )}
     </article>
   )
 }

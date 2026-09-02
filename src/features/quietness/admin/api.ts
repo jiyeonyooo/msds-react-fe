@@ -8,6 +8,8 @@ import type {
   NoiseMeasurementCreateRequest,
   QuietSpace,
   QuietSpaceCreateRequest,
+  QuietnessThreshold,
+  QuietnessThresholdUpdateRequest,
 } from './types'
 
 export const adminQuietnessApi = {
@@ -49,6 +51,25 @@ export const adminQuietnessApi = {
     return (
       await call<NoiseMeasurement>(() =>
         authApiClient.post('/admin/quietness/measurements', request),
+      )
+    ).data
+  },
+
+  async getThresholds(guesthouseId: number) {
+    return (
+      await call<QuietnessThreshold[]>(() =>
+        authApiClient.get(`/admin/quietness/guesthouses/${guesthouseId}/thresholds`),
+      )
+    ).data
+  },
+
+  async updateThresholds(guesthouseId: number, request: QuietnessThresholdUpdateRequest) {
+    return (
+      await call<QuietnessThreshold[]>(() =>
+        authApiClient.patch(
+          `/admin/quietness/guesthouses/${guesthouseId}/thresholds`,
+          request,
+        ),
       )
     ).data
   },

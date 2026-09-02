@@ -3,6 +3,8 @@ export type QuietSpaceType =
 
 export type NoiseDeviceStatus = 'ACTIVE' | 'INACTIVE' | 'DISCONNECTED'
 
+export type QuietnessLevel = 'VERY_QUIET' | 'QUIET' | 'NORMAL' | 'LOUD' | 'VERY_LOUD'
+
 export type QuietSpace = {
   spaceId: number
   guesthouseId: number
@@ -30,6 +32,22 @@ export type NoiseMeasurement = {
   spaceId: number
   decibel: number
   measuredAt: string
+}
+
+export type QuietnessThreshold = {
+  thresholdId: number
+  guesthouseId: number
+  level: QuietnessLevel
+  minDecibel: number | null
+  maxDecibel: number | null
+  displayOrder: number
+}
+
+export type QuietnessThresholdUpdateRequest = {
+  veryQuietMax: number
+  quietMax: number
+  normalMax: number
+  loudMax: number
 }
 
 export type QuietSpaceCreateRequest = {

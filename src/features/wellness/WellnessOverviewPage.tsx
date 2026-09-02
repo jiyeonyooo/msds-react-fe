@@ -214,9 +214,12 @@ export function WellnessOverviewPage() {
                   {displaySpaces.map((space) => (
                     <div key={space.spaceId}>
                       <div className="flex justify-between text-xs">
-                        <span>
+                        <Link
+                          className="transition hover:text-gold-500"
+                          to={`/wellness/quietness/${space.spaceId}`}
+                        >
                           {space.spaceName} · {quietnessLabel[space.level]}
-                        </span>
+                        </Link>
                         <b>{space.decibel.toFixed(1)} dB</b>
                       </div>
                       <div className="mt-3 h-1 rounded-full bg-subtle">

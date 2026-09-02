@@ -4,6 +4,7 @@ import { authApiClient, publicApiClient } from '../../lib/apiClient'
 import type {
   ApiEnvelope,
   HourlyQuietness,
+  QuietnessHistoryPoint,
   QuietnessSummary,
   QuietSpaceRecommendation,
   SpaceQuietness,
@@ -109,6 +110,28 @@ export const quietnessApi = {
           `/quietness/guesthouses/${guesthouseId}/spaces`,
         ),
       ),
+    ),
+  current: (spaceId: number, guesthouseId = defaultGuesthouseId) =>
+    dev(demoSpaces.find((space) => space.spaceId === spaceId) ?? demoSpaces[0], () =>
+      unwrap(
+        publicApiClient.get<ApiEnvelope<SpaceQuietness>>(
+          `/quietness/guesthouses/${guesthouseId}/spaces/${spaceId}`,
+        ),
+      ),
+    ),
+  history: (spaceId: number, from: string, to: string) =>
+    dev(
+      demoHourly.map((item): QuietnessHistoryPoint => ({
+        decibel: item.averageDecibel,
+        measuredAt: item.hourStart,
+      })),
+      () =>
+        unwrap(
+          publicApiClient.get<ApiEnvelope<QuietnessHistoryPoint[]>>(
+            `/quietness/spaces/${spaceId}/history`,
+            { params: { from, to } },
+          ),
+        ),
     ),
   recommendation: (guesthouseId = defaultGuesthouseId) =>
     unwrap(

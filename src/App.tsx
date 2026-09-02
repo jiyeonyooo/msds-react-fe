@@ -27,20 +27,25 @@ import { WellnessOverviewPage } from './features/wellness/WellnessOverviewPage'
 import { WellnessCheckPage } from './features/wellness/WellnessCheckPage'
 import { WellnessResultPage } from './features/wellness/WellnessResultPage'
 import { WellnessHistoryPage } from './features/wellness/WellnessHistoryPage'
+import { QuietnessSpaceDetailPage } from './features/wellness/QuietnessSpaceDetailPage'
 import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
 import { isDevMode } from './dev/scenarios'
 import { AdminLayout } from './features/admin/AdminLayout'
-import { AdminDashboardPage } from './features/program/admin/AdminDashboardPage'
 import { AdminProgramPage } from './features/program/admin/AdminProgramPage'
 import { AdminProgramApplicantsPage } from './features/program/admin/AdminProgramApplicantsPage'
 import { AdminInquiryListPage } from './features/inquiry/admin/AdminInquiryListPage'
 import { AdminInquiryDetailPage } from './features/inquiry/admin/AdminInquiryDetailPage'
 import { AdminQuietnessPage } from './features/quietness/admin/AdminQuietnessPage'
-import { AdminFeaturePlaceholderPage, AdminForbiddenPage } from './features/admin/AdminPages'
+import {
+  AdminFeaturePlaceholderPage,
+  AdminForbiddenPage,
+  AdminHomePage,
+} from './features/admin/AdminPages'
 import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
+import { AdminWellnessStatisticsPage } from './features/wellness/admin/AdminWellnessStatisticsPage'
 import './index.css'
 export default function App() {
   return (
@@ -69,6 +74,7 @@ export default function App() {
           <Route path="wellness/result/:checkId" element={<WellnessResultPage />} />
           <Route path="wellness/history" element={<WellnessHistoryPage />} />
           <Route path="admin/forbidden" element={<AdminForbiddenPage />} />
+          <Route path="wellness/quietness/:spaceId" element={<QuietnessSpaceDetailPage />} />
           <Route
             path="mypage"
             element={
@@ -129,13 +135,14 @@ export default function App() {
             </RequireAdmin>
           }
         >
-          <Route index element={<AdminDashboardPage />} />
+          <Route index element={<AdminHomePage />} />
           <Route path="reservations" element={<AdminReservationsPage />} />
           <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
+          <Route path="users" element={<AdminFeaturePlaceholderPage />} />
           <Route path="programs" element={<AdminProgramPage />} />
           <Route path="programs/:programId/applications" element={<AdminProgramApplicantsPage />} />
           <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="wellness" element={<AdminWellnessStatisticsPage />} />
           <Route path="quietness" element={<AdminQuietnessPage />} />
           <Route path="inquiries" element={<AdminInquiryListPage />} />
           <Route path="inquiries/:inquiryId" element={<AdminInquiryDetailPage />} />

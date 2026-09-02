@@ -92,6 +92,11 @@ export type HourlyQuietness = {
   sampleCount: number
 }
 
+export type QuietnessHistoryPoint = {
+  decibel: number
+  measuredAt: string
+}
+
 export type ResultRouteState = {
   result?: WellnessCheckResult
   answers?: WellnessCheckRequest['answers']
