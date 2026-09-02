@@ -5,6 +5,7 @@ import { FacilityPage } from './features/facility/FacilityPage'
 import ProgramListPage from './features/program/ProgramListPage'
 import ProgramDetailPage from './features/program/ProgramDetailPage'
 import MyProgramReservationsPage from './features/program/MyProgramReservationsPage'
+import ReviewPage from './features/program/review/ReviewPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
 import { RoomDetailPage } from './features/rooms/RoomDetailPage'
 import { ReservationPage } from './features/reservation/ReservationPage'
@@ -12,11 +13,17 @@ import { MyReservationsPage } from './features/reservation/MyReservationsPage'
 import { ConfirmationPage } from './features/reservation/ConfirmationPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
+import { RequireAuth } from './features/auth/RequireAuth'
+import { MyPage } from './features/account/MyPage'
+import { ProfileEditPage } from './features/account/ProfileEditPage'
+import { AccountDeletePage } from './features/account/AccountDeletePage'
+import { InquiryListPage } from './features/inquiry/InquiryListPage'
+import { InquiryNewPage } from './features/inquiry/InquiryNewPage'
+import { InquiryDetailPage } from './features/inquiry/InquiryDetailPage'
 import { WellnessOverviewPage } from './features/wellness/WellnessOverviewPage'
 import { WellnessCheckPage } from './features/wellness/WellnessCheckPage'
 import { WellnessResultPage } from './features/wellness/WellnessResultPage'
 import { WellnessHistoryPage } from './features/wellness/WellnessHistoryPage'
-import ReviewPage from './features/program/review/ReviewPage'
 import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
@@ -38,6 +45,7 @@ export default function App() {
           <Route path="facility" element={<FacilityPage />} />
           <Route path="programs" element={<ProgramListPage />} />
           <Route path="programs/:programId" element={<ProgramDetailPage />} />
+          <Route path="reviews" element={<ReviewPage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="rooms/:roomId" element={<RoomDetailPage />} />
           <Route path="reservations" element={<ReservationPage />} />
@@ -52,7 +60,54 @@ export default function App() {
           <Route path="wellness/result" element={<WellnessResultPage />} />
           <Route path="wellness/result/:checkId" element={<WellnessResultPage />} />
           <Route path="wellness/history" element={<WellnessHistoryPage />} />
-          <Route path="reviews" element={<ReviewPage />} />
+          <Route
+            path="mypage"
+            element={
+              <RequireAuth>
+                <MyPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="mypage/edit"
+            element={
+              <RequireAuth>
+                <ProfileEditPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="mypage/delete"
+            element={
+              <RequireAuth>
+                <AccountDeletePage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="inquiries"
+            element={
+              <RequireAuth>
+                <InquiryListPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="inquiries/new"
+            element={
+              <RequireAuth>
+                <InquiryNewPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="inquiries/:inquiryId"
+            element={
+              <RequireAuth>
+                <InquiryDetailPage />
+              </RequireAuth>
+            }
+          />
           {isDevMode && <Route path="__dev/login" element={<DevLoginPage />} />}
           {isDevMode && <Route path="__dev/components" element={<ComponentGallery />} />}
           <Route path="*" element={<NotFoundPage />} />
