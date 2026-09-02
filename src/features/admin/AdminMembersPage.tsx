@@ -14,6 +14,7 @@ const formatDate = (value: string | null | undefined) => {
 }
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
+const memberDeletionAvailable = false
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof ApiError && error.message ? error.message : fallback
@@ -180,12 +181,12 @@ function AdminMemberDetailPage({ memberId }: { memberId: string }) {
         </dl>
         <p className="mt-5 rounded-sm bg-ivory-100 px-4 py-3 text-[10px] leading-5 text-ink-500">운영에 필요한 기본 정보만 표시하며 비밀번호와 인증 정보는 조회하지 않습니다.</p>
       </AdminPanel>
-      <AdminPanel endpoint="DELETE /api/admin/members/{memberId}" title="계정 관리">
+      <AdminPanel endpoint="계정 상태 · 권한 · 삭제 API 정의 필요" title="계정 관리">
         <div className="space-y-5">
           <label className="block text-[10px] font-medium text-ink-700">계정 상태<select className="admin-field" disabled value="ACTIVE"><option value="ACTIVE">활성 회원</option></select><span className="mt-2 block text-[9px] leading-4 text-ink-500">상태 변경 API가 없어 현재는 조회만 제공합니다.</span></label>
           <label className="block text-[10px] font-medium text-ink-700">권한<select className="admin-field" disabled value={member.role}><option value={member.role}>{member.role}</option></select><span className="mt-2 block text-[9px] leading-4 text-ink-500">권한 변경은 운영 정책이 정의된 뒤 연결합니다.</span></label>
           <div className="rounded-md bg-ivory-100 p-4"><p className="text-[9px] font-medium tracking-[0.12em] text-gold-500">POLICY SAFETY</p><ul className="mt-3 space-y-2 text-[10px] leading-5 text-ink-500"><li>• 인증 정보는 화면에 노출하지 않습니다.</li><li>• 삭제 전 예약 이력을 함께 확인합니다.</li><li>• 삭제 작업은 재확인을 거칩니다.</li></ul></div>
-          <Button className="w-full" onClick={() => setConfirmingDeletion(true)} variant="danger">회원 삭제</Button>
+          <Button className="w-full" disabled={!memberDeletionAvailable} onClick={() => setConfirmingDeletion(true)} variant="danger">삭제 API 미연결</Button>
         </div>
       </AdminPanel>
     </div>
