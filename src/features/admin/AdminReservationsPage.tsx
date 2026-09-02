@@ -165,6 +165,8 @@ function AdminReservationDetailPage({ resvId }: { resvId: string }) {
   const [message, setMessage] = useState('')
   const [confirming, setConfirming] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [confirmingRestore, setConfirmingRestore] = useState(false)
+  const [restoring, setRestoring] = useState(false)
   const load = useCallback(async () => {
     setLoading(true); setMessage('')
     try { setDetail(await adminReservationApi.detail(resvId)) }
@@ -192,16 +194,31 @@ function AdminReservationDetailPage({ resvId }: { resvId: string }) {
       setConfirming(false)
     } finally { setCancelling(false) }
   }
+  async function restore() {
+    if (!detail) return
+    setRestoring(true); setMessage('')
+    try {
+      const result = await adminReservationApi.restore(resvId)
+      setDetail({ ...detail, resv_status: result.resv_status, cancelled_at: result.cancelled_at })
+      setConfirmingRestore(false)
+    } catch (error) {
+      const apiError = error as ApiError
+      if (apiError.status === 401) { setReturnPath(`/admin/reservations/${resvId}`); navigate('/login', { replace: true }); return }
+      setMessage(apiError.status === 403 ? '예약 복구 권한이 없습니다.' : apiError.status === 404 ? '예약 정보를 찾을 수 없습니다.' : errorMessage(error, '예약 복구에 실패했습니다.'))
+      setConfirmingRestore(false)
+    } finally { setRestoring(false) }
+  }
   if (loading) return <p className="py-16 text-center text-sm text-slate-600">예약 정보를 불러오는 중입니다.</p>
   if (!detail) return <section><PageHeading title="예약 상세" description="예약 상태와 상세 정보를 확인합니다." /><MessageBox message={message || '예약 정보를 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/reservations">예약 목록으로 돌아가기</Link></MessageBox></section>
   return <section className="max-w-4xl"><Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/reservations">← 예약 목록</Link><PageHeading title="예약 상세" description="예약 및 회원 정보를 확인하고 필요한 경우 예약을 취소합니다." />
     {message && <p className="mb-4 text-sm text-error" role="alert">{message}</p>}
     <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5"><div className="flex items-end gap-3"><div><p className="text-xs font-medium tracking-[0.12em] text-slate-500">RESERVATION NUMBER</p><h3 className="mt-1 text-xl font-semibold text-[#172b44]">{detail.resv_number}</h3></div><StatusBadge status={detail.resv_status} /></div><div className="text-right"><p className="text-xs font-medium tracking-[0.12em] text-slate-500">MEMBER</p><p className="mt-1 text-base font-semibold text-[#172b44]">{detail.member_name}</p></div></div><div className="grid gap-x-10 md:grid-cols-2"><DetailGroup title="예약 정보" rows={reservationInfoRows(detail)} /><DetailGroup title="회원 정보" rows={[["회원명", detail.member_name], ["전화번호", detail.phone_number]]} /><DetailGroup title="객실·숙박" rows={[["객실", `${detail.room_name} · ${detail.room_number}호`], ["체크인", detail.check_in_date], ["체크아웃", detail.check_out_date], ["숙박일수", `${detail.nights}박`], ["숙박 인원", `${detail.guest_count}명`]]} /><DetailGroup title="금액" rows={[["1박 가격", won(detail.price_per_night)], ["총 예약 금액", won(detail.total_price)]]} /></div></article>
-    {canCancel ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#ead8d2] bg-[#fffaf8] p-5"><p className="text-sm text-slate-700">체크인 전날까지 예약을 취소할 수 있습니다.</p><Button variant="danger" onClick={() => setConfirming(true)}>예약 취소</Button></div> : detail.resv_status === 'RESERVED' ? <p className="mt-6 text-sm text-error">체크인 당일부터는 예약을 취소할 수 없습니다.</p> : null}
-    {confirming && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="cancel-description" aria-labelledby="cancel-title" aria-modal="true" className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="cancel-title">예약을 취소하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="cancel-description">{detail.resv_number} 예약을 취소합니다. 취소 후에는 되돌릴 수 없습니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={cancelling} variant="secondary" onClick={() => setConfirming(false)}>닫기</Button><Button disabled={cancelling} variant="danger" onClick={() => void cancel()}>{cancelling ? '취소 처리 중' : '예약 취소'}</Button></div></section></div>}
+    {canCancel ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#ead8d2] bg-[#fffaf8] p-5"><p className="text-sm text-slate-700">체크인 전날까지 예약을 취소할 수 있습니다.</p><Button className="!min-h-9 px-3 py-1.5" variant="danger" onClick={() => setConfirming(true)}>예약 취소</Button></div> : detail.resv_status === 'CANCELLED' ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#d7c59e] bg-[#fffdf7] p-5"><p className="text-sm text-slate-700">취소된 예약입니다. 복구하면 예약 상태가 다시 예약으로 변경됩니다.</p><Button className="!min-h-9 px-3 py-1.5" onClick={() => setConfirmingRestore(true)} size="sm">예약 복구</Button></div> : <p className="mt-6 text-sm text-error">체크인 당일부터는 예약을 취소할 수 없습니다.</p>}
+    {confirming && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="cancel-description" aria-labelledby="cancel-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="cancel-title">예약을 취소하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="cancel-description">{detail.resv_number} 예약을 취소합니다. 취소 후에는 되돌릴 수 없습니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={cancelling} variant="secondary" onClick={() => setConfirming(false)}>닫기</Button><Button disabled={cancelling} variant="danger" onClick={() => void cancel()}>{cancelling ? '취소 처리 중' : '예약 취소'}</Button></div></section></div>}
+    {confirmingRestore && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="restore-description" aria-labelledby="restore-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="restore-title">예약을 복구하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="restore-description">{detail.resv_number} 예약을 다시 예약 상태로 변경합니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={restoring} variant="secondary" onClick={() => setConfirmingRestore(false)}>닫기</Button><Button disabled={restoring} onClick={() => void restore()}>{restoring ? '복구 처리 중' : '예약 복구'}</Button></div></section></div>}
   </section>
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) { return <header className="mb-5 mt-5 border-b border-slate-300 pb-6"><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">ADMINISTRATION</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#172b44]">{title}</h2><p className="mt-2 text-sm text-slate-600">{description}</p></header> }
+function PageHeading({ title, description }: { title: string; description: string }) { return <header className="mb-5 border-b border-slate-300 pb-6"><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">ADMINISTRATION</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#172b44]">{title}</h2><p className="mt-2 text-sm text-slate-600">{description}</p></header> }
 function MessageBox({ message, children }: { message: string; children?: ReactNode }) { return <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-600" role="alert"><p>{message}</p>{children}</div> }
 function DetailGroup({ title, rows }: { title: string; rows: Array<[string, string]> }) { return <section className="border-b border-slate-100 py-5"><h4 className="text-sm font-semibold text-[#172b44]">{title}</h4><dl className="mt-3 grid gap-2 text-sm sm:grid-cols-[110px_1fr]"><>{rows.map(([label, value]) => <div className="contents" key={label}><dt className="text-slate-500">{label}</dt><dd className="m-0 text-slate-800">{value}</dd></div>)}</></dl></section> }
