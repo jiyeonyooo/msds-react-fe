@@ -168,4 +168,7 @@
   .global-scrollbar:hover .global-scrollbar__thumb {
     background: rgb(183 154 103 / 88%);
   }
+  .global-scrollbar--dragging .global-scrollbar__thumb {
+    transition: none;
+  }
 }

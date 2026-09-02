@@ -6,13 +6,14 @@ function readMetrics(): ScrollMetrics {
   const documentHeight = document.documentElement.scrollHeight
   const viewportHeight = window.innerHeight
   const maxScroll = documentHeight - viewportHeight
+  const trackHeight = viewportHeight - 8
 
   if (maxScroll <= 0) return { height: 0, top: 0, visible: false }
 
-  const height = Math.max(40, (viewportHeight / documentHeight) * viewportHeight)
+  const height = Math.min(trackHeight, Math.max(40, (viewportHeight / documentHeight) * trackHeight))
   return {
     height,
-    top: (window.scrollY / maxScroll) * (viewportHeight - height),
+    top: (window.scrollY / maxScroll) * (trackHeight - height),
     visible: true,
   }
 }
@@ -21,24 +22,37 @@ function readMetrics(): ScrollMetrics {
 export function GlobalScrollbar() {
   const [metrics, setMetrics] = useState<ScrollMetrics>(() => readMetrics())
   const [hovered, setHovered] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const dragOffset = useRef<number | null>(null)
+  const previousScrollBehavior = useRef('')
 
-  const scrollToPointer = (clientY: number, offset = metrics.height / 2) => {
+  const scrollToPointer = (clientY: number, track: HTMLDivElement, offset = metrics.height / 2) => {
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight
-    const trackHeight = window.innerHeight - metrics.height - 8
-    const position = Math.min(Math.max(clientY - 4 - offset, 0), trackHeight)
-    window.scrollTo({ top: (position / trackHeight) * maxScroll, behavior: 'auto' })
+    const rect = track.getBoundingClientRect()
+    const usableTrack = rect.height - metrics.height
+    if (maxScroll <= 0 || usableTrack <= 0) return
+    const position = Math.min(Math.max(clientY - rect.top - offset, 0), usableTrack)
+    window.scrollTo({ top: (position / usableTrack) * maxScroll, behavior: 'auto' })
   }
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
-    const thumbTop = metrics.top + 4
+    const thumbTop = event.currentTarget.getBoundingClientRect().top + metrics.top
     dragOffset.current = Math.min(Math.max(event.clientY - thumbTop, 0), metrics.height)
+    previousScrollBehavior.current = document.documentElement.style.scrollBehavior
+    document.documentElement.style.scrollBehavior = 'auto'
+    setDragging(true)
     event.currentTarget.setPointerCapture(event.pointerId)
-    scrollToPointer(event.clientY, dragOffset.current)
+    scrollToPointer(event.clientY, event.currentTarget, dragOffset.current)
   }
 
   const drag = (event: PointerEvent<HTMLDivElement>) => {
-    if (dragOffset.current !== null) scrollToPointer(event.clientY, dragOffset.current)
+    if (dragOffset.current !== null) scrollToPointer(event.clientY, event.currentTarget, dragOffset.current)
+  }
+
+  const stopDrag = () => {
+    dragOffset.current = null
+    document.documentElement.style.scrollBehavior = previousScrollBehavior.current
+    setDragging(false)
   }
 
   useEffect(() => {
@@ -61,12 +75,14 @@ export function GlobalScrollbar() {
   return (
     <div
       aria-hidden="true"
-      className={`global-scrollbar ${hovered ? 'global-scrollbar--visible' : ''}`}
+      className={`global-scrollbar ${hovered ? 'global-scrollbar--visible' : ''} ${dragging ? 'global-scrollbar--dragging' : ''}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onPointerDown={startDrag}
       onPointerMove={drag}
-      onPointerUp={() => { dragOffset.current = null }}
+      onPointerUp={stopDrag}
+      onPointerCancel={stopDrag}
+      onLostPointerCapture={stopDrag}
     >
       <span className="global-scrollbar__thumb" style={{ height: metrics.height, transform: `translateY(${metrics.top}px)` }} />
     </div>
