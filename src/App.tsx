@@ -4,6 +4,7 @@ import { GlobalScrollbar } from './components/GlobalScrollbar'
 import { Navigate } from 'react-router-dom'
 import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
+import { AboutPage } from './features/about/AboutPage'
 import ProgramListPage from './features/program/ProgramListPage'
 import ReviewPage from './features/program/review/ReviewPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
@@ -33,6 +34,7 @@ import { AdminLayout } from './features/admin/AdminLayout'
 import { AdminFeaturePlaceholderPage, AdminForbiddenPage, AdminHomePage } from './features/admin/AdminPages'
 import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
+import { AdminInquiriesPage } from './features/admin/AdminInquiriesPage'
 import './index.css'
 export default function App() {
   return (
@@ -43,6 +45,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="facility" element={<FacilityPage />} />
+          <Route path="about" element={<AboutPage />} />
           <Route path="programs" element={<ProgramListPage />} />
           <Route path="reviews" element={<ReviewPage />} />
           <Route path="rooms" element={<RoomsPage />} />
@@ -126,7 +129,8 @@ export default function App() {
           <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
           <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
           <Route path="quietness" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="inquiries" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="inquiries" element={<AdminInquiriesPage />} />
+          <Route path="inquiries/:inquiryId" element={<AdminInquiriesPage />} />
           <Route path="*" element={<Navigate replace to="/admin" />} />
         </Route>
       </Routes>
