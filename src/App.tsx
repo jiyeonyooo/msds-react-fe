@@ -32,6 +32,7 @@ import { isDevMode } from './dev/scenarios'
 import { AdminLayout } from './features/admin/AdminLayout'
 import { AdminFeaturePlaceholderPage, AdminForbiddenPage, AdminHomePage } from './features/admin/AdminPages'
 import { RequireAdmin } from './features/admin/RequireAdmin'
+import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
 import './index.css'
 export default function App() {
   return (
@@ -119,7 +120,8 @@ export default function App() {
           }
         >
           <Route index element={<AdminHomePage />} />
-          <Route path="reservations" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="reservations" element={<AdminReservationsPage />} />
+          <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
           <Route path="programs" element={<AdminFeaturePlaceholderPage />} />
           <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
           <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
