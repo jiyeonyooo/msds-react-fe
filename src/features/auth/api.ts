@@ -12,8 +12,8 @@ import type {
 } from './types'
 
 // 개발 환경에서는 Vite dev 서버가 /api 요청을 Spring 서버로 프록시한다(vite.config.ts).
-// 배포 환경에서 API 오리진이 다르면 API_BASE_URL로 덮어쓴다.
-const baseUrl = import.meta.env.API_BASE_URL ?? ''
+// 배포 환경에서 API 오리진이 다르면 VITE_API_BASE_URL로 덮어쓴다.
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 export class AuthApiError extends Error {
   status: number
