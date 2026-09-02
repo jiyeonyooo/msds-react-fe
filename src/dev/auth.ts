@@ -1,4 +1,4 @@
-export type DevAuthState = 'guest' | 'member'
+export type DevAuthState = 'guest' | 'member' | 'admin'
 const key = 'msds.dev.auth'
 export function getDevAuthState(): DevAuthState {
   return (localStorage.getItem(key) as DevAuthState | null) ?? 'guest'

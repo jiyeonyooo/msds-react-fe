@@ -3,7 +3,7 @@
 /* Development-only tooling deliberately uses a separate dark palette. */
 @layer components {
   .dev-shell {
-    @apply fixed z-50 w-[260px] rounded-lg border border-[#3e4652] bg-[#17191d] p-[14px] font-mono text-xs leading-normal text-[#e9edf2] shadow-[0_12px_32px_#0005];
+    @apply fixed z-50 flex max-h-[calc(100vh-32px)] w-[260px] flex-col overflow-hidden rounded-lg border border-[#3e4652] bg-[#17191d] p-[14px] font-mono text-xs leading-normal text-[#e9edf2] shadow-[0_12px_32px_#0005];
   }
   .dev-shell header {
     @apply flex items-center justify-between text-[13px] text-[#83e4b5];
@@ -13,6 +13,9 @@
   }
   .dev-shell section {
     @apply mt-3 border-t border-[#363c45] pt-2.5;
+  }
+  .dev-shell .dev-routes {
+    @apply min-h-0 flex-1 overflow-y-auto;
   }
   .dev-shell h2 {
     @apply mb-[7px] text-[10px] tracking-[0.12em] text-[#8b96a5];
