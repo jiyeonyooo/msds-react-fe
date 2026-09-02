@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ApiRequestError } from '../../lib/api/errors'
+import { ApiError } from '../../lib/apiError'
 import { reservationApi } from './api'
 import type { AvailabilityRequest, AvailableRoom } from './types'
 
@@ -16,7 +16,7 @@ export function useReservationAvailability() {
     try {
       setRooms((await reservationApi.availability(params)).rooms)
     } catch (error) {
-      if (error instanceof ApiRequestError) {
+      if (error instanceof ApiError) {
         const fieldErrors = error.errors.reduce<Record<string, string>>(
           (result, item) => ({ ...result, [item.field]: result[item.field] ?? item.message }),
           {},

@@ -1,10 +1,9 @@
 import { getDevAuthState } from '../dev/auth'
 import { getDevScenario, isDevMode } from '../dev/scenarios'
-import { ApiRequestError } from '../lib/api/errors'
-import type { ApiErrorDetail } from '../lib/api/types'
+import { ApiError, type ApiErrorDetail } from '../lib/apiError'
 import type { AvailabilityResult, Reservation } from '../features/reservation/types'
 
-type MockResult<T> = { handled: boolean; data?: T; error?: ApiRequestError }
+type MockResult<T> = { handled: boolean; data?: T; error?: ApiError }
 
 const demoAvailability: AvailabilityResult = {
   check_in_date: '2026-09-12',
@@ -44,7 +43,7 @@ const demoReservation: Reservation = {
 export async function reservationMock<T>(path: string, method = 'GET'): Promise<MockResult<T>> {
   if (!isDevMode) return { handled: false }
   const fail = (status: number, code: string, message: string, errors: ApiErrorDetail[] = []) =>
-    ({ handled: true, error: new ApiRequestError(status, code, message, errors) }) as MockResult<T>
+    ({ handled: true, error: new ApiError(status, code, message, {}, errors) }) as MockResult<T>
   const protectedRequest =
     path.startsWith('/resv/me') || /^\/resv\/\d/.test(path) || method === 'POST'
   if (getDevAuthState() === 'guest' && protectedRequest)

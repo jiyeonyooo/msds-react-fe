@@ -1,5 +1,5 @@
 import { authApiClient, publicApiClient } from '../../lib/apiClient'
-import { apiRequest } from '../../lib/api/request'
+import { ApiError, call, type ApiEnvelope } from '../../lib/apiError'
 import { reservationMock } from '../../mocks/reservation'
 import type {
   AvailabilityRequest,
@@ -12,7 +12,7 @@ import type {
   ReservationStatus,
 } from './types'
 
-export { ApiRequestError as ApiError } from '../../lib/api/errors'
+export { ApiError } from '../../lib/apiError'
 
 type AvailabilityResponse = AvailabilityRequest & {
   nights: number
@@ -97,17 +97,22 @@ async function withMock<T>(path: string, method: string, request: () => Promise<
   }
   return request()
 }
+async function request<T>(client: typeof authApiClient, config: Parameters<typeof authApiClient.request>[0]) {
+  const body = await call<T>(() => client.request<ApiEnvelope<T>>(config))
+  if (body.code !== 'OK') throw new ApiError(200, body.code, body.message)
+  return body.data
+}
 export const reservationApi = {
   availability: (params: AvailabilityRequest) =>
     withMock('/resv', 'GET', async () =>
       mapAvailability(
-        await apiRequest<AvailabilityResponse>(publicApiClient, { url: '/resv', params }),
+        await request<AvailabilityResponse>(publicApiClient, { url: '/resv', params }),
       ),
     ),
   create: (data: ReservationRequest) =>
     withMock('/resv', 'POST', async () =>
       mapReservation(
-        await apiRequest<ReservationResponse>(authApiClient, {
+        await request<ReservationResponse>(authApiClient, {
           url: '/resv',
           method: 'POST',
           data,
@@ -120,7 +125,7 @@ export const reservationApi = {
     pageSize = 10,
   }: { status?: ReservationStatus; page?: number; pageSize?: number } = {}) =>
     withMock('/resv/me', 'GET', async () => {
-      const data = await apiRequest<ReservationPageResponse>(authApiClient, {
+      const data = await request<ReservationPageResponse>(authApiClient, {
         url: '/resv/me',
         params: { ...(status ? { resv_status: status } : {}), page_num: page, page_size: pageSize },
       })
@@ -131,11 +136,11 @@ export const reservationApi = {
     }),
   detail: (id: string) =>
     withMock(`/resv/${id}`, 'GET', async () =>
-      mapReservation(await apiRequest<ReservationResponse>(authApiClient, { url: `/resv/${id}` })),
+      mapReservation(await request<ReservationResponse>(authApiClient, { url: `/resv/${id}` })),
     ),
   cancel: (id: string) =>
     withMock(`/resv/${id}/cancel`, 'PATCH', async () => {
-      const data = await apiRequest<CancellationResponse>(authApiClient, {
+      const data = await request<CancellationResponse>(authApiClient, {
         url: `/resv/${id}/cancel`,
         method: 'PATCH',
       })

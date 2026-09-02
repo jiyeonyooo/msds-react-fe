@@ -1,6 +1,6 @@
 export type ReservationStatus = 'RESERVED' | 'CANCELLED'
 
-export type { ApiEnvelope, ApiErrorDetail } from '../../lib/api/types'
+export type { ApiEnvelope, ApiErrorDetail } from '../../lib/apiError'
 
 export type AvailabilityRequest = {
   check_in_date: string
