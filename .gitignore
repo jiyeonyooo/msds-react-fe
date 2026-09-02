@@ -32,5 +32,6 @@ dist-ssr
 # Local project instructions and source specifications
 /AGENTS.md
 /docs/
-!/docs/
+!/docs/api_spec_full.md
+!/docs/AUTH_VIEWS.md
 !/docs/FRONTEND_INTEGRATION.md
