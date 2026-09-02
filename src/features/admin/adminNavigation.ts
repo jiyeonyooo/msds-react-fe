@@ -6,6 +6,7 @@ export type AdminNavigationItem = {
 }
 
 export const adminNavigation: AdminNavigationItem[] = [
+  { to: '/admin/members', label: '회원 관리', description: '회원 정보와 회원별 예약 내역 조회', endpoint: 'GET /admin/members' },
   { to: '/admin/reservations', label: '예약 관리', description: '예약 조회와 상태 관리', endpoint: 'GET /admin/resv' },
   { to: '/admin/members', label: '회원 관리', description: '회원 조회와 정보·권한 관리', endpoint: 'GET /admin/users' },
   { to: '/admin/programs', label: '프로그램 관리', description: '명상 프로그램 운영', endpoint: 'GET /meditation/admin' },

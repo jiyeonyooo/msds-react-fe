@@ -144,6 +144,14 @@
 }
 
 @layer components {
+  .admin-interactive-row > td {
+    transition: background-color 160ms ease;
+  }
+  .admin-interactive-row:hover > td,
+  .admin-interactive-row:focus-visible > td {
+    background-color: #f5f1ea !important;
+  }
+
   .global-scrollbar {
     position: fixed;
     z-index: 60;

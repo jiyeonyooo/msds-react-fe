@@ -31,11 +31,19 @@ import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
 import { isDevMode } from './dev/scenarios'
 import { AdminLayout } from './features/admin/AdminLayout'
-import { AdminFeaturePlaceholderPage, AdminForbiddenPage, AdminHomePage } from './features/admin/AdminPages'
+import {
+  AdminFeaturePlaceholderPage,
+  AdminForbiddenPage,
+  AdminHomePage,
+} from './features/admin/AdminPages'
 import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
 import { AdminInquiriesPage } from './features/admin/AdminInquiriesPage'
 import { AdminMembersPage } from './features/admin/AdminMembersPage'
+import { RoomListPage } from './features/admin/RoomListPage'
+import { RoomFormPage } from './features/admin/RoomFormPage'
+import { FacilityListPage } from './features/admin/FacilityListPage'
+import { FacilityFormPage } from './features/admin/FacilityFormPage'
 import './index.css'
 export default function App() {
   return (
@@ -124,14 +132,19 @@ export default function App() {
           }
         >
           <Route index element={<AdminHomePage />} />
+          <Route path="members" element={<AdminMembersPage />} />
+          <Route path="members/:userId" element={<AdminMembersPage />} />
           <Route path="reservations" element={<AdminReservationsPage />} />
           <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
           <Route path="programs" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="rooms" element={<RoomListPage />} />
+          <Route path="rooms/new" element={<RoomFormPage />} />
+          <Route path="rooms/:roomId/edit" element={<RoomFormPage />} />
+          <Route path="facilities" element={<FacilityListPage />} />
+          <Route path="facilities/new" element={<FacilityFormPage />} />
+          <Route path="facilities/:facilityId/edit" element={<FacilityFormPage />} />
           <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
           <Route path="quietness" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="members" element={<AdminMembersPage />} />
-          <Route path="members/:userId" element={<AdminMembersPage />} />
           <Route path="inquiries" element={<AdminInquiriesPage />} />
           <Route path="inquiries/:inquiryId" element={<AdminInquiriesPage />} />
           <Route path="*" element={<Navigate replace to="/admin" />} />

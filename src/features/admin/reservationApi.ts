@@ -30,4 +30,6 @@ export const adminReservationApi = {
     withMock(`/admin/resv/${resvId}`, 'GET', () => request<AdminReservationDetail>({ url: `/admin/resv/${resvId}` })),
   cancel: (resvId: string) =>
     withMock(`/admin/resv/${resvId}/status`, 'PATCH', () => request<AdminCancellationResult>({ url: `/admin/resv/${resvId}/status`, method: 'PATCH' })),
+  restore: (resvId: string) =>
+    withMock(`/admin/resv/${resvId}/restore`, 'PATCH', () => request<AdminCancellationResult>({ url: `/admin/resv/${resvId}/restore`, method: 'PATCH' })),
 }
