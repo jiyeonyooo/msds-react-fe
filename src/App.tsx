@@ -3,6 +3,7 @@ import { AppLayout } from './components/AppLayout'
 import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
 import ProgramListPage from './features/program/ProgramListPage'
+import ProgramDetailPage from './features/program/ProgramDetailPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
 import { RoomDetailPage } from './features/rooms/RoomDetailPage'
 import { ReservationPage } from './features/reservation/ReservationPage'
@@ -29,6 +30,7 @@ export default function App() {
           <Route index element={<HomePage />} />
           <Route path="facility" element={<FacilityPage />} />
           <Route path="programs" element={<ProgramListPage />} />
+          <Route path="programs/:programId" element={<ProgramDetailPage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="rooms/:roomId" element={<RoomDetailPage />} />
           <Route path="reservations" element={<ReservationPage />} />
