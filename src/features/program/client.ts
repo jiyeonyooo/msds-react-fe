@@ -1,66 +1,69 @@
-// src/api/client.ts
+// client.ts
+import type { ApiResponse } from "./types.ts";
 
-import { getAccessToken } from '../auth/session'
-
-const BASE_URL = import.meta.env.API_BASE_URL ?? 'http://localhost:5173'
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8080";
 
 export class ApiError extends Error {
-  status: number
+  status: number;
 
   constructor(status: number, message: string) {
-    super(message)
-    this.status = status
+    super(message);
+    this.status = status;
   }
+}
+
+function getAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem("accessToken");
+  return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 interface RequestOptions {
-  method?: 'GET' | 'POST' | 'DELETE' | 'PATCH'
-  body?: unknown
+  method?: "GET" | "POST" | "DELETE" | "PATCH";
+  body?: unknown;
 }
 
-// POST 응답의 Location 헤더까지 필요할 때 쓰는 버전
-async function requestWithLocation(
-  path: string,
-  options: RequestOptions = {},
-): Promise<string | null> {
-  const token = getAccessToken()
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-    // 로그인 붙이면 credentials: "include" 또는 Authorization 헤더 추가
-  })
-  if (!res.ok) {
-    throw new ApiError(res.status, await res.text())
-  }
-  return res.headers.get('Location')
-}
-
-// 응답 바디(JSON)가 필요할 때 쓰는 버전
+// 응답이 ApiResponse<T>로 감싸져 있으므로 data만 꺼내서 반환
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const token = getAccessToken()
   const res = await fetch(`${BASE_URL}${path}`, {
-    method: options.method ?? 'GET',
+    method: options.method ?? "GET",
     headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
     },
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  })
+  });
+
+  const text = await res.text();
+  const parsed: ApiResponse<T> | null = text ? JSON.parse(text) : null;
+
   if (!res.ok) {
-    throw new ApiError(res.status, await res.text())
+    throw new ApiError(res.status, parsed?.message ?? "요청 처리 중 오류가 발생했습니다.");
   }
-  if (res.status === 204) return undefined as T // No Content
-  return res.json() as Promise<T>
+  return parsed?.data as T;
+}
+
+// Location 헤더가 필요한 POST용 (예약/리뷰 생성)
+async function requestWithLocation(path: string, options: RequestOptions = {}): Promise<string | null> {
+  const res = await fetch(`${BASE_URL}${path}`, {
+    method: options.method ?? "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeader(),
+    },
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    const parsed: ApiResponse<unknown> | null = text ? JSON.parse(text) : null;
+    throw new ApiError(res.status, parsed?.message ?? "요청 처리 중 오류가 발생했습니다.");
+  }
+  return res.headers.get("Location");
 }
 
 export const apiClient = {
   get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) => request<T>(path, { method: 'POST', body }),
-  postForLocation: (path: string, body: unknown) =>
-    requestWithLocation(path, { method: 'POST', body }),
-  delete: (path: string) => request<void>(path, { method: 'DELETE' }),
-}
+  post: <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body }),
+  postForLocation: (path: string, body: unknown) => requestWithLocation(path, { method: "POST", body }),
+  delete: (path: string) => request<void>(path, { method: "DELETE" }),
+};

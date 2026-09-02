@@ -1,6 +1,6 @@
 // src/types/meditation.ts
 
-export type ProgramStatus = "OPEN" | "CLOSED";
+export type ProgramStatus = "OPEN" | "CLOSED" | "DELETED";
 
 export interface ProgramResponse {
   id: number;
@@ -25,7 +25,7 @@ export interface ReservationRequest {
 export interface ReviewResponse {
   id: number;
   programName: string;
-  memberName: string; // 백엔드 필드명 그대로 유지. userName으로 바뀌면 여기도 수정 필요
+  userName: string; // 백엔드 필드명 그대로 유지. userName으로 바뀌면 여기도 수정 필요
   content: string;
   createdAt: string; // LocalDateTime은 JSON에서 ISO 문자열로 옴 (예: "2026-09-01T10:30:00")
 }
@@ -33,4 +33,19 @@ export interface ReviewResponse {
 export interface ReviewCreateRequest {
   programReservationId: number;
   content: string;
+}
+
+export interface ApiResponse<T> {
+  code: string;
+  message: string;
+  data: T;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
 }
