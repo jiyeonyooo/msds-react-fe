@@ -7,17 +7,20 @@ import axios, { type AxiosResponse } from 'axios'
  */
 export type ApiEnvelope<T> = { code: string; message: string; data: T }
 export type FieldErrors = Partial<Record<string, string>>
+export type ApiErrorDetail = { field: string; reason: string; message: string }
 
 export class ApiError extends Error {
   status: number
   code: string
   fieldErrors: FieldErrors
-  constructor(status: number, code: string, message: string, fieldErrors: FieldErrors = {}) {
+  errors: ApiErrorDetail[]
+  constructor(status: number, code: string, message: string, fieldErrors: FieldErrors = {}, errors: ApiErrorDetail[] = []) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.fieldErrors = fieldErrors
+    this.errors = errors
   }
 }
 
@@ -58,14 +61,23 @@ export function toApiError(error: unknown): ApiError {
         'API_INVALID_RESPONSE',
         'API 서버 응답을 확인할 수 없습니다. 백엔드 연결 상태를 확인해 주세요.',
       )
+    const errors = body.data && typeof body.data === 'object' && !Array.isArray(body.data)
+      && 'errors' in body.data
+      ? body.data.errors
+      : []
     return new ApiError(
       error.response.status,
       body.code,
       body.message,
       body.code === 'INVALID_INPUT' ? parseFieldErrors(body.message) : {},
+      Array.isArray(errors) ? errors.filter(isApiErrorDetail) : [],
     )
   }
   return new ApiError(0, 'UNKNOWN_ERROR', '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+}
+
+function isApiErrorDetail(value: unknown): value is ApiErrorDetail {
+  return Boolean(value && typeof value === 'object' && 'field' in value && 'reason' in value && 'message' in value)
 }
 
 // ApiResponse 봉투에서 data만 꺼낸다. 규격이 아니면 ApiError로 바꿔 던진다.
