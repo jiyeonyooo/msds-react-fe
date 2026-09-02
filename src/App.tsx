@@ -25,6 +25,8 @@ import { AdminLayout } from './components/admin/AdminLayout'
 import { AdminDashboardPage } from './features/program/admin/AdminDashboardPage'
 import { AdminProgramPage } from './features/program/admin/AdminProgramPage'
 import { AdminProgramApplicantsPage } from './features/program/admin/AdminProgramApplicantsPage'
+import { AdminInquiryListPage } from './features/inquiry/admin/AdminInquiryListPage'
+import { AdminInquiryDetailPage } from './features/inquiry/admin/AdminInquiryDetailPage'
 import './index.css'
 export default function App() {
   return (
@@ -59,6 +61,8 @@ export default function App() {
           <Route index element={<AdminDashboardPage />} />
           <Route path="programs" element={<AdminProgramPage />} />
           <Route path="programs/:programId/applications" element={<AdminProgramApplicantsPage />} />
+          <Route path="inquiries" element={<AdminInquiryListPage />} />
+          <Route path="inquiries/:inquiryId" element={<AdminInquiryDetailPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

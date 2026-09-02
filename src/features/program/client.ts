@@ -71,6 +71,7 @@ export const apiClient = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) => request<T>(path, { method: 'POST', body }),
   put: <T>(path: string, body: unknown) => request<T>(path, { method: 'PUT', body }),
+  patch: <T>(path: string, body: unknown) => request<T>(path, { method: 'PATCH', body }),
   postForLocation: (path: string, body: unknown) =>
     requestWithLocation(path, { method: 'POST', body }),
   delete: (path: string) => request<void>(path, { method: 'DELETE' }),

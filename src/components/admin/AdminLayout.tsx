@@ -1,18 +1,31 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { Logo } from '../ui'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { signOut } from '../../features/auth/api'
 import { useSession } from '../../features/auth/useSession'
+import { Logo } from '../ui'
 
 const navigation = [
   { label: '대시보드', to: '/admin' },
+  { label: '고객 관리', disabled: true },
+  { label: '문의 관리', to: '/admin/inquiries' },
   { label: '프로그램 관리', to: '/admin/programs' },
-]
+  { label: '웰니스 통계', disabled: true },
+  { label: '조용함 관리', disabled: true },
+] as const
+
+function sectionTitle(pathname: string) {
+  if (pathname.includes('/inquiries/')) return '문의 상세'
+  if (pathname.startsWith('/admin/inquiries')) return '문의 관리'
+  if (pathname.startsWith('/admin/programs')) return '프로그램 관리'
+  return '대시보드'
+}
 
 export function AdminLayout() {
   const session = useSession()
+  const location = useLocation()
 
   if (!session) {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f4f1ea] px-6 text-center">
+      <main className="grid min-h-screen place-items-center bg-subtle px-6 text-center">
         <div>
           <p className="text-[11px] font-medium tracking-[0.18em] text-gold-500">ADMIN ACCESS</p>
           <h1 className="mt-4 font-display text-4xl font-semibold">로그인이 필요합니다.</h1>
@@ -29,7 +42,7 @@ export function AdminLayout() {
 
   if (session.user?.role !== 'ADMIN') {
     return (
-      <main className="grid min-h-screen place-items-center bg-[#f4f1ea] px-6 text-center">
+      <main className="grid min-h-screen place-items-center bg-subtle px-6 text-center">
         <div>
           <p className="text-[11px] font-medium tracking-[0.18em] text-gold-500">ACCESS DENIED</p>
           <h1 className="mt-4 font-display text-4xl font-semibold">관리자만 접근할 수 있습니다.</h1>
@@ -41,43 +54,70 @@ export function AdminLayout() {
     )
   }
 
+  const initial = session.user.name.trim().charAt(0).toUpperCase() || 'A'
+
   return (
-    <div className="min-h-screen bg-[#f4f1ea] lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="bg-navy-900 px-7 py-8 text-white lg:sticky lg:top-0 lg:h-screen">
-        <Logo inverse />
-        <p className="mt-4 text-[10px] tracking-[0.22em] text-white/55">ADMIN CONSOLE</p>
+    <div className="min-h-screen bg-subtle lg:grid lg:grid-cols-[260px_1fr]">
+      <aside className="bg-navy-900 px-5 py-8 text-white lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
+        <div className="flex h-[150px] items-center justify-center overflow-hidden">
+          <Logo inverse />
+        </div>
         <nav
-          className="mt-10 flex gap-2 overflow-x-auto lg:block lg:space-y-2"
+          className="mt-5 flex gap-2 overflow-x-auto lg:mt-0 lg:block lg:space-y-2"
           aria-label="관리자 메뉴"
         >
-          {navigation.map((item) => (
-            <NavLink
-              className={({ isActive }) =>
-                `block shrink-0 border-l-2 px-4 py-3 text-xs tracking-[0.08em] transition ${
-                  isActive
-                    ? 'border-gold-500 bg-white/10 text-white'
-                    : 'border-transparent text-white/60 hover:bg-white/5 hover:text-white'
-                }`
-              }
-              end={item.to === '/admin'}
-              key={item.to}
-              to={item.to}
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          {navigation.map((item) =>
+            'to' in item ? (
+              <NavLink
+                className={({ isActive }) =>
+                  `block h-12 shrink-0 rounded-sm border-l-2 px-4 py-[13px] text-sm transition ${isActive ? 'border-gold-500 bg-white text-navy-900' : 'border-transparent text-white hover:bg-white/5'}`
+                }
+                end={item.to === '/admin'}
+                key={item.label}
+                to={item.to}
+              >
+                {item.label}
+              </NavLink>
+            ) : (
+              <span
+                aria-disabled="true"
+                className="block h-12 shrink-0 border-l-2 border-transparent px-4 py-[13px] text-sm text-white/45"
+                key={item.label}
+              >
+                {item.label}
+              </span>
+            ),
+          )}
+          <button
+            className="block h-12 w-full border-l-2 border-transparent px-4 text-left text-sm text-white hover:bg-white/5"
+            onClick={() => void signOut()}
+            type="button"
+          >
+            로그아웃
+          </button>
         </nav>
-        <div className="mt-8 border-t border-white/15 pt-6 text-[11px] leading-5 text-white/55 lg:absolute lg:right-7 lg:bottom-8 lg:left-7">
-          <p>{session.user.name}</p>
-          <p>{session.user.email}</p>
+        <div className="mt-8 border-t border-gold-300/60 pt-4 text-[11px] leading-5 lg:mt-auto">
+          <p className="text-[9px] font-medium tracking-[0.16em] text-gold-500">ADMINISTRATOR</p>
+          <p className="mt-2 text-white/85">{session.user.email}</p>
         </div>
       </aside>
       <div className="min-w-0">
-        <header className="flex min-h-16 items-center justify-between border-b border-[#d8d0c2] bg-[#fbfaf6] px-6 lg:px-10">
-          <p className="text-[11px] font-medium tracking-[0.15em] text-gold-500">MSDS OPERATIONS</p>
-          <NavLink className="text-[11px] text-ink-500 hover:text-navy-900" to="/">
-            사이트로 돌아가기 →
-          </NavLink>
+        <header className="flex h-20 items-center justify-between bg-white px-6 lg:px-12">
+          <div>
+            <p className="text-[10px] font-medium tracking-[0.16em] text-gold-500">MSDS ADMIN</p>
+            <p className="mt-1 text-sm font-medium text-navy-900">
+              {sectionTitle(location.pathname)}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="grid size-[34px] place-items-center rounded-full bg-navy-900 text-xs font-medium text-white">
+              {initial}
+            </span>
+            <div className="hidden sm:block">
+              <p className="text-xs font-medium text-navy-900">{session.user.name}</p>
+              <p className="mt-0.5 text-[10px] text-ink-700">{session.user.email}</p>
+            </div>
+          </div>
         </header>
         <Outlet />
       </div>
