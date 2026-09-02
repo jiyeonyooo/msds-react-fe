@@ -4,6 +4,7 @@ import { GlobalScrollbar } from './components/GlobalScrollbar'
 import { Navigate } from 'react-router-dom'
 import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
+import { AboutPage } from './features/about/AboutPage'
 import ProgramListPage from './features/program/ProgramListPage'
 import ReviewPage from './features/program/review/ReviewPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
@@ -37,11 +38,12 @@ import {
 } from './features/admin/AdminPages'
 import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
+import { AdminInquiriesPage } from './features/admin/AdminInquiriesPage'
+import { AdminMembersPage } from './features/admin/AdminMembersPage'
 import { RoomListPage } from './features/admin/RoomListPage'
 import { RoomFormPage } from './features/admin/RoomFormPage'
 import { FacilityListPage } from './features/admin/FacilityListPage'
 import { FacilityFormPage } from './features/admin/FacilityFormPage'
-import { AdminMembersPage } from './features/admin/AdminMembersPage'
 import './index.css'
 export default function App() {
   return (
@@ -52,6 +54,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="facility" element={<FacilityPage />} />
+          <Route path="about" element={<AboutPage />} />
           <Route path="programs" element={<ProgramListPage />} />
           <Route path="reviews" element={<ReviewPage />} />
           <Route path="rooms" element={<RoomsPage />} />
@@ -130,7 +133,7 @@ export default function App() {
         >
           <Route index element={<AdminHomePage />} />
           <Route path="members" element={<AdminMembersPage />} />
-          <Route path="members/:memberId" element={<AdminMembersPage />} />
+          <Route path="members/:userId" element={<AdminMembersPage />} />
           <Route path="reservations" element={<AdminReservationsPage />} />
           <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
           <Route path="programs" element={<AdminFeaturePlaceholderPage />} />
@@ -142,7 +145,8 @@ export default function App() {
           <Route path="facilities/:facilityId/edit" element={<FacilityFormPage />} />
           <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
           <Route path="quietness" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="inquiries" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="inquiries" element={<AdminInquiriesPage />} />
+          <Route path="inquiries/:inquiryId" element={<AdminInquiriesPage />} />
           <Route path="*" element={<Navigate replace to="/admin" />} />
         </Route>
       </Routes>
