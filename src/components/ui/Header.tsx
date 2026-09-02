@@ -8,7 +8,6 @@ import { Logo } from './Logo'
 import { NavItem } from './NavItem'
 
 const links = [
-  { label: 'HOME', path: '/' },
   { label: 'PROGRAM', path: '/programs' },
   { label: 'RESERVATION', path: '/reservations' },
   { label: 'ABOUT', path: '/about' },
@@ -18,22 +17,21 @@ export function Header() {
   // 실제 로그인 세션이 우선이고, DEV 도구의 인증 상태 전환도 함께 인정한다.
   const session = useSession()
   const location = useLocation()
-  const [devSignedIn, setDevSignedIn] = useState(isDevMode && getDevAuthState() === 'member')
+  const [devAuthState, setDevAuthState] = useState(() => (isDevMode ? getDevAuthState() : 'guest'))
   useEffect(() => {
-    const update = () => setDevSignedIn(getDevAuthState() === 'member')
+    const update = () => setDevAuthState(getDevAuthState())
     addEventListener('msds-dev-auth', update)
     return () => removeEventListener('msds-dev-auth', update)
   }, [])
-  const signedIn = session !== null || devSignedIn
+  const signedIn = session !== null || devAuthState !== 'guest'
   const action = signedIn
-    ? { to: '/mypage', label: 'MY PAGE' }
+    ? { to: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? '/admin' : '/mypage', label: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? 'ADMIN' : 'MY PAGE' }
     : { to: '/login', label: 'LOGIN' }
   return (
     <header className="relative z-40 h-[92px] border-b border-border-subtle bg-surface">
-      <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[150px_1fr_auto] items-center px-5 md:px-16">
+      <div className="relative mx-auto flex h-full max-w-[1440px] items-center justify-between px-5 md:px-16">
         <Logo />
-        <nav className="hidden justify-self-center md:flex md:items-center md:gap-2" aria-label="주요 메뉴">
-          <NavItem label={links[0].label} to={links[0].path} />
+        <nav className="hidden md:absolute md:left-1/2 md:flex md:-translate-x-1/2 md:items-center md:gap-2" aria-label="주요 메뉴">
           <div className="group relative">
             <NavLink
               className={`flex items-center gap-1 border-b px-4 py-3 text-xs tracking-[0.14em] transition-colors ${location.pathname.startsWith('/rooms') || location.pathname.startsWith('/facility') ? 'border-gold-500 text-navy-900' : 'border-transparent text-secondary hover:border-gold-300'}`}
@@ -47,9 +45,9 @@ export function Header() {
               <NavLink className="block px-6 py-3 text-[11px] tracking-[0.14em] text-secondary transition-colors hover:bg-subtle hover:text-navy-900" to="/facility" role="menuitem">FACILITY</NavLink>
             </div>
           </div>
-          {links.slice(1).map((link) => <NavItem key={link.path} label={link.label} to={link.path} />)}
+          {links.map((link) => <NavItem key={link.path} label={link.label} to={link.path} />)}
         </nav>
-        <div className="flex items-center gap-3 justify-self-end">
+        <div className="flex items-center gap-3">
           {session?.user && (
             <span className="hidden text-xs text-muted md:inline">{session.user.name}님</span>
           )}

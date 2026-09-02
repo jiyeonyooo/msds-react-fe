@@ -1,5 +1,7 @@
 ﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
+import { GlobalScrollbar } from './components/GlobalScrollbar'
+import { Navigate } from 'react-router-dom'
 import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
 import ProgramListPage from './features/program/ProgramListPage'
@@ -13,6 +15,7 @@ import { LoginPage } from './features/auth/LoginPage'
 import { SignupPage } from './features/auth/SignupPage'
 import { RequireAuth } from './features/auth/RequireAuth'
 import { MyPage } from './features/account/MyPage'
+import { RequireMemberMyPage } from './features/account/RequireMemberMyPage'
 import { ProfileEditPage } from './features/account/ProfileEditPage'
 import { AccountDeletePage } from './features/account/AccountDeletePage'
 import { InquiryListPage } from './features/inquiry/InquiryListPage'
@@ -26,11 +29,16 @@ import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
 import { isDevMode } from './dev/scenarios'
+import { AdminLayout } from './features/admin/AdminLayout'
+import { AdminFeaturePlaceholderPage, AdminForbiddenPage, AdminHomePage } from './features/admin/AdminPages'
+import { RequireAdmin } from './features/admin/RequireAdmin'
+import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
 import './index.css'
 export default function App() {
   return (
     <BrowserRouter>
       {isDevMode && <DevShell />}
+      <GlobalScrollbar />
       <Routes>
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
@@ -50,28 +58,29 @@ export default function App() {
           <Route path="wellness/history" element={<WellnessHistoryPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignupPage />} />
+          <Route path="admin/forbidden" element={<AdminForbiddenPage />} />
           <Route
             path="mypage"
             element={
-              <RequireAuth>
+              <RequireMemberMyPage>
                 <MyPage />
-              </RequireAuth>
+              </RequireMemberMyPage>
             }
           />
           <Route
             path="mypage/edit"
             element={
-              <RequireAuth>
+              <RequireMemberMyPage>
                 <ProfileEditPage />
-              </RequireAuth>
+              </RequireMemberMyPage>
             }
           />
           <Route
             path="mypage/delete"
             element={
-              <RequireAuth>
+              <RequireMemberMyPage>
                 <AccountDeletePage />
-              </RequireAuth>
+              </RequireMemberMyPage>
             }
           />
           <Route
@@ -101,6 +110,24 @@ export default function App() {
           {isDevMode && <Route path="__dev/login" element={<DevLoginPage />} />}
           {isDevMode && <Route path="__dev/components" element={<ComponentGallery />} />}
           <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        <Route
+          path="admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<AdminHomePage />} />
+          <Route path="reservations" element={<AdminReservationsPage />} />
+          <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
+          <Route path="programs" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="rooms" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="quietness" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="inquiries" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="*" element={<Navigate replace to="/admin" />} />
         </Route>
       </Routes>
     </BrowserRouter>
