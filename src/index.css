@@ -69,6 +69,12 @@
   --shadow-card: 0 8px 24px -6px rgb(14 34 57 / 8%);
 }
 
+@layer components {
+  .admin-field {
+    @apply mt-2 h-11 w-full rounded-sm border border-ivory-200 bg-white px-3 text-xs text-navy-900 placeholder:text-ink-500/60 disabled:bg-ivory-100 disabled:text-ink-500;
+  }
+}
+
 @layer base {
   :root {
     font-synthesis: none;

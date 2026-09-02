@@ -34,6 +34,7 @@ import { AdminProgramPage } from './features/program/admin/AdminProgramPage'
 import { AdminProgramApplicantsPage } from './features/program/admin/AdminProgramApplicantsPage'
 import { AdminInquiryListPage } from './features/inquiry/admin/AdminInquiryListPage'
 import { AdminInquiryDetailPage } from './features/inquiry/admin/AdminInquiryDetailPage'
+import { AdminQuietnessPage } from './features/quietness/admin/AdminQuietnessPage'
 import './index.css'
 export default function App() {
   return (
@@ -118,6 +119,7 @@ export default function App() {
           <Route path="programs/:programId/applications" element={<AdminProgramApplicantsPage />} />
           <Route path="inquiries" element={<AdminInquiryListPage />} />
           <Route path="inquiries/:inquiryId" element={<AdminInquiryDetailPage />} />
+          <Route path="quietness" element={<AdminQuietnessPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

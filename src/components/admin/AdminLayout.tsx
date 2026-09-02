@@ -9,13 +9,14 @@ const navigation = [
   { label: '문의 관리', to: '/admin/inquiries' },
   { label: '프로그램 관리', to: '/admin/programs' },
   { label: '웰니스 통계', disabled: true },
-  { label: '조용함 관리', disabled: true },
+  { label: '조용함 관리', to: '/admin/quietness' },
 ] as const
 
 function sectionTitle(pathname: string) {
   if (pathname.includes('/inquiries/')) return '문의 상세'
   if (pathname.startsWith('/admin/inquiries')) return '문의 관리'
   if (pathname.startsWith('/admin/programs')) return '프로그램 관리'
+  if (pathname.startsWith('/admin/quietness')) return '조용함 관리'
   return '대시보드'
 }
 
