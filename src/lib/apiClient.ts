@@ -1,7 +1,8 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { clearSession, getAccessToken } from '../features/auth/session'
 
-const API_BASE_URL = (import.meta.env.API_BASE_URL ?? 'http://localhost:8080').replace(/\/$/, '')
+// 개발 환경은 빈 값으로 두어 Vite의 /api 프록시를 사용한다.
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
 
 const commonConfig = {
   baseURL: `${API_BASE_URL}/api`,
