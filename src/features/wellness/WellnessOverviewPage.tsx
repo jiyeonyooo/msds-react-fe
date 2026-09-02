@@ -89,7 +89,7 @@ export function WellnessOverviewPage() {
               CHECK TODAY’S MIND
             </Link>
           </div>
-          <div className="justify-self-center md:justify-self-end">
+          <div className="w-full justify-self-center overflow-visible md:flex md:justify-end">
             <ScoreDisc
               score={latest?.totalScore ?? null}
               label={latest ? levelLabel[latest.level] : '체크 전'}
