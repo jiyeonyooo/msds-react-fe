@@ -6,7 +6,7 @@ const links = [
   ['STAY', '/rooms'],
   ['PROGRAM', '/programs'],
   ['WELLNESS', '/wellness'],
-  ['ABOUT', '/facility'],
+  ['ABOUT', '/about'],
   ['RESERVATION', '/reservations'],
 ]
 export function Footer() {

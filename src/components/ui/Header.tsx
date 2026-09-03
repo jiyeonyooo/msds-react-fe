@@ -11,7 +11,7 @@ const links = [
   { label: 'HOME', path: '/' },
   { label: 'PROGRAM', path: '/programs' },
   { label: 'WELLNESS', path: '/wellness' },
-  { label: 'ABOUT', path: '/facility' },
+  { label: 'ABOUT', path: '/about' },
 ]
 
 export function Header() {
@@ -27,10 +27,8 @@ export function Header() {
   const signedIn = session !== null || devAuthState !== 'guest'
   const accountAction = signedIn
     ? {
-        to:
-          session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? '/admin' : '/mypage',
-        label:
-          session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? 'ADMIN' : 'MY PAGE',
+        to: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? '/admin' : '/mypage',
+        label: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? 'ADMIN' : 'MY PAGE',
       }
     : { to: '/login', label: 'LOGIN' }
   return (
