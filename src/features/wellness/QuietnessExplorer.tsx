@@ -13,10 +13,85 @@ import { quietnessLabel, toLocalDateTime } from './wellnessFormat'
  * 여기서는 hourly API 응답만으로 그리고, 값이 없는 시간대는 비어 있는 것으로 둔다.
  */
 const hoursOfDay = Array.from({ length: 24 }, (_, hour) => hour)
+const clockHours = Array.from({ length: 12 }, (_, hour) => hour)
+const sunRayAngles = Array.from({ length: 8 }, (_, index) => index * 45)
 const ringSize = 240
 const ringRadius = 96
 const ringCircumference = 2 * Math.PI * ringRadius
 const gaugeMaxDecibel = 80
+const dialCenter = ringSize / 2
+const dialTickOuterRadius = 82
+
+function pointOnDial(hour: number, radius: number) {
+  const angle = (hour / 12) * Math.PI * 2 - Math.PI / 2
+  return {
+    x: dialCenter + Math.cos(angle) * radius,
+    y: dialCenter + Math.sin(angle) * radius,
+  }
+}
+
+function pointOnSkyArc(progress: number, radius: number) {
+  const angle = Math.PI + progress * Math.PI
+  return {
+    x: dialCenter + Math.cos(angle) * radius,
+    y: dialCenter + Math.sin(angle) * radius,
+  }
+}
+
+function getTimeAtmosphere(hour: number) {
+  if (hour < 5) {
+    return {
+      label: '깊은 밤',
+      sky: '#07172a',
+      glow: '#8da3c4',
+      glowOpacity: 0.1,
+      orbit: '#7188a6',
+    }
+  }
+  if (hour < 7) {
+    return {
+      label: '새벽',
+      sky: '#443d4c',
+      glow: '#efb078',
+      glowOpacity: 0.28,
+      orbit: '#c39868',
+    }
+  }
+  if (hour < 11) {
+    return {
+      label: '아침',
+      sky: '#66685f',
+      glow: '#f6d58c',
+      glowOpacity: 0.4,
+      orbit: '#ddbd79',
+    }
+  }
+  if (hour < 16) {
+    return {
+      label: '한낮',
+      sky: '#8b8068',
+      glow: '#ffe4a0',
+      glowOpacity: 0.52,
+      orbit: '#efd18a',
+    }
+  }
+  if (hour < 20) {
+    return {
+      label: '저녁',
+      sky: '#5a3946',
+      glow: '#efa16f',
+      glowOpacity: 0.34,
+      orbit: '#d09267',
+    }
+  }
+  return {
+    label: '밤',
+    sky: '#0c1f38',
+    glow: '#9aaed0',
+    glowOpacity: 0.13,
+    orbit: '#758aa9',
+  }
+}
 
 type Props = {
   spaces: SpaceQuietness[]
@@ -101,6 +176,12 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
   const gaugeProgress = selected
     ? Math.min(1, Math.max(0, selected.averageDecibel / gaugeMaxDecibel))
     : 0
+  const daytime = selectedHour >= 6 && selectedHour < 18
+  const meridiem = selectedHour < 12 ? '오전' : '오후'
+  const clockHour = selectedHour % 12 || 12
+  const atmosphere = getTimeAtmosphere(selectedHour)
+  const celestialProgress = daytime ? (selectedHour - 6) / 12 : ((selectedHour - 18 + 24) % 24) / 12
+  const celestialPoint = pointOnSkyArc(celestialProgress, 56)
 
   if (loading) {
     return (
@@ -134,7 +215,7 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
           HOURLY AVERAGE · 시간대별 평균 소음
         </p>
         <p className="mt-3 text-xs leading-6 text-white/55">
-          선택한 시간에 등록된 측정값을 1시간 단위로 평균한 수치입니다.
+          바늘은 시간, 안쪽의 빛은 낮과 밤, 금색 원호는 평균 소음을 나타냅니다.
         </p>
         <div className="relative mt-6 grid place-items-center">
           <svg
@@ -142,6 +223,38 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
             className="w-full max-w-[280px]"
             viewBox={`0 0 ${ringSize} ${ringSize}`}
           >
+            <circle
+              cx={dialCenter}
+              cy={dialCenter}
+              r="87"
+              style={{ fill: atmosphere.sky, transition: 'fill 700ms ease' }}
+            />
+            <circle
+              cx={dialCenter}
+              cy={dialCenter - 18}
+              fill={atmosphere.glow}
+              opacity={atmosphere.glowOpacity}
+              r="68"
+              style={{ transition: 'fill 700ms ease, opacity 700ms ease' }}
+            />
+            {!daytime && (
+              <g fill="#d9e2ef" opacity="0.32">
+                <circle cx="79" cy="92" r="1" />
+                <circle cx="101" cy="70" r="0.7" />
+                <circle cx="147" cy="76" r="0.9" />
+                <circle cx="168" cy="105" r="0.65" />
+              </g>
+            )}
+            <path
+              d={`M ${dialCenter - 56} ${dialCenter} A 56 56 0 0 1 ${dialCenter + 56} ${dialCenter}`}
+              fill="none"
+              opacity="0.34"
+              stroke={atmosphere.orbit}
+              strokeDasharray="2 4"
+              strokeLinecap="round"
+              strokeWidth="0.9"
+              style={{ transition: 'stroke 700ms ease' }}
+            />
             <circle
               cx={ringSize / 2}
               cy={ringSize / 2}
@@ -163,16 +276,104 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
               strokeWidth="14"
               transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
             />
+            {clockHours.map((hour) => {
+              const majorTick = hour % 3 === 0
+              const inner = pointOnDial(hour, majorTick ? 72 : 76)
+              const outer = pointOnDial(hour, dialTickOuterRadius)
+
+              return (
+                <g key={hour}>
+                  <line
+                    stroke="rgba(255,255,255,0.34)"
+                    strokeLinecap="round"
+                    strokeWidth={majorTick ? 1.8 : 1}
+                    x1={inner.x}
+                    x2={outer.x}
+                    y1={inner.y}
+                    y2={outer.y}
+                  />
+                </g>
+              )
+            })}
+            {[
+              { hour: 0, label: '12' },
+              { hour: 3, label: '3' },
+              { hour: 6, label: '6' },
+              { hour: 9, label: '9' },
+            ].map(({ hour, label }) => {
+              const point = pointOnDial(hour, 63)
+              return (
+                <text
+                  fill="rgba(255,255,255,0.42)"
+                  fontFamily="sans-serif"
+                  fontSize="7"
+                  key={hour}
+                  textAnchor="middle"
+                  x={point.x}
+                  y={point.y + 2.4}
+                >
+                  {label}
+                </text>
+              )
+            })}
+            <g
+              className="transition-transform duration-700 ease-calm motion-reduce:transition-none"
+              style={{
+                transform: `translate(${celestialPoint.x}px, ${celestialPoint.y}px)`,
+              }}
+            >
+              <circle fill={atmosphere.glow} opacity="0.16" r="13" />
+              {daytime ? (
+                <g fill="none" stroke="#e2c477" strokeLinecap="round">
+                  <circle fill="#d7b86d" r="4.2" stroke="none" />
+                  {sunRayAngles.map((angle) => (
+                    <line
+                      key={angle}
+                      strokeWidth="1"
+                      transform={`rotate(${angle})`}
+                      x1="0"
+                      x2="0"
+                      y1="-6"
+                      y2="-8"
+                    />
+                  ))}
+                </g>
+              ) : (
+                <path
+                  d="M 3.8 -5.8 A 6.4 6.4 0 1 0 3.8 5.8 A 5 5 0 0 1 3.8 -5.8 Z"
+                  fill="#d8c48f"
+                />
+              )}
+            </g>
+            <g
+              className="transition-transform duration-500 ease-calm motion-reduce:transition-none"
+              style={{
+                transform: `rotate(${selectedHour * 30}deg)`,
+                transformOrigin: `${dialCenter}px ${dialCenter}px`,
+              }}
+            >
+              <line
+                stroke="rgba(255,255,255,0.82)"
+                strokeLinecap="round"
+                strokeWidth="2"
+                x1={dialCenter}
+                x2={dialCenter}
+                y1={dialCenter + 7}
+                y2={dialCenter - 61}
+              />
+              <circle cx={dialCenter} cy={dialCenter - 61} fill="#f4ead6" r="2.8" />
+            </g>
+            <circle cx={dialCenter} cy={dialCenter} fill="#c6a86b" r="4.5" />
           </svg>
           <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-            <span className="relative text-[10px] tracking-[0.16em] text-white/50">
-              {pad(selectedHour)} 평균
+            <span className="relative justify-self-center rounded-full bg-navy-900/90 px-2.5 py-1 text-[10px] tracking-[0.08em] text-gold-300">
+              {atmosphere.label} · {meridiem} {clockHour}:00
             </span>
-            <strong className="relative mt-1 font-display text-4xl font-normal">
+            <strong className="relative mt-1 bg-navy-900/90 px-2 font-display text-4xl font-normal">
               {selected ? selected.averageDecibel.toFixed(1) : '—'}
               <small className="ml-1 font-sans text-xs text-white/50">dB</small>
             </strong>
-            <span className="relative mt-1 text-xs text-gold-300">
+            <span className="relative mt-1 justify-self-center bg-navy-900/90 px-2 text-xs text-gold-300">
               {selected ? quietnessLabel[selected.level] : '측정값 없음'}
             </span>
           </div>
@@ -244,8 +445,8 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
         <div className="mt-7 space-y-6">
           {quietestSpace && (
             <p className="rounded-md bg-subtle px-5 py-4 text-sm leading-6 text-ink-700">
-              각 공간의 최신 측정값 중 <b className="text-navy-900">{quietestSpace.spaceName}</b>
-              이 가장 낮습니다 · {quietestSpace.decibel.toFixed(1)} dB ·{' '}
+              각 공간의 최신 측정값 중 <b className="text-navy-900">{quietestSpace.spaceName}</b>이
+              가장 낮습니다 · {quietestSpace.decibel.toFixed(1)} dB ·{' '}
               {quietnessLabel[quietestSpace.level]}
             </p>
           )}
