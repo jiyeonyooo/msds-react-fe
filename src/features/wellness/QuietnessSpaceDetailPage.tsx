@@ -231,32 +231,48 @@ export function QuietnessSpaceDetailPage() {
                 <article className="h-[310px] border border-ivory-200 bg-white px-7 py-6">
                   <h3 className="text-lg font-medium">시간대별 평균 데시벨</h3>
                   <p className="mt-2 text-xs text-ink-700">막대가 낮을수록 조용한 시간입니다.</p>
-                  <div className="mt-5 flex h-[200px] items-end justify-around gap-3 overflow-hidden px-2 pb-6">
-                    {hourlyByTimeOfDay.length === 0 && (
-                      <p className="m-auto text-xs text-ink-700">
-                        최근 7일에 등록된 측정값이 없습니다.
-                      </p>
-                    )}
-                    {hourlyByTimeOfDay.map((item) => (
-                      <div
-                        className="flex h-full flex-1 flex-col items-center justify-end gap-3"
-                        key={item.hour}
-                      >
-                        <span className="text-[9px] font-medium text-ink-700">
-                          {item.averageDecibel.toFixed(1)}
-                        </span>
-                        <span
-                          className={
-                            item === quietestTimeOfDay ? 'w-12 bg-navy-900' : 'w-12 bg-gold-300'
-                          }
-                          style={{
-                            height: `${36 + ((item.averageDecibel - hourlyMinimum) / hourlyRange) * 108}px`,
-                          }}
-                          title={`${item.averageDecibel.toFixed(1)} dB`}
-                        />
-                        <span className="text-[9px] text-ink-700">{hourOfDayLabel(item.hour)}</span>
-                      </div>
-                    ))}
+                  <div className="mt-5 overflow-x-auto pb-2">
+                    <div className="grid h-[190px] min-w-[720px] grid-cols-[repeat(24,minmax(0,1fr))] items-end gap-1 px-1 pb-5">
+                      {hourlyByTimeOfDay.length === 0 && (
+                        <p className="col-span-24 m-auto text-xs text-ink-700">
+                          최근 7일에 등록된 측정값이 없습니다.
+                        </p>
+                      )}
+                      {hourlyByTimeOfDay.map((item) => {
+                        const showAxisLabel = item.hour % 3 === 0 || item === quietestTimeOfDay
+                        return (
+                          <div
+                            aria-label={`${hourOfDayLabel(item.hour)} 평균 ${item.averageDecibel.toFixed(1)} dB`}
+                            className="flex h-full min-w-0 flex-col items-center justify-end gap-2"
+                            key={item.hour}
+                          >
+                            <span
+                              aria-hidden={!showAxisLabel}
+                              className={`text-[8px] font-medium text-ink-700 ${showAxisLabel ? '' : 'opacity-0'}`}
+                            >
+                              {item.averageDecibel.toFixed(1)}
+                            </span>
+                            <span
+                              className={
+                                item === quietestTimeOfDay ? 'w-12 bg-navy-900' : 'w-12 bg-gold-300'
+                              }
+                              style={{
+                                maxWidth: '20px',
+                                width: '100%',
+                                height: `${36 + ((item.averageDecibel - hourlyMinimum) / hourlyRange) * 108}px`,
+                              }}
+                              title={`${item.averageDecibel.toFixed(1)} dB`}
+                            />
+                            <span
+                              aria-hidden={!showAxisLabel}
+                              className={`whitespace-nowrap text-[8px] text-ink-700 ${showAxisLabel ? '' : 'opacity-0'}`}
+                            >
+                              {hourOfDayLabel(item.hour)}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </article>
                 <article className="h-[310px] border border-ivory-200 bg-white px-7 py-6">
