@@ -24,6 +24,10 @@ function hourLabel(value: string) {
   )
 }
 
+function hourOfDayLabel(hour: number) {
+  return `${String(hour).padStart(2, '0')}시`
+}
+
 const spaceTypeLabels: Record<SpaceQuietness['spaceType'], string> = {
   ROOM: '객실',
   LOUNGE: '라운지',
@@ -78,11 +82,31 @@ export function QuietnessSpaceDetailPage() {
   const historyAverage = average(historyValues)
   const historyMinimum = historyValues.length ? Math.min(...historyValues) : 0
   const historyMaximum = historyValues.length ? Math.max(...historyValues) : 0
-  const quietestHour = useMemo(
-    () => [...hourly].sort((a, b) => a.averageDecibel - b.averageDecibel)[0],
-    [hourly],
+  const hourlyByTimeOfDay = useMemo(() => {
+    const buckets = new Map<number, { weightedTotal: number; sampleCount: number }>()
+
+    hourly.forEach((item) => {
+      const hour = new Date(item.hourStart).getHours()
+      const currentBucket = buckets.get(hour) ?? { weightedTotal: 0, sampleCount: 0 }
+      currentBucket.weightedTotal += item.averageDecibel * item.sampleCount
+      currentBucket.sampleCount += item.sampleCount
+      buckets.set(hour, currentBucket)
+    })
+
+    return [...buckets.entries()]
+      .sort(([firstHour], [secondHour]) => firstHour - secondHour)
+      .map(([hour, bucket]) => ({
+        hour,
+        averageDecibel: bucket.weightedTotal / bucket.sampleCount,
+        sampleCount: bucket.sampleCount,
+      }))
+  }, [hourly])
+  const quietestTimeOfDay = useMemo(
+    () => [...hourlyByTimeOfDay].sort((a, b) => a.averageDecibel - b.averageDecibel)[0],
+    [hourlyByTimeOfDay],
   )
-  const hourlyValues = hourly.map((item) => item.averageDecibel)
+  const totalHourlySamples = hourlyByTimeOfDay.reduce((total, item) => total + item.sampleCount, 0)
+  const hourlyValues = hourlyByTimeOfDay.map((item) => item.averageDecibel)
   const hourlyMinimum = hourlyValues.length ? Math.min(...hourlyValues) : 0
   const hourlyMaximum = hourlyValues.length ? Math.max(...hourlyValues) : 0
   const hourlyRange = Math.max(1, hourlyMaximum - hourlyMinimum)
@@ -108,8 +132,8 @@ export function QuietnessSpaceDetailPage() {
           {current?.spaceName ?? '선택한 공간'}의 소음 기록
         </h2>
         <p className="mt-3 max-w-[760px] text-[13px] leading-6 text-ink-700">
-          가장 최근 측정값으로 현재 상태를 확인하고, 최근 24시간 변화와 최근 7일의 시간대별
-          평균을 비교해 머물기 좋은 시간을 찾아보세요.
+          가장 최근 측정값으로 현재 상태를 확인하고, 최근 24시간 변화와 최근 7일의 시간대별 평균을
+          비교해 머물기 좋은 시간을 찾아보세요.
         </p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <select
@@ -145,7 +169,7 @@ export function QuietnessSpaceDetailPage() {
                 eyebrow="LATEST MEASUREMENT · 가장 최근 측정"
                 title={`${current?.spaceName ?? '공간'}의 최근 소음`}
               />
-              <div className="mt-[18px] grid gap-5 lg:grid-cols-[390px_410px_400px]">
+              <div className="mt-[18px] grid gap-5 lg:grid-cols-[390px_minmax(0,1fr)]">
                 <article className="h-[252px] rounded-sm bg-navy-900 p-8 text-white">
                   <p className="text-[10px] font-medium tracking-[1.5px] text-gold-300">
                     {current ? spaceTypeLabels[current.spaceType] : '측정 중'} · 최근 측정
@@ -169,23 +193,16 @@ export function QuietnessSpaceDetailPage() {
                   />
                   <Metric
                     label="최저 / 최고"
-                    value={history.length ? `${historyMinimum.toFixed(1)} / ${historyMaximum.toFixed(1)} dB` : '—'}
+                    value={
+                      history.length
+                        ? `${historyMinimum.toFixed(1)} / ${historyMaximum.toFixed(1)} dB`
+                        : '—'
+                    }
                   />
                   <Metric
                     label="등록된 측정값"
                     value={`${new Intl.NumberFormat('ko-KR').format(history.length)}개`}
                   />
-                </article>
-                <article className="h-[252px] border border-ivory-200 bg-white p-7">
-                  <h3 className="text-lg font-medium">이 화면을 보는 방법</h3>
-                  <p className="mt-5 text-[9px] font-medium tracking-[1.2px] text-gold-500">
-                    측정값이 만들어지는 과정
-                  </p>
-                  <ol className="mt-4 space-y-3 text-[11px] leading-5 text-ink-700">
-                    <li>1. 관리자가 공간의 측정 기기와 dB 값을 등록합니다.</li>
-                    <li>2. 최근 24시간 값은 시간 순서대로 변화 그래프에 표시됩니다.</li>
-                    <li>3. 최근 7일 값은 같은 시간끼리 평균해 조용한 시간을 찾습니다.</li>
-                  </ol>
                 </article>
               </div>
             </div>
@@ -206,56 +223,57 @@ export function QuietnessSpaceDetailPage() {
 
           <section className="bg-canvas py-10">
             <div className="mx-auto max-w-[1240px] px-6 md:px-12">
-              <SectionHeading eyebrow="최근 7일 · 시간대별 평균" title="하루 중 언제 가장 조용했나요?" />
+              <SectionHeading
+                eyebrow="최근 7일 · 실제 측정 기록 기준"
+                title="하루 중 언제 가장 조용했나요?"
+              />
               <div className="mt-5 grid gap-5 lg:grid-cols-[820px_400px]">
                 <article className="h-[310px] border border-ivory-200 bg-white px-7 py-6">
                   <h3 className="text-lg font-medium">시간대별 평균 데시벨</h3>
                   <p className="mt-2 text-xs text-ink-700">막대가 낮을수록 조용한 시간입니다.</p>
                   <div className="mt-5 flex h-[200px] items-end justify-around gap-3 overflow-hidden px-2 pb-6">
-                    {hourly.length === 0 && (
+                    {hourlyByTimeOfDay.length === 0 && (
                       <p className="m-auto text-xs text-ink-700">
                         최근 7일에 등록된 측정값이 없습니다.
                       </p>
                     )}
-                    {hourly.slice(-8).map((item) => (
+                    {hourlyByTimeOfDay.map((item) => (
                       <div
                         className="flex h-full flex-1 flex-col items-center justify-end gap-3"
-                        key={item.hourStart}
+                        key={item.hour}
                       >
                         <span className="text-[9px] font-medium text-ink-700">
                           {item.averageDecibel.toFixed(1)}
                         </span>
                         <span
                           className={
-                            item === quietestHour ? 'w-12 bg-navy-900' : 'w-12 bg-gold-300'
+                            item === quietestTimeOfDay ? 'w-12 bg-navy-900' : 'w-12 bg-gold-300'
                           }
                           style={{
                             height: `${36 + ((item.averageDecibel - hourlyMinimum) / hourlyRange) * 108}px`,
                           }}
                           title={`${item.averageDecibel.toFixed(1)} dB`}
                         />
-                        <span className="text-[9px] text-ink-700">{hourLabel(item.hourStart)}</span>
+                        <span className="text-[9px] text-ink-700">{hourOfDayLabel(item.hour)}</span>
                       </div>
                     ))}
                   </div>
                 </article>
                 <article className="h-[310px] border border-ivory-200 bg-white px-7 py-6">
-                  <p className="text-[9px] font-medium tracking-[1.3px] text-gold-500">
-                    가장 조용했던 시간
-                  </p>
+                  <p className="text-[9px] font-medium tracking-[1.3px] text-gold-500">집계 결과</p>
                   <p className="mt-3 font-display text-[31px] font-medium">
-                    {quietestHour ? hourLabel(quietestHour.hourStart) : '—'}
+                    {quietestTimeOfDay ? hourOfDayLabel(quietestTimeOfDay.hour) : '—'}
                   </p>
                   <p className="mt-4 text-xs leading-5 text-ink-700">
-                    {quietestHour
-                      ? `평균 ${quietestHour.averageDecibel.toFixed(1)} dB로 조회 기간 중 가장 고요합니다. 호흡 명상이나 독서에 권합니다.`
+                    {quietestTimeOfDay
+                      ? `최근 7일에 저장된 기록을 같은 시간대끼리 묶었을 때 평균 ${quietestTimeOfDay.averageDecibel.toFixed(1)} dB로 가장 낮았습니다.`
                       : '시간대별 측정값을 기다리고 있습니다.'}
                   </p>
-                  <div className="mt-4">
-                    <QuietnessBadge level={quietestHour?.level} />
-                  </div>
-                  <p className="mt-4 text-[10px] text-ink-700">
-                    표본 {quietestHour?.sampleCount ?? 0}개 · 최근 7일 집계
+                  <p className="mt-5 border-t border-ivory-200 pt-4 text-[10px] leading-5 text-ink-700">
+                    DB 측정 기록 {totalHourlySamples}개 · 확인된 시간대 {hourlyByTimeOfDay.length}개
+                    {totalHourlySamples > 0 && totalHourlySamples < 24
+                      ? ' · 아직 기록이 적어 참고용으로만 확인해 주세요.'
+                      : ''}
                   </p>
                 </article>
               </div>

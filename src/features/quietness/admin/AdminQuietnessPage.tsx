@@ -170,7 +170,7 @@ export function AdminQuietnessPage() {
             </select>
           </label>
         }
-        description="공간과 측정 기기의 연결 상태를 관리하고 실제 소음 측정값을 등록합니다."
+        description="공간과 측정 기기의 연결 상태를 관리하고 테스트·보정 데이터를 등록합니다."
         eyebrow="LIVE SPACE OPERATIONS"
         title="조용함 관리"
       />
@@ -394,47 +394,60 @@ function MeasurementCard({
 
   return (
     <Card>
-      <CardHeader eyebrow="MEASUREMENT REGISTRATION" title="소음 측정값 등록" />
-      <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
-        <Field label="측정 기기 *">
-          <select className="admin-field" disabled={!activeDevices.length} name="deviceId" required>
-            <option value="">ACTIVE 기기 선택</option>
-            {activeDevices.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.deviceName}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="데시벨 *">
-          <input
-            className="admin-field"
-            min="0"
-            name="decibel"
-            placeholder="예: 42.5"
-            required
-            step="0.1"
-            type="number"
-          />
-        </Field>
-        <details className="rounded-sm border border-slate-200 bg-slate-50 px-4 py-3">
-          <summary className="cursor-pointer text-xs font-medium text-slate-700">
-            과거 측정 시각 직접 지정
-          </summary>
-          <label className="mt-3 block text-xs text-slate-600">
-            측정 시각
-            <input className="admin-field mt-2" name="measuredAt" type="datetime-local" />
-          </label>
-        </details>
-        <div className="flex items-end">
-          <Button className="w-full" disabled={submitting || !activeDevices.length} type="submit">
-            {submitting ? '등록 중...' : '측정 등록'}
-          </Button>
-        </div>
-      </form>
+      <CardHeader eyebrow="TEST / MANUAL ENTRY" title="측정 데이터 테스트·보정" />
+      <p className="mt-4 text-sm leading-6 text-slate-600">
+        현재 프로젝트에는 센서 자동 수집 연동이 없습니다. 기능을 확인하거나 누락된 기록을 보정하기
+        위해 실제 DB에 값을 저장하는 보조 입력입니다.
+      </p>
+      <details className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <summary className="cursor-pointer text-sm font-medium text-[#172b44]">
+          측정값 직접 등록하기
+        </summary>
+        <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
+          <Field label="측정 기기 *">
+            <select
+              className="admin-field"
+              disabled={!activeDevices.length}
+              name="deviceId"
+              required
+            >
+              <option value="">ACTIVE 기기 선택</option>
+              {activeDevices.map((device) => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.deviceName}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="데시벨 *">
+            <input
+              className="admin-field"
+              min="0"
+              name="decibel"
+              placeholder="예: 42.5"
+              required
+              step="0.1"
+              type="number"
+            />
+          </Field>
+          <details className="rounded-sm border border-slate-200 bg-slate-50 px-4 py-3">
+            <summary className="cursor-pointer text-xs font-medium text-slate-700">
+              과거 측정 시각 직접 지정
+            </summary>
+            <label className="mt-3 block text-xs text-slate-600">
+              측정 시각
+              <input className="admin-field mt-2" name="measuredAt" type="datetime-local" />
+            </label>
+          </details>
+          <div className="flex items-end">
+            <Button className="w-full" disabled={submitting || !activeDevices.length} type="submit">
+              {submitting ? '등록 중...' : '측정 등록'}
+            </Button>
+          </div>
+        </form>
+      </details>
       <PathNote>
-        기본적으로 등록 버튼을 누른 현재 시각이 자동 저장됩니다. 과거 기록을 보정할 때만 시각을
-        직접 지정하세요.
+        직접 등록하면 실제 DB에 저장되어 사용자 조용함 화면의 최신값과 통계에 반영됩니다.
       </PathNote>
     </Card>
   )
