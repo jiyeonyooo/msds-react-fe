@@ -1,6 +1,6 @@
 // program.ts
 import { authApiClient, publicApiClient } from "../../lib/apiClient.ts";
-import type { ApiResponse, ProgramResponse, ProgramCreateRequest, ReservationRequest, ReservationResponse, ProgramApplicationResponse, ProgramUpdateRequest, ProgramReservationResponse } from "./types.ts";
+import type { ApiResponse, ProgramResponse, ProgramCreateRequest, ReservationRequest, ReservationResponse, ProgramApplicationResponse, ProgramReservationResponse } from "./types.ts";
 
 export const getPrograms = async (): Promise<ProgramResponse[]> => {
   const res = await publicApiClient.get<ApiResponse<ProgramResponse[]>>("/meditation/program");

@@ -10,6 +10,7 @@ export function WellnessHistoryPage() {
   const { isMember } = useWellnessMember()
   const [history, setHistory] = useState<WellnessHistory[]>([])
   const [trend, setTrend] = useState<WellnessTrendPoint[]>([])
+  const [historyScope, setHistoryScope] = useState<'journey' | 'all'>('journey')
   const [loading, setLoading] = useState(isMember)
   const [error, setError] = useState('')
 
@@ -33,14 +34,31 @@ export function WellnessHistoryPage() {
     }
   }, [isMember])
 
-  const latest = history[0]
-  const first = trend[0]
+  const currentJourneyHistory = useMemo(() => {
+    const beforeStayIndex = history.findIndex((item) => item.stayStage === 'BEFORE_STAY')
+    if (beforeStayIndex >= 0) return history.slice(0, beforeStayIndex + 1)
+    return history.slice(0, 3)
+  }, [history])
+  const visibleHistory = historyScope === 'journey' ? currentJourneyHistory : history
+  const visibleCheckIds = useMemo(
+    () => new Set(visibleHistory.map((item) => item.checkId)),
+    [visibleHistory],
+  )
+  const visibleTrend = useMemo(
+    () => trend.filter((point) => visibleCheckIds.has(point.checkId)),
+    [trend, visibleCheckIds],
+  )
+  const first = visibleTrend[0]
+  const latest = visibleTrend[visibleTrend.length - 1]
   const improvement = first && latest ? first.totalScore - latest.totalScore : 0
   const improvementRate =
     first && improvement > 0 ? Math.round((improvement / first.totalScore) * 100) : 0
   const best = useMemo(
-    () => (history.length ? [...history].sort((a, b) => a.totalScore - b.totalScore)[0] : null),
-    [history],
+    () =>
+      visibleHistory.length
+        ? [...visibleHistory].sort((a, b) => a.totalScore - b.totalScore)[0]
+        : null,
+    [visibleHistory],
   )
 
   if (!isMember) {
@@ -111,13 +129,25 @@ export function WellnessHistoryPage() {
       </section>
 
       <section className="mx-auto max-w-[1240px] px-6 py-20 md:px-12">
-        <div className="mb-7 flex gap-2">
-          <span className="rounded-full bg-navy-900 px-5 py-3 text-[10px] tracking-[0.1em] text-white">
+        <div className="mb-7 flex gap-2" role="tablist" aria-label="웰니스 기록 범위">
+          <button
+            aria-selected={historyScope === 'journey'}
+            className={`rounded-full px-5 py-3 text-[10px] tracking-[0.1em] transition-colors ${historyScope === 'journey' ? 'bg-navy-900 text-white' : 'bg-subtle text-secondary hover:bg-ivory-200'}`}
+            onClick={() => setHistoryScope('journey')}
+            role="tab"
+            type="button"
+          >
             CURRENT JOURNEY
-          </span>
-          <span className="rounded-full bg-subtle px-5 py-3 text-[10px] tracking-[0.1em] text-secondary">
+          </button>
+          <button
+            aria-selected={historyScope === 'all'}
+            className={`rounded-full px-5 py-3 text-[10px] tracking-[0.1em] transition-colors ${historyScope === 'all' ? 'bg-navy-900 text-white' : 'bg-subtle text-secondary hover:bg-ivory-200'}`}
+            onClick={() => setHistoryScope('all')}
+            role="tab"
+            type="button"
+          >
             ALL HISTORY
-          </span>
+          </button>
         </div>
         {loading && (
           <div className="py-28 text-center text-sm text-muted">
@@ -154,7 +184,7 @@ export function WellnessHistoryPage() {
                   </span>
                 )}
               </div>
-              <TrendChart points={trend} />
+              <TrendChart points={visibleTrend} />
             </article>
             <article className="rounded-lg bg-navy-900 p-7 text-white">
               <SectionLabel>RECOVERY SUMMARY</SectionLabel>
@@ -200,18 +230,18 @@ export function WellnessHistoryPage() {
                 <h2 className="mt-4 font-display text-[42px]">Your moments, recorded gently</h2>
               </div>
               <span className="self-end text-xs text-muted">
-                전체 {history.length}회 · 최근 기록
+                {historyScope === 'journey' ? '현재 여정' : '전체'} {visibleHistory.length}회
               </span>
             </div>
             <div className="mt-9 grid gap-5 lg:grid-cols-[1.6fr_0.8fr]">
               <div className="rounded-lg border border-border-subtle bg-white px-6">
-                <div className="hidden grid-cols-[1.1fr_0.8fr_1fr_0.7fr] border-b border-border-subtle py-5 text-[10px] tracking-[0.12em] text-muted md:grid">
+                <div className="hidden grid-cols-[1.1fr_0.8fr_1fr_0.7fr] gap-3 border-b border-border-subtle py-5 text-[10px] tracking-[0.12em] text-muted md:grid">
                   <span>측정 시점</span>
                   <span>숙박 단계</span>
                   <span>점수 / 상태</span>
-                  <span />
+                  <span className="justify-self-end">상세</span>
                 </div>
-                {history.slice(0, 8).map((item) => (
+                {visibleHistory.map((item) => (
                   <div
                     className="grid gap-3 border-b border-border-subtle py-6 last:border-0 md:grid-cols-[1.1fr_0.8fr_1fr_0.7fr] md:items-center"
                     key={item.checkId}
@@ -225,7 +255,7 @@ export function WellnessHistoryPage() {
                       <b className="font-sans text-sm">{levelLabel[item.level]}</b>
                     </span>
                     <Link
-                      className="text-xs font-medium text-gold-500"
+                      className="text-xs font-medium text-gold-500 md:justify-self-end"
                       to={`/wellness/result/${item.checkId}`}
                     >
                       VIEW DETAIL

@@ -3,6 +3,20 @@ import type { RoomDetail, RoomStatus, RoomType } from '../rooms/types'
 
 export type ApiEnvelope<T> = { code: string; message: string; data: T }
 
+export type RoomImageType = 'MAIN' | 'BEDROOM' | 'BATHROOM' | 'VIEW' | 'ETC'
+
+export type UploadedImage = {
+  originalName: string
+  storedName: string
+  url: string
+}
+
+export type RoomImageCreateRequest = {
+  imageUrl: string
+  imageType: RoomImageType
+  sortOrder: number
+}
+
 export type RoomFormValue = {
   name: string
   description: string

@@ -4,6 +4,7 @@ import { Button } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
 import { setReturnPath } from '../auth/session'
 import { adminMemberApi } from './memberApi'
+import { AdminPageHeading } from './shared'
 import type {
   AdminMemberActivity,
   AdminMemberDetail,
@@ -109,7 +110,7 @@ function AdminMemberListPage() {
   const members = page?.user_list ?? []
 
   return <section>
-    <PageHeading description="가입한 회원을 조회하고 정보와 권한을 관리합니다." title="회원 관리" />
+    <AdminPageHeading description="가입한 회원을 조회하고 정보와 권한을 관리합니다." title="회원 관리" />
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard label="전체 회원" value={stats?.total_users} />
       <SummaryCard label="관리자" value={stats?.admin_users} />
@@ -214,7 +215,7 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
 
   if (loading) return <p className="py-16 text-center text-sm text-slate-600">회원 정보를 불러오는 중입니다.</p>
   if (!member) return <section>
-    <PageHeading description="회원 정보와 활동 내역을 확인합니다." title="회원 상세" />
+    <AdminPageHeading description="회원 정보와 활동 내역을 확인합니다." title="회원 상세" />
     <MessageBox message={message || '회원을 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/members">회원 목록으로 돌아가기</Link></MessageBox>
   </section>
 
@@ -223,7 +224,7 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/members">← 회원 목록</Link>
       <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">GET /api/admin/users/{member.user_id}</code>
     </div>
-    <PageHeading description="회원 기본 정보와 예약·문의 활동 이력을 조회합니다." title="회원 상세" />
+    <AdminPageHeading description="회원 기본 정보와 예약·문의 활동 이력을 조회합니다." title="회원 상세" />
     {message && <p className="mb-4 rounded-sm border border-error-border bg-[#fffaf8] px-4 py-3 text-sm text-error" role="alert">{message}</p>}
     <div className="grid items-start gap-6 lg:grid-cols-[1.45fr_1fr]">
       <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
@@ -336,5 +337,4 @@ function SummaryCard({ label, value, emphasis = false }: { label: string; value?
   </div>
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) { return <header className="mt-5 mb-5 border-b border-slate-300 pb-6"><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">ADMINISTRATION</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#172b44]">{title}</h2><p className="mt-2 text-sm text-slate-600">{description}</p></header> }
 function MessageBox({ message, children }: { message: string; children?: ReactNode }) { return <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-600" role="alert"><p>{message}</p>{children}</div> }

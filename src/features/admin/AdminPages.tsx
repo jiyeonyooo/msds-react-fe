@@ -5,6 +5,13 @@ import { adminInquiryApi } from './inquiryApi'
 import { adminMemberApi } from './memberApi'
 import { adminReservationApi } from './reservationApi'
 import { adminNavigation, adminNavigationGroups, type AdminNavigationItem } from './adminNavigation'
+import {
+  AdminEmptyState,
+  AdminPageHeading,
+  adminEyebrowClass,
+  adminHeadingClass,
+  adminSectionTitleClass,
+} from './shared'
 
 type Summary = {
   members?: number
@@ -67,7 +74,7 @@ export function AdminHomePage() {
 
   return (
     <>
-      <PageHeading
+      <AdminPageHeading
         description="오늘 처리할 일과 관리 기능을 한눈에 봅니다."
         title="운영 대시보드"
       />
@@ -124,13 +131,10 @@ export function AdminHomePage() {
         return (
           <section aria-labelledby={`admin-group-${group.id}`} className="mt-10" key={group.id}>
             <div className="flex items-baseline gap-3">
-              <h3
-                className="font-display text-xl font-medium text-navy-900"
-                id={`admin-group-${group.id}`}
-              >
+              <h2 className={adminSectionTitleClass} id={`admin-group-${group.id}`}>
                 {group.id}
-              </h3>
-              <p className="text-xs text-ink-500">{group.caption}</p>
+              </h2>
+              <p className="text-xs text-slate-600">{group.caption}</p>
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {items.map((item) => (
@@ -163,17 +167,17 @@ function MetricTile({
 }) {
   return (
     <Link
-      className={`group rounded-lg border bg-white px-5 py-4 shadow-card transition hover:-translate-y-0.5 ${highlight ? 'border-gold-300' : 'border-border-subtle hover:border-gold-300'}`}
+      className={`group rounded-lg border bg-white px-5 py-4 shadow-sm transition hover:-translate-y-0.5 ${highlight ? 'border-[#d7c59e]' : 'border-slate-200 hover:border-[#d7c59e]'}`}
       to={to}
     >
-      <p className="text-[10px] font-medium tracking-[0.14em] text-ink-500">{label}</p>
+      <p className="text-[11px] font-medium tracking-[0.12em] text-slate-500">{label}</p>
       <p
-        className={`mt-1.5 font-display text-[32px] leading-none font-medium ${highlight ? 'text-gold-500' : 'text-navy-900'}`}
+        className={`mt-1 text-2xl font-semibold ${highlight ? 'text-[#a77f3b]' : 'text-[#172b44]'}`}
       >
         {loading ? '–' : <CountUp value={value} />}
-        <span className="ml-1 font-sans text-xs font-normal text-ink-500">{unit}</span>
+        <span className="ml-1 text-sm font-normal text-slate-500">{unit}</span>
       </p>
-      <p className="mt-2.5 text-[11px] leading-4 text-ink-500">{caption}</p>
+      <p className="mt-2 text-[11px] leading-4 text-slate-500">{caption}</p>
     </Link>
   )
 }
@@ -181,7 +185,7 @@ function MetricTile({
 function FeatureCard({ item }: { item: AdminNavigationItem }) {
   return (
     <Link
-      className="group relative overflow-hidden rounded-lg border border-border-subtle bg-white p-6 shadow-card transition hover:-translate-y-0.5 hover:border-gold-300"
+      className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-[#d7c59e]"
       to={item.to}
     >
       {/* 왼쪽 금색 띠는 평소 숨어 있다가 hover 때만 드러나 어느 카드를 겨누는지 알려 준다. */}
@@ -189,11 +193,9 @@ function FeatureCard({ item }: { item: AdminNavigationItem }) {
         aria-hidden="true"
         className="absolute inset-y-0 left-0 w-0.5 bg-gold-500 opacity-0 transition group-hover:opacity-100"
       />
-      <p className="font-display text-[22px] leading-tight font-medium text-navy-900">
-        {item.label}
-      </p>
-      <p className="mt-2 text-xs leading-5 text-ink-500">{item.description}</p>
-      <span className="mt-5 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.08em] text-navy-900">
+      <p className="text-base font-semibold text-[#172b44]">{item.label}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-600">{item.description}</p>
+      <span className="mt-5 flex items-center gap-1.5 text-[11px] font-medium tracking-[0.08em] text-[#172b44]">
         바로가기
         <span aria-hidden="true" className="transition group-hover:translate-x-0.5">
           →
@@ -214,8 +216,8 @@ export function AdminFeaturePlaceholderPage() {
 export function AdminForbiddenPage() {
   return (
     <main className="mx-auto max-w-7xl px-6 py-24 text-center">
-      <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">ACCESS DENIED</p>
-      <h1 className="mt-3 text-3xl font-semibold text-navy-900">관리자 권한이 필요합니다.</h1>
+      <p className={adminEyebrowClass}>ACCESS DENIED</p>
+      <h1 className={`mt-3 ${adminHeadingClass}`}>관리자 권한이 필요합니다.</h1>
       <Link
         className="mt-7 inline-block rounded-sm bg-navy-900 px-6 py-3 text-xs tracking-[0.08em] text-white"
         to="/"
@@ -226,34 +228,15 @@ export function AdminForbiddenPage() {
   )
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) {
-  return (
-    <header className="mb-7 border-b border-border-subtle pb-6">
-      <p className="text-[11px] font-medium tracking-[0.16em] text-gold-500">ADMINISTRATION</p>
-      <h2 className="mt-2 font-display text-[34px] leading-tight font-medium text-navy-900">
-        {title}
-      </h2>
-      <p className="mt-2 text-sm text-ink-500">{description}</p>
-    </header>
-  )
-}
-
 function FeaturePlaceholder({ item }: { item: AdminNavigationItem }) {
   return (
     <>
-      <PageHeading description={item.description} title={item.label} />
-      <section
-        aria-labelledby="admin-feature-preparing"
-        className="rounded-lg border border-dashed border-border-subtle bg-white px-6 py-16 text-center"
-      >
-        <h3 className="text-lg font-medium text-navy-900" id="admin-feature-preparing">
-          기능 준비 중
-        </h3>
-        <p className="mt-2 text-sm text-ink-500">
-          이 화면의 세부 조회·등록·수정 기능은 다음 단계에서 연결합니다.
-        </p>
-        <p className="mt-5 text-xs text-ink-500/70">연결 예정 API: {item.endpoint}</p>
-      </section>
+      <AdminPageHeading description={item.description} title={item.label} />
+      <AdminEmptyState>
+        <p className={adminSectionTitleClass}>기능 준비 중</p>
+        <p className="mt-2">이 화면의 세부 조회·등록·수정 기능은 다음 단계에서 연결합니다.</p>
+        <p className="mt-5 text-xs text-slate-500">연결 예정 API: {item.endpoint}</p>
+      </AdminEmptyState>
     </>
   )
 }

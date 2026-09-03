@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ApiError } from '../../program/client'
+import { ApiError } from '../../../lib/apiError'
 import { getAdminInquiries } from './api'
 import type { InquiryResponse, InquiryStatus } from './types'
 

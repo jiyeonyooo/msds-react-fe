@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 're
 import { Button } from '../../../components/ui/Button'
 import { ApiError } from '../../../lib/apiError'
 import { adminQuietnessApi } from './api'
+import {
+  AdminPageHeading,
+  AdminSummaryCard,
+  adminPanelTitleClass,
+  adminSectionTitleClass,
+} from '../../admin/shared'
 import type {
   NoiseDevice,
   NoiseDeviceStatus,
@@ -31,8 +37,8 @@ const statusLabels: Record<NoiseDeviceStatus, string> = {
 
 const statusStyles: Record<NoiseDeviceStatus, string> = {
   ACTIVE: 'border-[#afc9b1] bg-[#edf5ed] text-[#3f6f46]',
-  INACTIVE: 'border-[#d4d8dc] bg-[#f1f3f4] text-ink-500',
-  DISCONNECTED: 'border-gold-300 bg-ivory-100 text-[#806d48]',
+  INACTIVE: 'border-slate-300 bg-slate-100 text-slate-600',
+  DISCONNECTED: 'border-[#d7c59e] bg-[#fffaf0] text-[#a77f3b]',
 }
 
 const thresholdLabels: Record<Exclude<QuietnessLevel, 'VERY_LOUD'>, string> = {
@@ -148,194 +154,167 @@ export function AdminQuietnessPage() {
   }
 
   return (
-    <main className="min-h-[calc(100vh-80px)] bg-subtle px-5 py-10 lg:px-12">
-      <div className="mx-auto max-w-[1084px]">
-        <section className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div>
-            <p className="text-[10px] font-medium tracking-[0.18em] text-gold-500">
-              LIVE SPACE OPERATIONS
-            </p>
-            <h1 className="mt-3 font-display text-[42px] font-semibold leading-none text-navy-900">
-              조용함 관리
-            </h1>
-            <p className="mt-4 text-sm leading-6 text-ink-500">
-              공간과 측정 기기의 연결 상태를 관리하고 실제 소음 측정값을 등록합니다.
-            </p>
-          </div>
-          <div className="min-w-[270px]">
-            <label className="block text-[10px] font-medium tracking-[0.12em] text-ink-500">
-              GUESTHOUSE
-              <select
-                aria-label="게스트하우스 선택"
-                className="mt-2 h-11 w-full border border-ivory-200 bg-white px-3 text-xs text-navy-900"
-                value={guesthouseId}
-                onChange={() => undefined}
-              >
-                <option value={guesthouseId}>게스트하우스 #1</option>
-              </select>
-            </label>
-            <p className="mt-2 border-l-2 border-gold-500 pl-3 text-[9px] leading-4 tracking-[0.08em] text-ink-500">
-              ADMIN API CONNECTED / 공간 · 기기 · 상태 · 측정 등록
-            </p>
-          </div>
-        </section>
+    <section>
+      <AdminPageHeading
+        action={
+          <label className="text-sm font-medium text-slate-700">
+            게스트하우스
+            <select
+              aria-label="게스트하우스 선택"
+              className="mt-2 block h-11 min-w-[220px] rounded-sm border border-slate-300 bg-white px-3 text-sm"
+              value={guesthouseId}
+              onChange={() => undefined}
+            >
+              <option value={guesthouseId}>게스트하우스 #1</option>
+            </select>
+          </label>
+        }
+        description="공간과 측정 기기의 연결 상태를 관리하고 실제 소음 측정값을 등록합니다."
+        eyebrow="LIVE SPACE OPERATIONS"
+        title="조용함 관리"
+      />
 
-        {(message || error) && (
-          <div
-            className={`mt-5 border px-4 py-3 text-xs ${error ? 'border-error-border bg-[#f8eeeb] text-error' : 'border-[#afc9b1] bg-[#edf5ed] text-[#3f6f46]'}`}
-            role="status"
-          >
-            {error || message}
-          </div>
-        )}
+      {(message || error) && (
+        <div
+          className={`mb-4 rounded-lg border px-4 py-3 text-sm ${error ? 'border-[#ead8d2] bg-[#fffaf8] text-error' : 'border-[#e5d7b8] bg-[#fffaf0] text-slate-700'}`}
+          role="status"
+        >
+          {error || message}
+        </div>
+      )}
 
-        <section className="mt-5 grid border border-ivory-200 bg-white sm:grid-cols-3">
-          <SummaryItem label="등록 기기" value={loading ? '—' : devices.length} />
-          <SummaryItem label="ACTIVE 기기" value={loading ? '—' : activeDevices.length} />
-          <SummaryItem label="측정 공간" value={loading ? '—' : spaces.length} last />
-        </section>
-
-        <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,660px)_minmax(320px,404px)]">
-          <Card>
-            <CardHeader
-              eyebrow="DEVICE MANAGEMENT"
-              title="측정 기기"
-              action={<Button onClick={() => setDialog('device')}>기기 등록</Button>}
-            />
-            <div className="mt-6 overflow-x-auto">
-              <table className="w-full min-w-[600px] border-collapse text-left">
-                <thead>
-                  <tr className="border-y border-ivory-200 text-[10px] tracking-[0.08em] text-ink-500">
-                    <th className="px-3 py-3 font-medium">기기 / 공간</th>
-                    <th className="px-3 py-3 font-medium">일련번호 · 모델</th>
-                    <th className="px-3 py-3 font-medium">상태</th>
-                    <th className="px-3 py-3 font-medium">최근 연결</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {devices.map((device) => (
-                    <tr className="border-b border-ivory-200 text-xs" key={device.deviceId}>
-                      <td className="px-3 py-4">
-                        <p className="font-medium text-navy-900">{device.deviceName}</p>
-                        <p className="mt-1 text-[10px] text-ink-500">
-                          {spaceNames.get(device.spaceId) ?? `공간 #${device.spaceId}`}
-                        </p>
-                      </td>
-                      <td className="px-3 py-4 text-ink-700">
-                        <p>{device.serialNumber}</p>
-                        <p className="mt-1 text-[10px] text-ink-500">
-                          {device.modelName || '모델 미등록'}
-                        </p>
-                      </td>
-                      <td className="px-3 py-4">
-                        <select
-                          aria-label={`${device.deviceName} 상태`}
-                          className={`h-8 rounded-full border px-2 text-[9px] font-medium tracking-[0.06em] ${statusStyles[device.status]}`}
-                          onChange={(event) =>
-                            void updateStatus(
-                              device.deviceId,
-                              event.target.value as NoiseDeviceStatus,
-                            )
-                          }
-                          value={device.status}
-                        >
-                          {Object.keys(statusLabels).map((status) => (
-                            <option key={status} value={status}>
-                              {statusLabels[status as NoiseDeviceStatus]}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-4 text-[10px] text-ink-500">
-                        {formatDate(device.lastConnectedAt)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {!loading && devices.length === 0 && (
-                <EmptyState>등록된 측정 기기가 없습니다.</EmptyState>
-              )}
-            </div>
-            <PathNote>
-              PATCH /devices/{'{deviceId}'}/status · ACTIVE 기기만 측정값 등록 가능
-            </PathNote>
-          </Card>
-
-          <Card>
-            <CardHeader
-              eyebrow="SPACE MANAGEMENT"
-              title="측정 공간"
-              action={<Button onClick={() => setDialog('space')}>공간 등록</Button>}
-            />
-            <div className="mt-6 space-y-2">
-              {spaces.map((space) => (
-                <article
-                  className="flex items-center justify-between border border-ivory-200 bg-ivory-50 px-4 py-4"
-                  key={space.spaceId}
-                >
-                  <div>
-                    <p className="text-xs font-medium text-navy-900">{space.name}</p>
-                    <p className="mt-1 text-[10px] text-ink-500">
-                      {spaceTypeLabels[space.type]} · SPACE #{space.spaceId}
-                    </p>
-                  </div>
-                  <span
-                    aria-label={space.active ? '활성 공간' : '비활성 공간'}
-                    className={`size-2 rounded-full ${space.active ? 'bg-[#668e69]' : 'bg-[#a9a9a4]'}`}
-                  />
-                </article>
-              ))}
-              {!loading && spaces.length === 0 && <EmptyState>등록된 공간이 없습니다.</EmptyState>}
-            </div>
-            <PathNote>POST /spaces · name 최대 100자 · type 필수</PathNote>
-          </Card>
-        </section>
-
-        <section className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,660px)_minmax(320px,404px)]">
-          <MeasurementCard
-            activeDevices={activeDevices}
-            onError={fail}
-            onSuccess={(deviceName) => notify(`${deviceName} 측정값을 등록했습니다.`)}
-          />
-          <ThresholdCard
-            onChange={setThresholds}
-            onError={fail}
-            onSuccess={() => notify('조용함 기준값을 변경했습니다.')}
-            thresholds={thresholds}
-          />
-        </section>
+      <div className="grid gap-3 sm:grid-cols-3" aria-label="조용함 운영 요약">
+        <AdminSummaryCard label="등록 기기" unit="대" value={loading ? '—' : devices.length} />
+        <AdminSummaryCard
+          label="ACTIVE 기기"
+          unit="대"
+          value={loading ? '—' : activeDevices.length}
+        />
+        <AdminSummaryCard label="측정 공간" unit="곳" value={loading ? '—' : spaces.length} />
       </div>
 
+      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader
+            eyebrow="DEVICE MANAGEMENT"
+            title="측정 기기"
+            action={<Button onClick={() => setDialog('device')}>기기 등록</Button>}
+          />
+          <div className="mt-6 overflow-x-auto">
+            <table className="w-full min-w-[600px] border-collapse text-left">
+              <thead>
+                <tr className="border-b border-slate-200 text-[11px] tracking-[0.08em] text-slate-500">
+                  <th className="px-3 py-3 font-medium">기기 / 공간</th>
+                  <th className="px-3 py-3 font-medium">일련번호 · 모델</th>
+                  <th className="px-3 py-3 font-medium">상태</th>
+                  <th className="px-3 py-3 font-medium">최근 연결</th>
+                </tr>
+              </thead>
+              <tbody>
+                {devices.map((device) => (
+                  <tr className="border-b border-slate-200 text-sm" key={device.deviceId}>
+                    <td className="px-3 py-4">
+                      <p className="font-medium text-[#172b44]">{device.deviceName}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {spaceNames.get(device.spaceId) ?? `공간 #${device.spaceId}`}
+                      </p>
+                    </td>
+                    <td className="px-3 py-4 text-slate-700">
+                      <p>{device.serialNumber}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {device.modelName || '모델 미등록'}
+                      </p>
+                    </td>
+                    <td className="px-3 py-4">
+                      <select
+                        aria-label={`${device.deviceName} 상태`}
+                        className={`h-8 rounded-full border px-2 text-[9px] font-medium tracking-[0.06em] ${statusStyles[device.status]}`}
+                        onChange={(event) =>
+                          void updateStatus(
+                            device.deviceId,
+                            event.target.value as NoiseDeviceStatus,
+                          )
+                        }
+                        value={device.status}
+                      >
+                        {Object.keys(statusLabels).map((status) => (
+                          <option key={status} value={status}>
+                            {statusLabels[status as NoiseDeviceStatus]}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-4 text-xs text-slate-500">
+                      {formatDate(device.lastConnectedAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!loading && devices.length === 0 && (
+              <EmptyState>등록된 측정 기기가 없습니다.</EmptyState>
+            )}
+          </div>
+          <PathNote>PATCH /devices/{'{deviceId}'}/status · ACTIVE 기기만 측정값 등록 가능</PathNote>
+        </Card>
+
+        <Card>
+          <CardHeader
+            eyebrow="SPACE MANAGEMENT"
+            title="측정 공간"
+            action={<Button onClick={() => setDialog('space')}>공간 등록</Button>}
+          />
+          <div className="mt-6 space-y-2">
+            {spaces.map((space) => (
+              <article
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-4"
+                key={space.spaceId}
+              >
+                <div>
+                  <p className="text-sm font-medium text-[#172b44]">{space.name}</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {spaceTypeLabels[space.type]} · SPACE #{space.spaceId}
+                  </p>
+                </div>
+                <span
+                  aria-label={space.active ? '활성 공간' : '비활성 공간'}
+                  className={`size-2 rounded-full ${space.active ? 'bg-[#668e69]' : 'bg-[#a9a9a4]'}`}
+                />
+              </article>
+            ))}
+            {!loading && spaces.length === 0 && <EmptyState>등록된 공간이 없습니다.</EmptyState>}
+          </div>
+          <PathNote>POST /spaces · name 최대 100자 · type 필수</PathNote>
+        </Card>
+      </section>
+
+      <section className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <MeasurementCard
+          activeDevices={activeDevices}
+          onError={fail}
+          onSuccess={(deviceName) => notify(`${deviceName} 측정값을 등록했습니다.`)}
+        />
+        <ThresholdCard
+          onChange={setThresholds}
+          onError={fail}
+          onSuccess={() => notify('조용함 기준값을 변경했습니다.')}
+          thresholds={thresholds}
+        />
+      </section>
       {dialog === 'space' && <SpaceDialog onClose={() => setDialog(null)} onSubmit={createSpace} />}
       {dialog === 'device' && (
         <DeviceDialog onClose={() => setDialog(null)} onSubmit={createDevice} spaces={spaces} />
       )}
-    </main>
-  )
-}
-
-function SummaryItem({
-  label,
-  value,
-  last = false,
-}: {
-  label: string
-  value: number | string
-  last?: boolean
-}) {
-  return (
-    <div
-      className={`px-6 py-5 ${last ? '' : 'border-b border-ivory-200 sm:border-r sm:border-b-0'}`}
-    >
-      <p className="text-[10px] tracking-[0.08em] text-ink-500">{label}</p>
-      <p className="mt-2 font-display text-3xl font-semibold text-navy-900">{value}</p>
-    </div>
+    </section>
   )
 }
 
 function Card({ children }: { children: ReactNode }) {
-  return <article className="border border-ivory-200 bg-white p-6">{children}</article>
+  return (
+    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      {children}
+    </article>
+  )
 }
 
 function CardHeader({
@@ -348,12 +327,10 @@ function CardHeader({
   action?: ReactNode
 }) {
   return (
-    <header className="flex items-start justify-between gap-4">
+    <header className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
       <div>
-        <p className="text-[9px] font-medium tracking-[0.16em] text-gold-500">{eyebrow}</p>
-        <h2 className="mt-2 font-display text-[26px] font-semibold leading-none text-navy-900">
-          {title}
-        </h2>
+        <p className="text-[11px] font-medium tracking-[0.12em] text-slate-500">{eyebrow}</p>
+        <h2 className={`mt-1 ${adminPanelTitleClass}`}>{title}</h2>
       </div>
       {action}
     </header>
@@ -362,14 +339,14 @@ function CardHeader({
 
 function PathNote({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-5 border-t border-ivory-200 pt-4 text-[9px] leading-4 tracking-[0.04em] text-ink-500">
+    <p className="mt-5 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500">
       {children}
     </p>
   )
 }
 
 function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="px-3 py-10 text-center text-xs text-ink-500">{children}</p>
+  return <p className="px-3 py-10 text-center text-sm text-slate-500">{children}</p>
 }
 
 function MeasurementCard({
@@ -407,7 +384,6 @@ function MeasurementCard({
   return (
     <Card>
       <CardHeader eyebrow="MEASUREMENT REGISTRATION" title="소음 측정값 등록" />
-      <p className="mt-3 text-[10px] text-ink-500">POST /api/admin/quietness/measurements</p>
       <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
         <Field label="측정 기기 *">
           <select className="admin-field" disabled={!activeDevices.length} name="deviceId" required>
@@ -457,7 +433,9 @@ function ThresholdCard({
 }) {
   const [submitting, setSubmitting] = useState(false)
   const editableThresholds = thresholds.filter(
-    (threshold): threshold is QuietnessThreshold & {
+    (
+      threshold,
+    ): threshold is QuietnessThreshold & {
       level: Exclude<QuietnessLevel, 'VERY_LOUD'>
       maxDecibel: number
     } => threshold.level !== 'VERY_LOUD' && threshold.maxDecibel !== null,
@@ -485,23 +463,19 @@ function ThresholdCard({
   }
 
   return (
-    <article className="flex min-h-[290px] flex-col bg-navy-900 p-6 text-white">
-      <p className="text-[9px] font-medium tracking-[0.16em] text-gold-300">LIVE POLICY</p>
-      <h2 className="mt-2 font-display text-[26px] font-semibold">조용함 기준값 관리</h2>
-      <p className="mt-3 text-[10px] leading-5 text-white/65">
+    <Card>
+      <CardHeader eyebrow="LIVE POLICY" title="조용함 기준값 관리" />
+      <p className="mt-4 text-sm leading-6 text-slate-600">
         각 단계의 최대 데시벨을 입력하면 다음 단계의 시작값은 자동으로 이어집니다.
       </p>
       {editableThresholds.length === 4 ? (
         <form className="mt-4 grid grid-cols-2 gap-3" onSubmit={submit}>
           {editableThresholds.map((threshold) => (
-            <label
-              className="text-[9px] font-medium tracking-[0.05em] text-gold-300"
-              key={threshold.level}
-            >
+            <label className="text-sm font-medium text-slate-700" key={threshold.level}>
               {thresholdLabels[threshold.level]}
-              <span className="mt-1 flex items-center border border-white/20 bg-white/5 px-3">
+              <span className="mt-2 flex items-center rounded-sm border border-slate-300 bg-white px-3">
                 <input
-                  className="h-9 min-w-0 flex-1 bg-transparent text-xs text-white outline-none"
+                  className="h-10 min-w-0 flex-1 bg-transparent text-sm text-[#172b44] outline-none"
                   defaultValue={threshold.maxDecibel}
                   key={`${threshold.level}-${threshold.maxDecibel}`}
                   max="999.98"
@@ -511,7 +485,7 @@ function ThresholdCard({
                   step="0.01"
                   type="number"
                 />
-                <span className="text-[9px] text-white/45">dB</span>
+                <span className="text-xs text-slate-500">dB</span>
               </span>
             </label>
           ))}
@@ -520,17 +494,17 @@ function ThresholdCard({
           </Button>
         </form>
       ) : (
-        <p className="mt-auto border border-white/15 px-4 py-5 text-center text-xs text-white/60">
+        <p className="mt-4 rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500">
           기준값을 불러오는 중입니다.
         </p>
       )}
-    </article>
+    </Card>
   )
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <label className="block text-[10px] font-medium tracking-[0.04em] text-ink-700">
+    <label className="block text-sm font-medium text-slate-700">
       {label}
       {children}
     </label>
@@ -548,24 +522,24 @@ function DialogShell({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-center bg-navy-900/55 px-5"
+      className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 px-5"
       role="presentation"
     >
       <section
         aria-modal="true"
-        className="w-full max-w-[500px] bg-white p-7 shadow-floating"
+        className="w-full max-w-[500px] rounded-lg bg-white p-7 shadow-floating"
         role="dialog"
       >
         <header className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[9px] font-medium tracking-[0.16em] text-gold-500">
+            <p className="text-[11px] font-medium tracking-[0.12em] text-slate-500">
               NEW REGISTRATION
             </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold text-navy-900">{title}</h2>
+            <h2 className={`mt-1 ${adminSectionTitleClass}`}>{title}</h2>
           </div>
           <button
             aria-label="닫기"
-            className="p-2 text-xl text-ink-500"
+            className="p-2 text-xl text-slate-500"
             onClick={onClose}
             type="button"
           >

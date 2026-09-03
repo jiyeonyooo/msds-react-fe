@@ -29,9 +29,6 @@ export default function ProgramListPage() {
     loadAll();
   }, []);
 
-  // 이름 기준이 아니라 실제로는 프로그램 id 기준으로 중복 여부를 확인해야 하지만,
-  // ReservationResponse에 programId가 없으므로 programName으로 비교합니다.
-  // (백엔드 응답에 programId가 추가되면 더 정확해집니다)
   const reservedProgramNames = new Set(
     myReservations.filter((r) => r.status === "RESERVED").map((r) => r.programName),
   );
@@ -48,7 +45,7 @@ export default function ProgramListPage() {
       setError(`인원은 1명 이상 ${maxRemain}명 이하로 입력해주세요.`);
       return;
     }
-    if (reservingId !== null) return; // 연타 방지: 요청 진행 중이면 무시
+    if (reservingId !== null) return;
     setReservingId(programId);
     try {
       await reserveProgram({ programId, quantity });
@@ -91,22 +88,24 @@ export default function ProgramListPage() {
 
       <section className="bg-white px-6 py-14 md:px-[100px]">
         <div className="mx-auto max-w-[1240px]">
-          {notice && (
-            <p
-              className="mb-6 rounded-sm border border-border-accent bg-[#faf6ed] px-4 py-3 text-sm text-ink-700"
-              role="status"
-            >
-              {notice}
-            </p>
-          )}
-          {error && (
-            <p
-              className="mb-6 rounded-sm border border-error-border bg-[#f8eeeb] px-4 py-3 text-sm text-error"
-              role="alert"
-            >
-              {error}
-            </p>
-          )}
+          <div aria-live="polite" className="mb-6 min-h-[46px]">
+            {notice && (
+              <p
+                className="rounded-sm border border-border-accent bg-[#faf6ed] px-4 py-3 text-sm text-ink-700"
+                role="status"
+              >
+                {notice}
+              </p>
+            )}
+            {error && (
+              <p
+                className="rounded-sm border border-error-border bg-[#f8eeeb] px-4 py-3 text-sm text-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+          </div>
 
           {loading && <p className="py-12 text-sm text-ink-500">불러오는 중…</p>}
 

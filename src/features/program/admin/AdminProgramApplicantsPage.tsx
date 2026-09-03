@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../../../lib/apiError'
 import { getProgramApplications, getPrograms } from '../program'
+import { AdminPageHeading, AdminSummaryCard, adminSectionTitleClass } from '../../admin/shared'
 import type {
   ProgramApplicationResponse,
   ProgramReservationStatus,
@@ -64,58 +65,57 @@ export function AdminProgramApplicantsPage() {
   const cancelledCount = applications.filter((item) => item.status === 'CANCELLED').length
 
   return (
-    <main className="px-6 py-9 lg:px-10 lg:py-11">
-      <Link className="text-xs text-ink-500 hover:text-navy-900" to="/admin/programs">
+    <section>
+      <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/programs">
         ← 프로그램 관리
       </Link>
-      <div className="mt-5 flex flex-wrap items-end justify-between gap-5">
-        <div>
-          <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">
-            PROGRAM APPLICANTS
-          </p>
-          <h1 className="mt-2 font-display text-4xl font-semibold text-navy-900">신청자 관리</h1>
-          <p className="mt-2 text-sm text-ink-500">프로그램별 신청 및 취소 현황을 확인합니다.</p>
-        </div>
-        <label className="text-xs font-medium text-ink-700">
-          프로그램 선택
-          <select
-            className="mt-2 block h-11 min-w-[260px] rounded-sm border border-[#cfc7ba] bg-white px-3 text-sm"
-            onChange={(event) => {
-              setLoading(true)
-              setError('')
-              navigate(`/admin/programs/${event.target.value}/applications`)
-            }}
-            value={Number.isInteger(selectedId) ? selectedId : ''}
-          >
-            {programs.map((program) => (
-              <option key={program.id} value={program.id}>
-                {program.name}
-              </option>
-            ))}
-          </select>
-        </label>
+      <AdminPageHeading
+        action={
+          <label className="text-sm font-medium text-slate-700">
+            프로그램 선택
+            <select
+              className="mt-2 block h-11 min-w-[260px] rounded-sm border border-slate-300 bg-white px-3 text-sm"
+              onChange={(event) => {
+                setLoading(true)
+                setError('')
+                navigate(`/admin/programs/${event.target.value}/applications`)
+              }}
+              value={Number.isInteger(selectedId) ? selectedId : ''}
+            >
+              {programs.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        }
+        description="프로그램별 신청 및 취소 현황을 확인합니다."
+        eyebrow="PROGRAM APPLICANTS"
+        title="신청자 관리"
+      />
+
+      <div className="grid gap-3 sm:grid-cols-3" aria-label="신청자 요약">
+        {(
+          [
+            ['현재 참여 인원', participantCount, '명'],
+            ['유효 신청 건', reservedApplications.length, '건'],
+            ['취소 건', cancelledCount, '건'],
+          ] as const
+        ).map(([label, value, unit]) => (
+          <AdminSummaryCard key={label} label={label} unit={unit} value={value} />
+        ))}
       </div>
 
-      <section className="mt-8 grid gap-4 sm:grid-cols-3" aria-label="신청자 요약">
-        {[
-          ['현재 참여 인원', `${participantCount}명`],
-          ['유효 신청 건', `${reservedApplications.length}건`],
-          ['취소 건', `${cancelledCount}건`],
-        ].map(([label, value]) => (
-          <article className="rounded-lg border border-[#d8d0c2] bg-[#fbfaf6] p-5" key={label}>
-            <p className="text-[10px] tracking-[0.14em] text-ink-500">{label}</p>
-            <p className="mt-2 font-display text-4xl font-semibold text-navy-900">{value}</p>
-          </article>
-        ))}
-      </section>
-
       {selectedProgram && (
-        <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-lg bg-navy-900 px-6 py-5 text-white">
+        <section className="mt-4 flex flex-wrap items-center justify-between gap-4 rounded-lg border border-slate-200 bg-slate-50 px-6 py-4">
           <div>
-            <p className="text-[10px] tracking-[0.15em] text-gold-300">SELECTED PROGRAM</p>
-            <h2 className="mt-1 font-display text-2xl font-semibold">{selectedProgram.name}</h2>
+            <p className="text-[11px] font-medium tracking-[0.12em] text-slate-500">
+              SELECTED PROGRAM
+            </p>
+            <h2 className="mt-1 text-base font-semibold text-[#172b44]">{selectedProgram.name}</h2>
           </div>
-          <p className="text-xs text-white/70">
+          <p className="text-xs text-slate-600">
             정원 {selectedProgram.capacity}명 · 잔여 {selectedProgram.remain}명
           </p>
         </section>
@@ -123,24 +123,24 @@ export function AdminProgramApplicantsPage() {
 
       {error && (
         <p
-          className="mt-5 rounded-sm border border-error-border bg-[#f8eeeb] px-4 py-3 text-sm text-error"
+          className="mt-4 rounded-lg border border-[#ead8d2] bg-[#fffaf8] px-4 py-3 text-sm text-error"
           role="alert"
         >
           {error}
         </p>
       )}
 
-      <section className="mt-8">
+      <section className="mt-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <h2 className="font-display text-2xl font-semibold">신청 내역</h2>
+          <h2 className={adminSectionTitleClass}>신청 내역</h2>
           <div
-            className="flex rounded-sm border border-[#cfc7ba] bg-white p-1"
+            className="flex rounded-sm border border-slate-300 bg-white p-1"
             aria-label="신청 상태 필터"
           >
             {(['ALL', 'RESERVED', 'CANCELLED'] as const).map((status) => (
               <button
-                className={`px-4 py-2 text-[10px] font-medium tracking-[0.1em] ${
-                  filter === status ? 'bg-navy-900 text-white' : 'text-ink-500'
+                className={`px-4 py-2 text-[11px] font-medium tracking-[0.1em] ${
+                  filter === status ? 'bg-[#172b44] text-white' : 'text-slate-600'
                 }`}
                 key={status}
                 onClick={() => setFilter(status)}
@@ -152,9 +152,9 @@ export function AdminProgramApplicantsPage() {
           </div>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-lg border border-[#d8d0c2] bg-white">
+        <div className="mt-4 overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
           <table className="w-full min-w-[780px] border-collapse text-left">
-            <thead className="bg-[#f0ece4] text-[10px] tracking-[0.12em] text-ink-500">
+            <thead className="bg-slate-50 text-[11px] tracking-[0.12em] text-slate-500">
               <tr>
                 <th className="px-5 py-4 font-medium">신청자</th>
                 <th className="px-5 py-4 font-medium">인원</th>
@@ -166,36 +166,36 @@ export function AdminProgramApplicantsPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td className="px-5 py-10 text-center text-sm text-ink-500" colSpan={5}>
+                  <td className="px-5 py-10 text-center text-sm text-slate-600" colSpan={5}>
                     신청자 정보를 불러오는 중입니다…
                   </td>
                 </tr>
               ) : filteredApplications.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-10 text-center text-sm text-ink-500" colSpan={5}>
+                  <td className="px-5 py-10 text-center text-sm text-slate-600" colSpan={5}>
                     조건에 맞는 신청 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
                 filteredApplications.map((application) => (
-                  <tr className="border-t border-[#e5dfd4] text-sm" key={application.reservationId}>
+                  <tr className="border-t border-slate-200 text-sm" key={application.reservationId}>
                     <td className="px-5 py-4">
-                      <p className="font-medium text-navy-900">{application.name}</p>
-                      <p className="mt-1 text-xs text-ink-500">{application.email}</p>
+                      <p className="font-medium text-[#172b44]">{application.name}</p>
+                      <p className="mt-1 text-xs text-slate-600">{application.email}</p>
                     </td>
                     <td className="px-5 py-4">{application.quantity}명</td>
-                    <td className="px-5 py-4 text-xs text-ink-500">
+                    <td className="px-5 py-4 text-xs text-slate-600">
                       {formatDate(application.createdAt)}
                     </td>
-                    <td className="px-5 py-4 text-xs text-ink-500">
+                    <td className="px-5 py-4 text-xs text-slate-600">
                       {formatDate(application.cancelledAt)}
                     </td>
                     <td className="px-5 py-4">
                       <span
                         className={`rounded-full px-2.5 py-1 text-[9px] font-bold tracking-[0.1em] ${
                           application.status === 'RESERVED'
-                            ? 'bg-[#e4eadf] text-[#486043]'
-                            : 'bg-[#eee9e1] text-ink-500'
+                            ? 'bg-[#172b44] text-white'
+                            : 'border border-slate-300 bg-white text-slate-600'
                         }`}
                       >
                         {application.status}
@@ -208,6 +208,6 @@ export function AdminProgramApplicantsPage() {
           </table>
         </div>
       </section>
-    </main>
+    </section>
   )
 }

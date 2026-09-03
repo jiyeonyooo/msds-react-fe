@@ -64,6 +64,8 @@ export function WellnessCheckPage() {
   const answeredCount = Object.keys(answers).length
 
   const goTo = (nextIndex: number) => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current)
+    advanceTimer.current = null
     setError('')
     setRestored(false)
     setIndex(Math.min(Math.max(0, nextIndex), Math.max(0, questions.length - 1)))
@@ -93,29 +95,6 @@ export function WellnessCheckPage() {
     }
     advanceTimer.current = window.setTimeout(() => goTo(nextIndex), autoAdvanceDelay)
   }
-
-  // 숫자키로 답하고 좌우 방향키로 오간다. 마우스를 놓지 않아도 되는 만큼 응답이 빨라진다.
-  useEffect(() => {
-    if (!question || submitting) return
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
-      if (event.key === 'ArrowLeft') {
-        goTo(index - 1)
-        return
-      }
-      if (event.key === 'ArrowRight') {
-        moveNext()
-        return
-      }
-      const digit = Number(event.key)
-      if (!Number.isInteger(digit) || digit < 1 || digit > question.options.length) return
-      event.preventDefault()
-      choose(question.questionId, question.options[digit - 1].value)
-    }
-    addEventListener('keydown', onKeyDown)
-    return () => removeEventListener('keydown', onKeyDown)
-  })
 
   const submit = async () => {
     if (!question || selected == null) return moveNext()
@@ -152,6 +131,38 @@ export function WellnessCheckPage() {
       setSubmitting(false)
     }
   }
+
+  // 숫자키로 답하고 Enter/방향키로 오간다. 마우스를 놓지 않아도 되는 만큼 응답이 빨라진다.
+  useEffect(() => {
+    if (!question || submitting) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || event.isComposing) return
+      const target = event.target as HTMLElement | null
+      if (target && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        goTo(index - 1)
+        return
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        moveNext()
+        return
+      }
+      if (event.key === 'Enter') {
+        event.preventDefault()
+        if (isLast) void submit()
+        else moveNext()
+        return
+      }
+      const digit = Number(event.key)
+      if (!Number.isInteger(digit) || digit < 1 || digit > question.options.length) return
+      event.preventDefault()
+      choose(question.questionId, question.options[digit - 1].value)
+    }
+    addEventListener('keydown', onKeyDown)
+    return () => removeEventListener('keydown', onKeyDown)
+  })
 
   return (
     <main>
@@ -211,13 +222,15 @@ export function WellnessCheckPage() {
                 </SectionLabel>
                 <p className="mt-2 text-sm text-muted">{categoryCopy[question.category].title}</p>
                 <p className="mt-3 text-xs text-muted">
-                  숫자키 1–{question.options.length} 로 답하고 ← → 로 문항을 오갈 수 있어요.
+                  숫자키 1–{question.options.length}로 답하고, Enter 또는 ← → 키로 문항을 오갈 수 있어요.
                 </p>
               </div>
               <ProgressRing answered={answeredCount} total={questions.length} />
             </div>
             <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_336px]">
-              <article className="rounded-lg border border-border-subtle bg-white p-7 md:p-11">
+              <article
+                className="rounded-lg border border-border-subtle bg-white p-7 md:p-11"
+              >
                 <SectionLabel>
                   {categoryCopy[question.category].eyebrow} ·{' '}
                   {categoryCopy[question.category].title}
@@ -252,14 +265,33 @@ export function WellnessCheckPage() {
                     )
                   })}
                 </fieldset>
-                <p className="mt-7 text-xs text-muted">
-                  0 전혀 그렇지 않다&nbsp;&nbsp;—&nbsp;&nbsp;4 매우 그렇다
-                </p>
+                <div className="mt-7 flex flex-col justify-between gap-2 text-xs text-muted sm:flex-row sm:items-center">
+                  <p>0 전혀 그렇지 않다&nbsp;&nbsp;—&nbsp;&nbsp;4 매우 그렇다</p>
+                  <p className="text-[10px] tracking-[0.05em]">숫자키 1–5로 선택 · ENTER로 다음</p>
+                </div>
                 {error && (
                   <p className="mt-5 text-sm text-error" role="alert">
                     {error}
                   </p>
                 )}
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border-subtle pt-6">
+                  <Button
+                    variant="secondary"
+                    disabled={index === 0 || submitting}
+                    onClick={() => goTo(index - 1)}
+                  >
+                    PREVIOUS
+                  </Button>
+                  {isLast ? (
+                    <Button disabled={submitting} onClick={() => void submit()}>
+                      {submitting ? 'SAVING…' : 'VIEW MY RESULT'}
+                    </Button>
+                  ) : (
+                    <Button disabled={submitting} onClick={moveNext}>
+                      NEXT QUESTION
+                    </Button>
+                  )}
+                </div>
               </article>
               <aside className="rounded-lg bg-navy-900 p-7 text-white">
                 <h2 className="text-2xl font-medium">체크 전 안내</h2>
@@ -287,24 +319,6 @@ export function WellnessCheckPage() {
                   의료적 진단이나 치료를 대신하지 않습니다.
                 </p>
               </aside>
-            </div>
-            <div className="mt-7 flex justify-between">
-              <Button
-                variant="secondary"
-                disabled={index === 0 || submitting}
-                onClick={() => goTo(index - 1)}
-              >
-                PREVIOUS
-              </Button>
-              {isLast ? (
-                <Button disabled={submitting} onClick={() => void submit()}>
-                  {submitting ? 'SAVING…' : 'VIEW MY RESULT'}
-                </Button>
-              ) : (
-                <Button disabled={submitting} onClick={moveNext}>
-                  NEXT QUESTION
-                </Button>
-              )}
             </div>
           </>
         )}
