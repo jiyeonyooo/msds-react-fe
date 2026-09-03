@@ -177,9 +177,10 @@ export function WellnessResultPage() {
           <div className="flex items-center gap-7">
             <span
               aria-hidden="true"
-              className="flex size-20 shrink-0 items-center justify-center rounded-full border border-gold-500 font-display text-4xl text-gold-300"
+              className="flex size-20 shrink-0 flex-col items-center justify-center rounded-full border border-gold-500 text-gold-300"
             >
-              {recommendation.symbol}
+              <strong className="text-[10px] font-medium tracking-[0.16em]">NEXT</strong>
+              <small className="mt-1 text-[9px] tracking-[0.18em]">STEP</small>
             </span>
             <div>
               <SectionLabel>{recommendation.eyebrow}</SectionLabel>

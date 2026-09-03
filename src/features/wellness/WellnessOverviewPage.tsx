@@ -177,11 +177,7 @@ export function WellnessOverviewPage() {
             </div>
             {summary?.latestMeasuredAt && (
               <span className="hidden rounded-full bg-white px-4 py-2 text-[10px] tracking-[0.16em] text-gold-500 md:block">
-                ● LIVE ·{' '}
-                {new Date(summary.latestMeasuredAt).toLocaleTimeString('ko-KR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                최근 측정 · {formatDateTime(summary.latestMeasuredAt)}
               </span>
             )}
           </div>
