@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '../../components/ui'
 import { wellnessApi } from '../wellness/api'
 import type { WellnessHistory } from '../wellness/types'
 import { formatDateTime, levelLabel, stayStageLabel } from '../wellness/wellnessFormat'
-import { AccountLayout, HeroAction } from './AccountLayout'
+import { AccountLayout } from './AccountLayout'
+import { AccountEmptyState, AccountPanel, AccountPanelAction } from './AccountPanel'
 
 /**
  * 계정 영역 안에서 보는 마음 기록.
@@ -40,30 +40,25 @@ export function MyWellnessPage() {
     <AccountLayout
       description="숙박 전후로 남긴 마음 상태를 모아 봅니다. 기록은 본인만 볼 수 있습니다."
       eyebrow="MY WELLNESS"
-      hero={<HeroAction badge="CHECK" label="새로 기록하기" to="/wellness/check" />}
       title="마음 기록"
     >
-      <article className="rounded-xl border border-border-subtle bg-white px-8 py-7">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="flex-1">
-            <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              최근 기록
-            </h2>
-            <p className="text-[10px] tracking-[0.08em] text-muted">
-              {latest
-                ? `가장 최근 기록은 ${formatDateTime(latest.checkedAt)} 입니다.`
-                : '아직 남긴 기록이 없습니다.'}
-            </p>
-          </div>
+      <AccountPanel
+        action={<AccountPanelAction to="/wellness/check">새로 기록하기</AccountPanelAction>}
+        meta={
+          latest
+            ? `가장 최근 기록은 ${formatDateTime(latest.checkedAt)} 입니다.`
+            : '아직 남긴 기록이 없습니다.'
+        }
+        title="최근 기록"
+        toolbar={
           <Link
             className="text-[11px] font-medium tracking-[0.08em] text-navy-900"
             to="/wellness/history"
           >
             전체 흐름 보기 →
           </Link>
-        </div>
-        <span className="my-4 block h-px w-full bg-border-subtle" />
-
+        }
+      >
         {error && (
           <p className="text-[13px] text-error" role="alert">
             {error}
@@ -75,14 +70,11 @@ export function MyWellnessPage() {
           </p>
         )}
         {!error && !loading && history.length === 0 && (
-          <div className="grid justify-items-center gap-4 py-10 text-center">
-            <p className="text-[13px] text-muted">
-              첫 기록을 남기면 머무는 동안의 변화를 함께 볼 수 있어요.
-            </p>
-            <Link to="/wellness/check">
-              <Button size="sm">마음 기록 시작하기</Button>
-            </Link>
-          </div>
+          <AccountEmptyState
+            actionLabel="마음 기록 시작하기"
+            actionTo="/wellness/check"
+            message="첫 기록을 남기면 머무는 동안의 변화를 함께 볼 수 있어요."
+          />
         )}
         {!error && !loading && history.length > 0 && (
           <ul className="grid gap-0">
@@ -108,7 +100,7 @@ export function MyWellnessPage() {
             ))}
           </ul>
         )}
-      </article>
+      </AccountPanel>
     </AccountLayout>
   )
 }

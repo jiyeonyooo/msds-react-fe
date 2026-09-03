@@ -4,7 +4,8 @@ import { Button, StatusBadge } from '../../components/ui'
 import type { ApiError } from '../../lib/apiError'
 import { reservationApi } from '../reservation/api'
 import type { Reservation, ReservationStatus } from '../reservation/types'
-import { AccountLayout, HeroAction } from './AccountLayout'
+import { AccountLayout } from './AccountLayout'
+import { AccountEmptyState, AccountPanel, AccountPanelAction } from './AccountPanel'
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
 const PAGE_SIZE = 10
@@ -66,20 +67,14 @@ export function MyAccountReservationsPage() {
     <AccountLayout
       description="지금까지 예약하신 머무름을 모아 봅니다. 취소와 상세 확인은 예약 상세에서 하실 수 있습니다."
       eyebrow="MY STAYS"
-      hero={<HeroAction badge="BOOK" label="새로 예약하기" to="/reservations" />}
       title="예약 내역"
     >
-      <article className="rounded-xl border border-border-subtle bg-white px-8 py-7">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              예약 내역
-            </h2>
-            <p className="text-[10px] tracking-[0.08em] text-muted">
-              {loading ? '불러오는 중…' : `총 ${total.toLocaleString('ko-KR')}건`}
-            </p>
-          </div>
-          <div className="flex gap-1.5" role="group" aria-label="예약 상태 필터">
+      <AccountPanel
+        action={<AccountPanelAction to="/reservations">새로 예약하기</AccountPanelAction>}
+        meta={loading ? '불러오는 중…' : `총 ${total.toLocaleString('ko-KR')}건`}
+        title="예약 목록"
+        toolbar={
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="예약 상태 필터">
             {statusFilters.map((filter) => (
               <button
                 aria-pressed={status === filter.value}
@@ -96,9 +91,8 @@ export function MyAccountReservationsPage() {
               </button>
             ))}
           </div>
-        </div>
-        <span className="my-4 block h-px w-full bg-border-subtle" />
-
+        }
+      >
         {error && (
           <p className="text-[13px] text-error" role="alert">
             {error}
@@ -110,14 +104,15 @@ export function MyAccountReservationsPage() {
           </p>
         )}
         {!error && !loading && items.length === 0 && (
-          <div className="grid justify-items-center gap-4 py-12 text-center">
-            <p className="text-[13px] text-muted">
-              {status === 'ALL' ? '아직 예약한 머무름이 없습니다.' : '해당 상태의 예약이 없습니다.'}
-            </p>
-            <Link to="/reservations">
-              <Button size="sm">객실 둘러보기</Button>
-            </Link>
-          </div>
+          <AccountEmptyState
+            actionLabel={status === 'ALL' ? '객실 둘러보기' : undefined}
+            actionTo={status === 'ALL' ? '/reservations' : undefined}
+            message={
+              status === 'ALL'
+                ? '아직 예약한 머무름이 없습니다. 마음에 드는 객실을 골라 보세요.'
+                : '해당 상태의 예약이 없습니다.'
+            }
+          />
         )}
         {!error && !loading && items.length > 0 && (
           <ul className="grid gap-0">
@@ -174,7 +169,7 @@ export function MyAccountReservationsPage() {
             </div>
           </div>
         )}
-      </article>
+      </AccountPanel>
     </AccountLayout>
   )
 }
