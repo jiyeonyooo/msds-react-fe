@@ -417,16 +417,25 @@ function MeasurementCard({
             type="number"
           />
         </Field>
-        <Field label="측정 시각 (선택)">
-          <input className="admin-field" name="measuredAt" type="datetime-local" />
-        </Field>
+        <details className="rounded-sm border border-slate-200 bg-slate-50 px-4 py-3">
+          <summary className="cursor-pointer text-xs font-medium text-slate-700">
+            과거 측정 시각 직접 지정
+          </summary>
+          <label className="mt-3 block text-xs text-slate-600">
+            측정 시각
+            <input className="admin-field mt-2" name="measuredAt" type="datetime-local" />
+          </label>
+        </details>
         <div className="flex items-end">
           <Button className="w-full" disabled={submitting || !activeDevices.length} type="submit">
             {submitting ? '등록 중...' : '측정 등록'}
           </Button>
         </div>
       </form>
-      <PathNote>ACTIVE 상태의 기기만 등록 가능 · decibel ≥ 0 · measuredAt은 선택값</PathNote>
+      <PathNote>
+        기본적으로 등록 버튼을 누른 현재 시각이 자동 저장됩니다. 과거 기록을 보정할 때만 시각을
+        직접 지정하세요.
+      </PathNote>
     </Card>
   )
 }
