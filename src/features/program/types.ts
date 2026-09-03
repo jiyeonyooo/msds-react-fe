@@ -47,3 +47,34 @@ export interface ReservationResponse {
   createdAt: string;
   hasReview: boolean;
 }
+
+export type ProgramReservationStatus = "RESERVED" | "CANCELLED";
+
+export interface ProgramReservationResponse {
+  reservationId: number;
+  programId: number;
+  programName: string;
+  pictureUrl: string | null;
+  quantity: number;
+  status: ProgramReservationStatus;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
+export interface ProgramApplicationResponse {
+  reservationId: number;
+  programId: number;
+  userId: number;
+  name: string;
+  email: string;
+  quantity: number;
+  status: ProgramReservationStatus;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
+export interface ProgramUpdateRequest {
+  name: string;
+  pictureUrl?: string;
+  capacity: number;
+}

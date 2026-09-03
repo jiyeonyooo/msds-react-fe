@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui'
-import { ApiError } from './client'
+import { ApiError } from '../../lib/apiError'
 import { getProgram, getPrograms, reserveProgram } from './program'
 import { getProgramPresentation, instructorMark } from './programPresentation'
 import type { ProgramResponse } from './types'

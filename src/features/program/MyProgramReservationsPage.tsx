@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, StatusBadge } from '../../components/ui'
 import { setReturnPath } from '../auth/session'
-import { ApiError } from './client'
+import { ApiError } from '../../lib/apiError'
 import { cancelReservation, getMyProgramReservations } from './program'
 import type { ProgramReservationResponse, ProgramReservationStatus } from './types'
 

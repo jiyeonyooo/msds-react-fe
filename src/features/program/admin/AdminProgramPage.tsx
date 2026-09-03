@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../../../components/ui'
-import { ApiError } from '../client'
+import { ApiError } from '../../../lib/apiError'
 import { createProgram, deleteProgram, getPrograms, updateProgram } from '../program'
 import type { ProgramCreateRequest, ProgramResponse, ProgramStatus } from '../types'
 
