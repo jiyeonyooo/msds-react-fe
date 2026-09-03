@@ -1,17 +1,31 @@
 // program.ts
-import { apiClient } from "./client.ts";
-import type { ProgramResponse, ProgramCreateRequest, ReservationRequest } from "./types.ts";
+import { authApiClient, publicApiClient } from "../../lib/apiClient.ts";
+import type { ApiResponse, ProgramResponse, ProgramCreateRequest, ReservationRequest, ReservationResponse } from "./types.ts";
 
-export const getPrograms = () => apiClient.get<ProgramResponse[]>("/meditation/program");
+export const getPrograms = async (): Promise<ProgramResponse[]> => {
+  const res = await publicApiClient.get<ApiResponse<ProgramResponse[]>>("/meditation/program");
+  return res.data.data;
+};
 
-export const reserveProgram = (request: ReservationRequest) =>
-  apiClient.postForLocation("/meditation/program", request);
+export const reserveProgram = async (request: ReservationRequest): Promise<number> => {
+  const res = await authApiClient.post<ApiResponse<number>>("/meditation/program", request);
+  return res.data.data;
+};
 
-export const cancelReservation = (reservationId: number) =>
-  apiClient.delete(`/meditation/program/reservation/${reservationId}`);
+export const cancelReservation = async (reservationId: number): Promise<void> => {
+  await authApiClient.delete<ApiResponse<void>>(`/meditation/program/reservation/${reservationId}`);
+};
 
-export const createProgram = (request: ProgramCreateRequest) =>
-  apiClient.postForLocation("/meditation/admin/program", request);
+export const createProgram = async (request: ProgramCreateRequest): Promise<number> => {
+  const res = await authApiClient.post<ApiResponse<number>>("/meditation/admin/program", request);
+  return res.data.data;
+};
 
-export const deleteProgram = (programId: number) =>
-  apiClient.delete(`/meditation/admin/program/${programId}`);
+export const deleteProgram = async (programId: number): Promise<void> => {
+  await authApiClient.delete<ApiResponse<void>>(`/meditation/admin/program/${programId}`);
+};
+
+export const getMyReservations = async (): Promise<ReservationResponse[]> => {
+  const res = await authApiClient.get<ApiResponse<ReservationResponse[]>>("/meditation/program/reservations/me");
+  return res.data.data;
+};

@@ -1,7 +1,7 @@
 // src/pages/ProgramListPage.tsx
 import { useEffect, useState } from "react";
 import { getPrograms, reserveProgram } from "./program.ts";
-import { ApiError } from "./client.ts";
+import { ApiError } from "../../lib/apiError.ts";
 import type { ProgramResponse } from "./types.ts";
 import { Link } from "react-router-dom";
 
