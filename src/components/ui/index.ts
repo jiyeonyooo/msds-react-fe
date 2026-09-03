@@ -1,5 +1,4 @@
 export { BookingField } from './BookingField'
-export { BookingSummaryBar } from './BookingSummaryBar'
 export { Button } from './Button'
 export { DatePicker } from './DatePicker'
 export { Footer } from './Footer'
