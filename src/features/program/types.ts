@@ -1,69 +1,80 @@
-// src/types/meditation.ts
-
-export type ProgramStatus = 'OPEN' | 'CLOSED'
+export type ProgramStatus = "OPEN" | "CLOSED" | "DELETED";
 
 export interface ProgramResponse {
-  id: number
-  name: string
-  pictureUrl: string | null
-  capacity: number
-  remain: number
-  status: ProgramStatus
+  id: number;
+  name: string;
+  pictureUrl: string | null;
+  capacity: number;
+  remain: number;
+  status: ProgramStatus;
 }
 
 export interface ProgramCreateRequest {
-  name: string
-  pictureUrl?: string
-  capacity: number
-}
-
-export interface ProgramUpdateRequest {
-  name: string
-  pictureUrl?: string
-  capacity: number
+  name: string;
+  pictureUrl?: string;
+  capacity: number;
 }
 
 export interface ReservationRequest {
-  programId: number
-  quantity: number
-}
-
-export type ProgramReservationStatus = 'RESERVED' | 'CANCELLED'
-
-export interface ProgramReservationResponse {
-  reservationId: number
-  programId: number
-  programName: string
-  pictureUrl: string | null
-  quantity: number
-  status: ProgramReservationStatus
-  createdAt: string
-  cancelledAt: string | null
-}
-
-export interface ProgramApplicationResponse {
-  reservationId: number
-  programId: number
-  userId: number
-  name: string
-  email: string
-  quantity: number
-  status: ProgramReservationStatus
-  createdAt: string
-  cancelledAt: string | null
+  programId: number;
+  quantity: number;
 }
 
 export interface ReviewResponse {
-  id: number
-  programReservationId: number
-  userId: number
-  programName: string
-  userName: string
-  content: string
-  createdAt: string // LocalDateTime은 JSON에서 ISO 문자열로 옴 (예: "2026-09-01T10:30:00")
+  id: number;
+  programName: string;
+  userName: string;
+  content: string;
+  createdAt: string;
 }
 
 export interface ReviewCreateRequest {
-  programReservationId: number
-  content: string
+  programReservationId: number;
+  content: string;
+}
+
+export interface ApiResponse<T> {
+  code: string;
+  message: string;
+  data: T;
+}
+
+export interface ReservationResponse {
+  reservationId: number;
+  programName: string;
+  quantity: number;
+  status: "RESERVED" | "CANCELLED";
+  createdAt: string;
+  hasReview: boolean;
+}
+
+export type ProgramReservationStatus = "RESERVED" | "CANCELLED";
+
+export interface ProgramReservationResponse {
+  reservationId: number;
+  programId: number;
+  programName: string;
+  pictureUrl: string | null;
+  quantity: number;
+  status: ProgramReservationStatus;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
+export interface ProgramApplicationResponse {
+  reservationId: number;
+  programId: number;
+  userId: number;
+  name: string;
+  email: string;
+  quantity: number;
+  status: ProgramReservationStatus;
+  createdAt: string;
+  cancelledAt: string | null;
+}
+
+export interface ProgramUpdateRequest {
+  name: string;
+  pictureUrl?: string;
+  capacity: number;
 }

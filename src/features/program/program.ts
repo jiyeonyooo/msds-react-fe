@@ -1,37 +1,50 @@
-// src/api/program.ts
-import { apiClient } from './client'
-import type {
-  ProgramApplicationResponse,
-  ProgramCreateRequest,
-  ProgramReservationResponse,
-  ProgramResponse,
-  ProgramUpdateRequest,
-  ReservationRequest,
-} from './types'
+// program.ts
+import { authApiClient, publicApiClient } from "../../lib/apiClient.ts";
+import type { ApiResponse, ProgramResponse, ProgramCreateRequest, ReservationRequest, ReservationResponse, ProgramApplicationResponse, ProgramUpdateRequest, ProgramReservationResponse } from "./types.ts";
 
-export const getPrograms = () => apiClient.get<ProgramResponse[]>('/meditation/program')
+export const getPrograms = async (): Promise<ProgramResponse[]> => {
+  const res = await publicApiClient.get<ApiResponse<ProgramResponse[]>>("/meditation/program");
+  return res.data.data;
+};
 
-export const getProgram = (programId: number) =>
-  apiClient.get<ProgramResponse>(`/meditation/program/detail/${programId}`)
+export const reserveProgram = async (request: ReservationRequest): Promise<number> => {
+  const res = await authApiClient.post<ApiResponse<number>>("/meditation/program", request);
+  return res.data.data;
+};
 
-export const reserveProgram = (request: ReservationRequest) =>
-  apiClient.postForLocation('/meditation/program', request)
+export const cancelReservation = async (reservationId: number): Promise<void> => {
+  await authApiClient.delete<ApiResponse<void>>(`/meditation/program/reservation/${reservationId}`);
+};
 
-export const cancelReservation = (reservationId: number) =>
-  apiClient.delete(`/meditation/program/reservation/${reservationId}`)
+export const createProgram = async (request: ProgramCreateRequest): Promise<number> => {
+  const res = await authApiClient.post<ApiResponse<number>>("/meditation/admin/program", request);
+  return res.data.data;
+};
 
-export const getMyProgramReservations = () =>
-  apiClient.get<ProgramReservationResponse[]>('/meditation/program/reservations')
+export const deleteProgram = async (programId: number): Promise<void> => {
+  await authApiClient.delete<ApiResponse<void>>(`/meditation/admin/program/${programId}`);
+};
 
-// --- 관리자 ---
-export const createProgram = (request: ProgramCreateRequest) =>
-  apiClient.postForLocation('/meditation/admin/program', request)
+export const getMyReservations = async (): Promise<ReservationResponse[]> => {
+  const res = await authApiClient.get<ApiResponse<ReservationResponse[]>>("/meditation/program/reservations/me");
+  return res.data.data;
+};
 
-export const updateProgram = (programId: number, request: ProgramUpdateRequest) =>
-  apiClient.put<void>(`/meditation/admin/program/${programId}`, request)
+export const getProgramApplications = async (programId: number): Promise<ProgramApplicationResponse[]> => {
+  const res = await authApiClient.get<ApiResponse<ProgramApplicationResponse[]>>(`/meditation/admin/program/${programId}/applications`);
+  return res.data.data;
+};
 
-export const deleteProgram = (programId: number) =>
-  apiClient.delete(`/meditation/admin/program/${programId}`)
+export const updateProgram = async (programId: number, request: ProgramCreateRequest): Promise<void> => {
+  await authApiClient.patch<ApiResponse<void>>(`/meditation/admin/program/${programId}`, request);
+};
 
-export const getProgramApplications = (programId: number) =>
-  apiClient.get<ProgramApplicationResponse[]>(`/meditation/admin/program/${programId}/applications`)
+export const getMyProgramReservations = async (): Promise<ProgramReservationResponse[]> => {
+  const res = await authApiClient.get<ApiResponse<ProgramReservationResponse[]>>("/meditation/program/reservations");
+  return res.data.data;
+};
+
+export const getProgram = async (programId: number): Promise<ProgramResponse> => {
+  const res = await authApiClient.get<ApiResponse<ProgramResponse>>(`/meditation/program/detail/${programId}`);
+  return res.data.data;
+};
