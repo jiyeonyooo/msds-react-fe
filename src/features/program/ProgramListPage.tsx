@@ -10,11 +10,11 @@ export default function ProgramListPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-  getPrograms().then((data) => {
-    console.log("받은 데이터:", data);
-    setPrograms(data);
-  }).catch(console.error);
-}, []);
+    getPrograms().then((data) => {
+      console.log("받은 데이터:", data);
+      setPrograms(data);
+    }).catch(console.error);
+  }, []);
 
   const handleReserve = async (programId: number) => {
     setError(null);
@@ -23,7 +23,7 @@ export default function ProgramListPage() {
       setPrograms(await getPrograms());
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.message); // 백엔드가 텍스트로 에러를 내려주는 경우
+        setError(err.message);
       } else {
         setError("예약 중 오류가 발생했습니다.");
       }
@@ -33,16 +33,14 @@ export default function ProgramListPage() {
   return (
     <div>
       <Link to="/reviews">
-        <button>
-          후기 게시판 보기
-        </button>
+        <button>후기 게시판 보기</button>
       </Link>
       {error && <p style={{ color: "red" }}>{error}</p>}
       <ul>
         {programs.map((p) => (
           <li key={p.id}>
             {p.name} ({p.remain}/{p.capacity})
-            <button disabled={p.status === "CLOSED"} onClick={() => handleReserve(p.id)}>
+            <button disabled={p.status !== "OPEN"} onClick={() => handleReserve(p.id)}>
               예약
             </button>
           </li>

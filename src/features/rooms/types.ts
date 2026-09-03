@@ -27,7 +27,7 @@ export type RoomDetail = {
     viewType: 'CITY' | 'OCEAN' | 'MOUNTAIN' | 'GARDEN' | 'RIVER' | 'NONE' | null
   }
   basePrice: number
-  images: { imageId: number; imageUrl: string; imageType: string; sortOrder: number }[]
+  images: { imageId: number | null; imageUrl: string; imageType: string; sortOrder: number }[]
   equipmentGroups: {
     category: string
     categoryName: string

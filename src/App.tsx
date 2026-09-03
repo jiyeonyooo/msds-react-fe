@@ -4,7 +4,10 @@ import { GlobalScrollbar } from './components/GlobalScrollbar'
 import { Navigate } from 'react-router-dom'
 import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
+import { AboutPage } from './features/about/AboutPage'
 import ProgramListPage from './features/program/ProgramListPage'
+import ProgramDetailPage from './features/program/ProgramDetailPage'
+import MyProgramReservationsPage from './features/program/MyProgramReservationsPage'
 import ReviewPage from './features/program/review/ReviewPage'
 import { RoomsPage } from './features/rooms/RoomsPage'
 import { RoomDetailPage } from './features/rooms/RoomDetailPage'
@@ -25,23 +28,28 @@ import { WellnessOverviewPage } from './features/wellness/WellnessOverviewPage'
 import { WellnessCheckPage } from './features/wellness/WellnessCheckPage'
 import { WellnessResultPage } from './features/wellness/WellnessResultPage'
 import { WellnessHistoryPage } from './features/wellness/WellnessHistoryPage'
+import { QuietnessSpaceDetailPage } from './features/wellness/QuietnessSpaceDetailPage'
 import { ComponentGallery } from './dev/ComponentGallery'
 import { DevShell } from './dev/DevShell'
 import { DevLoginPage } from './dev/DevLoginPage'
 import { isDevMode } from './dev/scenarios'
 import { AdminLayout } from './features/admin/AdminLayout'
+import { AdminProgramPage } from './features/program/admin/AdminProgramPage'
+import { AdminProgramApplicantsPage } from './features/program/admin/AdminProgramApplicantsPage'
+import { AdminQuietnessPage } from './features/quietness/admin/AdminQuietnessPage'
 import {
-  AdminFeaturePlaceholderPage,
   AdminForbiddenPage,
   AdminHomePage,
 } from './features/admin/AdminPages'
 import { RequireAdmin } from './features/admin/RequireAdmin'
 import { AdminReservationsPage } from './features/admin/AdminReservationsPage'
+import { AdminWellnessStatisticsPage } from './features/wellness/admin/AdminWellnessStatisticsPage'
+import { AdminInquiriesPage } from './features/admin/AdminInquiriesPage'
+import { AdminMembersPage } from './features/admin/AdminMembersPage'
 import { RoomListPage } from './features/admin/RoomListPage'
 import { RoomFormPage } from './features/admin/RoomFormPage'
 import { FacilityListPage } from './features/admin/FacilityListPage'
 import { FacilityFormPage } from './features/admin/FacilityFormPage'
-import { AdminMembersPage } from './features/admin/AdminMembersPage'
 import './index.css'
 export default function App() {
   return (
@@ -52,7 +60,9 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="facility" element={<FacilityPage />} />
+          <Route path="about" element={<AboutPage />} />
           <Route path="programs" element={<ProgramListPage />} />
+          <Route path="programs/:programId" element={<ProgramDetailPage />} />
           <Route path="reviews" element={<ReviewPage />} />
           <Route path="rooms" element={<RoomsPage />} />
           <Route path="rooms/:roomId" element={<RoomDetailPage />} />
@@ -60,14 +70,16 @@ export default function App() {
           <Route path="reservations/confirm" element={<ConfirmationPage />} />
           <Route path="my-reservations" element={<MyReservationsPage />} />
           <Route path="my-reservations/:resvId" element={<MyReservationsPage />} />
+          <Route path="my-programs" element={<MyProgramReservationsPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="signup" element={<SignupPage />} />
           <Route path="wellness" element={<WellnessOverviewPage />} />
           <Route path="wellness/check" element={<WellnessCheckPage />} />
           <Route path="wellness/result" element={<WellnessResultPage />} />
           <Route path="wellness/result/:checkId" element={<WellnessResultPage />} />
           <Route path="wellness/history" element={<WellnessHistoryPage />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="signup" element={<SignupPage />} />
           <Route path="admin/forbidden" element={<AdminForbiddenPage />} />
+          <Route path="wellness/quietness/:spaceId" element={<QuietnessSpaceDetailPage />} />
           <Route
             path="mypage"
             element={
@@ -130,19 +142,21 @@ export default function App() {
         >
           <Route index element={<AdminHomePage />} />
           <Route path="members" element={<AdminMembersPage />} />
-          <Route path="members/:memberId" element={<AdminMembersPage />} />
+          <Route path="members/:userId" element={<AdminMembersPage />} />
           <Route path="reservations" element={<AdminReservationsPage />} />
           <Route path="reservations/:resvId" element={<AdminReservationsPage />} />
-          <Route path="programs" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="programs" element={<AdminProgramPage />} />
+          <Route path="programs/:programId/applications" element={<AdminProgramApplicantsPage />} />
           <Route path="rooms" element={<RoomListPage />} />
           <Route path="rooms/new" element={<RoomFormPage />} />
           <Route path="rooms/:roomId/edit" element={<RoomFormPage />} />
           <Route path="facilities" element={<FacilityListPage />} />
           <Route path="facilities/new" element={<FacilityFormPage />} />
           <Route path="facilities/:facilityId/edit" element={<FacilityFormPage />} />
-          <Route path="wellness" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="quietness" element={<AdminFeaturePlaceholderPage />} />
-          <Route path="inquiries" element={<AdminFeaturePlaceholderPage />} />
+          <Route path="wellness" element={<AdminWellnessStatisticsPage />} />
+          <Route path="quietness" element={<AdminQuietnessPage />} />
+          <Route path="inquiries" element={<AdminInquiriesPage />} />
+          <Route path="inquiries/:inquiryId" element={<AdminInquiriesPage />} />
           <Route path="*" element={<Navigate replace to="/admin" />} />
         </Route>
       </Routes>

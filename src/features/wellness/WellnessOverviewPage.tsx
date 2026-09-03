@@ -89,7 +89,7 @@ export function WellnessOverviewPage() {
               CHECK TODAY’S MIND
             </Link>
           </div>
-          <div className="justify-self-center md:justify-self-end">
+          <div className="w-full justify-self-center overflow-visible md:flex md:justify-end">
             <ScoreDisc
               score={latest?.totalScore ?? null}
               label={latest ? levelLabel[latest.level] : '체크 전'}
@@ -214,9 +214,12 @@ export function WellnessOverviewPage() {
                   {displaySpaces.map((space) => (
                     <div key={space.spaceId}>
                       <div className="flex justify-between text-xs">
-                        <span>
+                        <Link
+                          className="transition hover:text-gold-500"
+                          to={`/wellness/quietness/${space.spaceId}`}
+                        >
                           {space.spaceName} · {quietnessLabel[space.level]}
-                        </span>
+                        </Link>
                         <b>{space.decibel.toFixed(1)} dB</b>
                       </div>
                       <div className="mt-3 h-1 rounded-full bg-subtle">

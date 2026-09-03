@@ -1,5 +1,3 @@
-// types.ts (최종)
-
 export type ProgramStatus = "OPEN" | "CLOSED" | "DELETED";
 
 export interface ProgramResponse {

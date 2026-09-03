@@ -9,7 +9,7 @@ import { inquiryApi } from './api'
  * 문의 작성 화면.
  *
  * 요청: POST /api/inquiries { title, content }
- * 서버 제약: 제목 필수·100자 이내, 내용 필수.
+ * 서버 제약: 제목 필수·100자 이내, 내용 필수·2,000자 이내.
  */
 export function InquiryNewPage() {
   const navigate = useNavigate()
@@ -24,7 +24,9 @@ export function InquiryNewPage() {
       if (values.title.trim().length > 100) return '제목은 100자를 초과할 수 없습니다.'
       return undefined
     }
-    return values.content.trim() ? undefined : '내용은 필수 입력값입니다.'
+    if (!values.content.trim()) return '내용은 필수 입력값입니다.'
+    if (values.content.trim().length > 2000) return '내용은 2,000자를 초과할 수 없습니다.'
+    return undefined
   }
   const update = (field: 'title' | 'content', value: string) => {
     const values = { ...form, [field]: value }
@@ -64,9 +66,9 @@ export function InquiryNewPage() {
   return (
     <AccountLayout
       description="머무름과 프로그램에 대해 궁금한 점을 남겨 주시면 확인 후 답변을 드립니다."
-      eyebrow="NEW INQUIRY"
+      eyebrow="MEMBER SUPPORT"
       hero={<HeroAction badge="LIST" label="목록으로 돌아가기" to="/inquiries" />}
-      title="문의 작성"
+      title="새 문의 작성"
     >
       <form
         className="grid gap-[18px] rounded-xl border border-border-subtle bg-white p-9"
@@ -76,7 +78,7 @@ export function InquiryNewPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="flex-1">
             <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              Write an Inquiry
+              문의 작성
             </h2>
             <p className="text-xs leading-5 text-secondary">
               답변은 마이페이지의 내 문의에서 확인하실 수 있습니다.
@@ -98,9 +100,10 @@ export function InquiryNewPage() {
             value={form.title}
           />
         </FormField>
-        <FormField error={errors.content} label="내용">
+        <FormField error={errors.content} hint={`${form.content.length}/2,000자`} label="내용">
           <Textarea
             className={errors.content ? 'border-error-border' : ''}
+            maxLength={2000}
             name="content"
             onBlur={() => blur('content')}
             onChange={(event) => update('content', event.target.value)}

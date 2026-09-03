@@ -1,33 +1,102 @@
 import { authApiClient } from '../../lib/apiClient'
-import { ApiError, call, type ApiEnvelope } from '../../lib/apiError'
-import { adminMemberMock } from '../../mocks/adminMember'
+import { call } from '../../lib/apiError'
 import type {
+  AdminMemberActivity,
   AdminMemberDetail,
   AdminMemberFilters,
   AdminMemberPage,
-  AdminMemberReservations,
+  AdminMemberRole,
+  AdminMemberStats,
 } from './memberTypes'
 
-async function request<T>(config: Parameters<typeof authApiClient.request>[0]) {
-  const body = await call<T>(() => authApiClient.request<ApiEnvelope<T>>(config))
-  if (body.code !== 'OK') throw new ApiError(200, body.code, body.message)
-  return body.data
+type AdminUserWire = {
+  userId: number
+  email: string
+  name: string
+  phoneNumber: string
+  role: string
+  createdAt: string
 }
 
+type AdminUserDetailWire = AdminUserWire & { updatedAt: string | null }
+
+type AdminUserPageWire = {
+  content: AdminUserWire[]
+  pageNumber: number
+  pageSize: number
+  totalElements: number
+  totalPages: number
+  userCount: number
+  adminCount: number
+}
+
+function toRole(role: string): AdminMemberRole {
+  return role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER'
+}
+
+function toMember(user: AdminUserWire) {
+  return {
+    user_id: user.userId,
+    email: user.email,
+    name: user.name,
+    phone_number: user.phoneNumber,
+    role: toRole(user.role),
+    reservation_count: 0,
+    inquiry_count: 0,
+    created_at: user.createdAt,
+  }
+}
+
+/** 현재 백엔드의 관리자 회원 목록·상세 계약을 화면 모델로 변환한다. */
 export const adminMemberApi = {
-  list: (filters: AdminMemberFilters) => withMock('/admin/members', 'GET', filters, () =>
-    request<AdminMemberPage>({ url: '/admin/members', params: filters })),
-  detail: (memberId: string) => withMock(`/admin/members/${memberId}`, 'GET', undefined, () =>
-    request<AdminMemberDetail>({ url: `/admin/members/${memberId}` })),
-  reservations: (memberId: string, pageNum = 0) => withMock(`/admin/members/${memberId}/resv`, 'GET', undefined, () =>
-    request<AdminMemberReservations>({ url: `/admin/members/${memberId}/resv`, params: { page_num: pageNum, page_size: 10 } })),
-  remove: (memberId: string) => withMock(`/admin/members/${memberId}`, 'DELETE', undefined, () =>
-    request<null>({ url: `/admin/members/${memberId}`, method: 'DELETE' })),
-}
+  list: async (filters: AdminMemberFilters) => {
+    const response = await call<AdminUserPageWire>(() => authApiClient.get('/admin/users', {
+      params: {
+        role: filters.role,
+        keyword: filters.keyword,
+        page: filters.page_num,
+        size: filters.page_size,
+      },
+    }))
+    const data: AdminMemberPage = {
+      user_list: response.data.content.map(toMember),
+      page_num: response.data.pageNumber,
+      page_size: response.data.pageSize,
+      total_elements: response.data.totalElements,
+      total_pages: response.data.totalPages,
+    }
+    return { ...response, data }
+  },
 
-async function withMock<T>(path: string, method: string, filters: AdminMemberFilters | undefined, run: () => Promise<T>) {
-  const mock = await adminMemberMock<T>(path, method, filters)
-  if (!mock.handled) return run()
-  if (mock.error) throw mock.error
-  return mock.data as T
+  stats: async () => {
+    const response = await call<AdminUserPageWire>(() => authApiClient.get('/admin/users', {
+      params: { page: 0, size: 1 },
+    }))
+    const data: AdminMemberStats = {
+      total_users: response.data.totalElements,
+      admin_users: response.data.adminCount,
+      general_users: response.data.userCount,
+      new_users_today: 0,
+      new_users_last_7_days: 0,
+    }
+    return { ...response, data }
+  },
+
+  detail: async (userId: string) => {
+    const response = await call<AdminUserDetailWire>(() => authApiClient.get(`/admin/users/${userId}`))
+    const data: AdminMemberDetail = {
+      ...toMember(response.data),
+      updated_at: response.data.updatedAt ?? response.data.createdAt,
+    }
+    return { ...response, data }
+  },
+
+  activity: async (userId: string) => {
+    const data: AdminMemberActivity = {
+      user_id: Number(userId),
+      reservations: [],
+      inquiries: [],
+    }
+    return { code: 'OK', message: '활동 이력 API 준비 중입니다.', data }
+  },
 }
