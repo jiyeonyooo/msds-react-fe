@@ -6,7 +6,9 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, ''
 
 const commonConfig = {
   baseURL: `${API_BASE_URL}/api`,
-  headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+  // Axios가 일반 객체에는 application/json을, FormData에는 boundary가 포함된
+  // multipart/form-data를 요청 데이터에 맞춰 자동으로 설정합니다.
+  headers: { Accept: 'application/json' },
 }
 
 /** 인증이 필요 없는 API 전용 클라이언트입니다. */

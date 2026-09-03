@@ -10,6 +10,7 @@ import {
   inputClass,
 } from '../../admin/shared'
 import { ApiError } from '../../../lib/apiError'
+import { resolveProgramImageUrl } from '../../../lib/imageUrl'
 import { createProgram, deleteProgram, getPrograms, uploadProgramImage } from '../program'
 import type { ProgramCreateRequest, ProgramResponse, ProgramStatus } from '../types'
 import { isAxiosError } from 'axios'
@@ -183,7 +184,7 @@ export function AdminProgramPage() {
               />
               {form.pictureUrl && (
                 <img
-                  src={form.pictureUrl}
+                  src={resolveProgramImageUrl(form.pictureUrl)}
                   alt="미리보기"
                   className="mt-2 h-20 w-20 rounded-sm object-cover"
                 />
@@ -255,7 +256,7 @@ export function AdminProgramPage() {
                 >
                   <div className="grid size-[72px] place-items-center overflow-hidden rounded-sm bg-slate-100 text-[10px] text-slate-400">
                     {program.pictureUrl ? (
-                      <img alt="" className="size-full object-cover" src={program.pictureUrl} />
+                      <img alt="" className="size-full object-cover" src={resolveProgramImageUrl(program.pictureUrl)} />
                     ) : (
                       'NO IMAGE'
                     )}
