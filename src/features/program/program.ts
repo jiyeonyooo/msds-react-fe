@@ -48,3 +48,14 @@ export const getProgram = async (programId: number): Promise<ProgramResponse> =>
   const res = await authApiClient.get<ApiResponse<ProgramResponse>>(`/meditation/program/detail/${programId}`);
   return res.data.data;
 };
+
+export const uploadProgramImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await authApiClient.post<ApiResponse<string>>(
+    "/meditation/admin/program/upload-image",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } },
+  );
+  return res.data.data; // 예: "/images/uuid.jpg"
+};

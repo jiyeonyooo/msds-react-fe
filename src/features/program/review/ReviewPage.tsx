@@ -10,6 +10,12 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("ko-KR", { dateStyle: "long" }).format(new Date(value));
 }
 
+function maskName(name: string): string {
+  if (name.length <= 1) return name;
+  const visibleCount = Math.min(2, name.length - 1); // 최소 1글자는 항상 가림
+  return name.slice(0, visibleCount) + "*".repeat(name.length - visibleCount);
+}
+
 export default function ReviewPage() {
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
   const [myReservations, setMyReservations] = useState<ReservationResponse[]>([]);
@@ -185,7 +191,7 @@ export default function ReviewPage() {
                         <p className="text-[10px] font-medium tracking-[0.14em] text-gold-500">
                           {r.programName.toUpperCase()}
                         </p>
-                        <h3 className="mt-2 font-display text-2xl font-semibold">{r.userName}</h3>
+                        <h3 className="mt-2 font-display text-2xl font-semibold">{maskName(r.userName)}</h3>
                       </div>
                       <div className="text-right">
                         <p className="text-[11px] tracking-[0.04em] text-ink-500">

@@ -1,50 +1,65 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "../../components/ui";
-import { getPrograms, reserveProgram } from "./program.ts";
+import { getPrograms, reserveProgram, getMyReservations } from "./program.ts";
 import { ApiError } from "../../lib/apiError.ts";
-import { showToast } from "../../lib/toast.ts";
-import { SeatGauge } from "./SeatGauge.tsx";
-import { SkeletonCards } from "../../components/motion";
-import type { ProgramResponse } from "./types.ts";
+import type { ProgramResponse, ReservationResponse } from "./types.ts";
 
 export default function ProgramListPage() {
   const [programs, setPrograms] = useState<ProgramResponse[]>([]);
+  const [myReservations, setMyReservations] = useState<ReservationResponse[]>([]);
+  const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [reservingId, setReservingId] = useState<number | null>(null);
 
-  const loadPrograms = () => {
+  const loadAll = () => {
     setLoading(true);
-    getPrograms()
-      .then(setPrograms)
+    Promise.all([getPrograms(), getMyReservations().catch(() => [] as ReservationResponse[])])
+      .then(([programData, reservationData]) => {
+        setPrograms(programData);
+        setMyReservations(reservationData);
+      })
       .catch(() => setError("프로그램 목록을 불러오지 못했습니다."))
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    loadPrograms();
+    loadAll();
   }, []);
 
-  const handleReserve = async (programId: number) => {
+  // 이름 기준이 아니라 실제로는 프로그램 id 기준으로 중복 여부를 확인해야 하지만,
+  // ReservationResponse에 programId가 없으므로 programName으로 비교합니다.
+  // (백엔드 응답에 programId가 추가되면 더 정확해집니다)
+  const reservedProgramNames = new Set(
+    myReservations.filter((r) => r.status === "RESERVED").map((r) => r.programName),
+  );
+
+  const handleQuantityChange = (programId: number, value: number) => {
+    setQuantities((prev) => ({ ...prev, [programId]: value }));
+  };
+
+  const handleReserve = async (programId: number, maxRemain: number) => {
     setError("");
     setNotice("");
+    const quantity = quantities[programId] ?? 1;
+    if (quantity < 1 || quantity > maxRemain) {
+      setError(`인원은 1명 이상 ${maxRemain}명 이하로 입력해주세요.`);
+      return;
+    }
+    if (reservingId !== null) return; // 연타 방지: 요청 진행 중이면 무시
     setReservingId(programId);
     try {
-      await reserveProgram({ programId, quantity: 1 });
+      await reserveProgram({ programId, quantity });
       setNotice("예약이 완료되었습니다.");
-      showToast("프로그램 신청이 완료되었습니다. 마이페이지에서 확인할 수 있습니다.");
-      loadPrograms();
+      loadAll();
     } catch (err) {
-      const message =
-        err instanceof ApiError && err.status === 401
-          ? "예약하려면 먼저 로그인해 주세요."
-          : err instanceof ApiError && err.message
-            ? err.message
-            : "예약 중 오류가 발생했습니다.";
-      setError(message);
-      showToast(message, "error");
+      if (err instanceof ApiError && err.status === 401) {
+        setError("예약하려면 먼저 로그인해 주세요.");
+      } else {
+        setError(err instanceof ApiError && err.message ? err.message : "예약 중 오류가 발생했습니다.");
+      }
     } finally {
       setReservingId(null);
     }
@@ -93,9 +108,7 @@ export default function ProgramListPage() {
             </p>
           )}
 
-          {loading && (
-            <SkeletonCards className="grid gap-6 md:grid-cols-2" count={4} mediaClassName="h-[200px]" />
-          )}
+          {loading && <p className="py-12 text-sm text-ink-500">불러오는 중…</p>}
 
           {!loading && programs.length === 0 && (
             <div className="border border-dashed border-[#c7bfad] px-6 py-24 text-center text-sm leading-7 text-ink-500">
@@ -105,36 +118,60 @@ export default function ProgramListPage() {
 
           {!loading && programs.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2">
-              {programs.map((p) => (
-                <article
-                  key={p.id}
-                  className="grid overflow-hidden rounded-[14px] border border-border-subtle bg-white sm:grid-cols-[200px_1fr]"
-                >
-                  <div className="grid h-[200px] place-items-center overflow-hidden bg-[#e8e3d9] text-[10px] text-ink-500 sm:h-full">
-                    {p.pictureUrl ? (
-                      <img alt={p.name} className="size-full object-cover" src={p.pictureUrl} />
-                    ) : (
-                      "NO IMAGE"
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-3 px-6 py-6">
-                    <p className="text-[10px] font-medium tracking-[0.14em] text-gold-500">
-                      {p.status === "OPEN" ? "모집중" : "마감"}
-                    </p>
-                    <h3 className="font-display text-2xl font-semibold text-navy-900">{p.name}</h3>
-                    <div className="mt-auto">
-                      <SeatGauge capacity={p.capacity} remain={p.remain} />
+              {programs.map((p) => {
+                const alreadyReserved = reservedProgramNames.has(p.name);
+                const isReserving = reservingId === p.id;
+                return (
+                  <article
+                    key={p.id}
+                    className="grid overflow-hidden rounded-[14px] border border-border-subtle bg-white sm:grid-cols-[200px_1fr]"
+                  >
+                    <div className="grid h-[200px] place-items-center overflow-hidden bg-[#e8e3d9] text-[10px] text-ink-500 sm:h-full">
+                      {p.pictureUrl ? (
+                        <img alt={p.name} className="size-full object-cover" src={p.pictureUrl} />
+                      ) : (
+                        "NO IMAGE"
+                      )}
                     </div>
-                    <Button
-                      disabled={p.status !== "OPEN" || reservingId === p.id}
-                      onClick={() => handleReserve(p.id)}
-                      size="sm"
-                    >
-                      {reservingId === p.id ? "예약 중…" : "예약하기"}
-                    </Button>
-                  </div>
-                </article>
-              ))}
+                    <div className="flex flex-col gap-3 px-6 py-6">
+                      <p className="text-[10px] font-medium tracking-[0.14em] text-gold-500">
+                        {p.status === "OPEN" ? "모집중" : "마감"}
+                      </p>
+                      <h3 className="font-display text-2xl font-semibold text-navy-900">{p.name}</h3>
+                      <p className="text-xs font-medium text-ink-500">
+                        잔여 {p.remain} / 정원 {p.capacity}
+                      </p>
+
+                      {alreadyReserved ? (
+                        <p className="mt-auto text-xs text-ink-500">이미 예약한 프로그램입니다.</p>
+                      ) : (
+                        <div className="mt-auto flex items-center gap-2">
+                          <label className="flex items-center gap-1 text-xs text-ink-700">
+                            인원
+                            <input
+                              type="number"
+                              min={1}
+                              max={p.remain}
+                              value={quantities[p.id] ?? 1}
+                              onChange={(e) => handleQuantityChange(p.id, Number(e.target.value))}
+                              className="w-16 rounded-sm border border-[#cfc7ba] px-2 py-1 text-sm"
+                              disabled={p.status !== "OPEN" || isReserving}
+                            />
+                            명
+                          </label>
+                          <Button
+                            disabled={p.status !== "OPEN" || isReserving || p.remain === 0}
+                            onClick={() => handleReserve(p.id, p.remain)}
+                            size="sm"
+                          >
+                            {isReserving ? "예약 중…" : "예약하기"}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </div>
