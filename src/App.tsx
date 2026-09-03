@@ -1,6 +1,7 @@
 ﻿import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { GlobalScrollbar } from './components/GlobalScrollbar'
+import { ScrollRestoration } from './components/ScrollRestoration'
 import { Navigate } from 'react-router-dom'
 import { HomePage } from './features/home/HomePage'
 import { FacilityPage } from './features/facility/FacilityPage'
@@ -56,6 +57,7 @@ import './index.css'
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollRestoration />
       {isDevMode && <DevShell />}
       <GlobalScrollbar />
       <Routes>
