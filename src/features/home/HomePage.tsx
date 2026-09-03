@@ -47,7 +47,7 @@ export function HomePage() {
     .slice(0, 3)
 
   return (
-    <main ref={scope} className="landing-page overflow-clip text-navy-900">
+    <main ref={scope} className="landing-page overflow-x-clip text-navy-900">
       <HeroSection onSearch={goToReservation} />
       <StoryValuesSection onCardSelect={scrollToExperience} />
       <RoomsShowcaseSection rooms={rooms} status={contentStatus} />

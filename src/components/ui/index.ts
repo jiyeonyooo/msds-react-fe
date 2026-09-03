@@ -1,5 +1,6 @@
 export { BookingField } from './BookingField'
 export { Button } from './Button'
+export { DatePicker } from './DatePicker'
 export { Footer } from './Footer'
 export { FormField, Select, Textarea, TextInput } from './FormField'
 export { Header } from './Header'

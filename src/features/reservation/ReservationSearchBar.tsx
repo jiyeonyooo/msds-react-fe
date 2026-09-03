@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react'
-import { BookingField, Button, Select, TextInput } from '../../components/ui'
+import { BookingField, Button, DatePicker, Select } from '../../components/ui'
 import type { AvailabilityRequest } from './types'
 import { defaultAvailability, seoulToday } from './reservationSearchDefaults'
 
@@ -44,31 +44,29 @@ export function ReservationSearchBar({
       noValidate
     >
       <SearchField label="CHECK-IN" error={errors.check_in_date}>
-        <TextInput
+        <DatePicker
           aria-invalid={Boolean(errors.check_in_date)}
-          className="border-0 bg-transparent p-0"
-          type="date"
+          label="체크인"
           min={seoulToday()}
+          onChange={(value) => update('check_in_date', value)}
           value={form.check_in_date}
-          onChange={(event) => update('check_in_date', event.target.value)}
         />
       </SearchField>
       <SearchField label="CHECK-OUT" error={errors.check_out_date}>
-        <TextInput
+        <DatePicker
           aria-invalid={Boolean(errors.check_out_date)}
-          className="border-0 bg-transparent p-0"
-          type="date"
+          label="체크아웃"
           min={form.check_in_date}
+          onChange={(value) => update('check_out_date', value)}
           value={form.check_out_date}
-          onChange={(event) => update('check_out_date', event.target.value)}
         />
       </SearchField>
       <SearchField label="GUESTS" error={errors.guest_count}>
         <Select
           aria-invalid={Boolean(errors.guest_count)}
-          className="border-0 bg-transparent p-0"
+          className="h-8 w-full border-0 bg-transparent px-0 text-sm"
           value={form.guest_count}
-          onChange={(event) => update('guest_count', Number(event.target.value))}
+          onValueChange={(value) => update('guest_count', Number(value))}
         >
           {[1, 2, 3, 4].map((count) => (
             <option key={count} value={count}>
