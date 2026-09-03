@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useRevealAll } from '../../components/motion/hooks'
 import facilityImage1 from '../../assets/facility1.png'
 import facilityImage2 from '../../assets/facility2.png'
 import facilityImage3 from '../../assets/facility3.png'
@@ -38,6 +39,8 @@ export function FacilityPage() {
   const [facilities, setFacilities] = useState<Facility[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  // 목록이 도착한 뒤에 그려지므로 길이를 키로 리빌 관찰을 다시 건다.
+  useRevealAll(`facilities-${facilities.length}`)
   const [retryKey, setRetryKey] = useState(0)
 
   useEffect(() => {
@@ -94,16 +97,16 @@ export function FacilityPage() {
       {loading && <div className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-live="polite" aria-label="편의시설을 불러오는 중입니다">{Array.from({ length: 6 }, (_, index) => <FacilitySkeleton key={index} />)}</div>}
       {!loading && error && <section className="mt-8 border border-error-border bg-white px-6 py-20 text-center" role="alert"><p className="text-sm text-error">편의시설 정보를 불러오지 못했습니다.</p><p className="mt-2 text-xs text-muted">잠시 후 다시 시도해 주세요.</p><button className="mt-7 border border-navy-900 px-6 py-3 text-xs tracking-[0.08em] hover:bg-navy-900 hover:text-white" onClick={retry}>다시 시도</button></section>}
       {!loading && !error && facilities.length === 0 && <section className="mt-8 border border-dashed border-gold-300 px-6 py-20 text-center"><p className="text-sm text-navy-900">{selected === 'ALL' ? '아직 등록된 편의시설이 없습니다.' : '이 카테고리에 등록된 편의시설이 없습니다.'}</p>{selected === 'ALL' ? <p className="mt-2 text-xs text-muted">새로운 공간을 준비하고 있습니다.</p> : <button className="mt-7 border border-navy-900 px-6 py-3 text-xs tracking-[0.08em] hover:bg-navy-900 hover:text-white" onClick={() => selectCategory('ALL')}>전체 편의시설 보기</button>}</section>}
-      {!loading && !error && facilities.length > 0 && <section className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-live="polite">{facilities.map((facility, index) => <FacilityCard facility={facility} imageUrl={facilityImages[index % facilityImages.length]} key={facility.facilityId} />)}</section>}
+      {!loading && !error && facilities.length > 0 && <section className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3" aria-live="polite">{facilities.map((facility, index) => <FacilityCard delay={Math.min(index, 5) * 70} facility={facility} imageUrl={facilityImages[index % facilityImages.length]} key={facility.facilityId} />)}</section>}
     </div>
   </main>
 }
 
-function FacilityCard({ facility, imageUrl }: { facility: Facility; imageUrl: string }) {
+function FacilityCard({ delay, facility, imageUrl }: { delay: number; facility: Facility; imageUrl: string }) {
   const [imageFailed, setImageFailed] = useState(false)
-  return <article className="overflow-hidden border border-border-subtle bg-white shadow-card">
+  return <article className="reveal group overflow-hidden border border-border-subtle bg-white shadow-card transition duration-500 ease-calm hover:-translate-y-1" style={{ '--reveal-delay': `${delay}ms` } as React.CSSProperties}>
     <div className="aspect-[16/10] overflow-hidden bg-[linear-gradient(135deg,#f1ece3,#dde3d8)] md:aspect-[3/2]">
-      {!imageFailed ? <img className="h-full w-full object-cover transition duration-700 hover:scale-[1.03]" src={imageUrl} alt={`${facility.name} 전경`} onError={() => setImageFailed(true)} /> : <div className="grid h-full place-items-center" aria-hidden="true"><span className="grid size-16 place-items-center rounded-full border border-gold-300 font-display text-3xl text-gold-500">{categorySymbols[facility.category]}</span></div>}
+      {!imageFailed ? <img className="h-full w-full object-cover transition duration-[1200ms] ease-calm group-hover:scale-[1.05]" src={imageUrl} alt={`${facility.name} 전경`} onError={() => setImageFailed(true)} /> : <div className="grid h-full place-items-center" aria-hidden="true"><span className="grid size-16 place-items-center rounded-full border border-gold-300 font-display text-3xl text-gold-500">{categorySymbols[facility.category]}</span></div>}
     </div>
     <div className="p-7">
       <span className="text-[10px] font-medium tracking-[0.16em] text-gold-500">{categoryLabels[facility.category]}</span>

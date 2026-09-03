@@ -24,6 +24,15 @@ export function Header() {
     addEventListener('msds-dev-auth', update)
     return () => removeEventListener('msds-dev-auth', update)
   }, [])
+  // 조금이라도 내려가면 헤더 배경을 굳힌다. 히어로 위에 얹혀 있을 때는 투명에 가깝게 두어
+  // 첫 화면의 사진을 가리지 않고, 스크롤이 시작되면 경계선과 그림자로 분리한다.
+  const [lifted, setLifted] = useState(false)
+  useEffect(() => {
+    const update = () => setLifted(scrollY > 8)
+    update()
+    addEventListener('scroll', update, { passive: true })
+    return () => removeEventListener('scroll', update)
+  }, [])
   const signedIn = session !== null || devAuthState !== 'guest'
   const accountAction = signedIn
     ? {
@@ -32,7 +41,14 @@ export function Header() {
       }
     : { to: '/login', label: 'LOGIN' }
   return (
-    <header className="relative z-40 h-[92px] border-b border-border-subtle bg-surface" id="top">
+    <header
+      className={`sticky top-0 z-40 h-[92px] transition-[background-color,border-color,box-shadow] duration-500 ease-calm ${
+        lifted
+          ? 'border-b border-border-subtle bg-surface shadow-card'
+          : 'border-b border-transparent bg-surface/85 backdrop-blur-sm'
+      }`}
+      id="top"
+    >
       <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[150px_1fr_auto] items-center px-5 md:px-16">
         <Logo />
         <nav

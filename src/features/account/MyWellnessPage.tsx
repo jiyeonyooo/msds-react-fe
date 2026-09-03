@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { wellnessApi } from '../wellness/api'
 import type { WellnessHistory } from '../wellness/types'
 import { formatDateTime, levelLabel, stayStageLabel } from '../wellness/wellnessFormat'
+import { SkeletonRows } from '../../components/motion'
 import { AccountLayout } from './AccountLayout'
 import { AccountEmptyState, AccountPanel, AccountPanelAction } from './AccountPanel'
 
@@ -65,9 +66,7 @@ export function MyWellnessPage() {
           </p>
         )}
         {!error && loading && (
-          <p className="py-10 text-center text-[13px] text-muted" role="status">
-            기록을 불러오는 중입니다…
-          </p>
+          <SkeletonRows rows={3} />
         )}
         {!error && !loading && history.length === 0 && (
           <AccountEmptyState
