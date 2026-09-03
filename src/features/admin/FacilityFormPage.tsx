@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AdminApiError, adminApi } from './api'
-import { AdminField, AdminPageHeader, ImageThumb, inputClass, LoadingState, Notice } from './shared'
+import { SingleImageField } from './ImageUploadFields'
+import { uploadPendingImage, type PendingImage } from './imageUpload'
+import { AdminField, AdminPageHeader, inputClass, LoadingState, Notice } from './shared'
 import type { FacilityCategory, FacilityFormValue, FacilityUpdateRequest } from './types'
 
 const initial: FacilityFormValue = {
@@ -52,7 +54,8 @@ export function FacilityFormPage() {
     [pending, setPending] = useState(false),
     [message, setMessage] = useState(''),
     [errors, setErrors] = useState<ReturnType<typeof validate>>({})
-  const dirty = JSON.stringify(form) !== JSON.stringify(base),
+  const [pendingImage, setPendingImage] = useState<PendingImage | null>(null)
+  const dirty = JSON.stringify(form) !== JSON.stringify(base) || pendingImage !== null,
     invalid = Object.keys(validate(form, edit ? base : undefined)).length > 0
   useEffect(() => {
     if (!edit || !id) return
@@ -108,15 +111,26 @@ export function FacilityFormPage() {
     if (Object.keys(next).length) return
     setPending(true)
     try {
+      let imageUrl = form.imageUrl
+      if (pendingImage) {
+        const uploaded =
+          pendingImage.uploaded ??
+          (await uploadPendingImage(pendingImage, 'facilities', (change) =>
+            setPendingImage((image) => (image ? { ...image, ...change } : image)),
+          ))
+        imageUrl = uploaded.url
+      }
       const body = {
         name: form.name.trim(),
         category: form.category,
         description: form.description.trim() || undefined,
-        imageUrl: form.imageUrl.trim() || undefined,
+        imageUrl: imageUrl.trim() || undefined,
         active: form.active,
       }
       const result =
-        edit && id ? await adminApi.updateFacility(id, patch) : await adminApi.createFacility(body)
+        edit && id
+          ? await adminApi.updateFacility(id, pendingImage ? { ...patch, imageUrl } : patch)
+          : await adminApi.createFacility(body)
       const v = {
         name: result.name,
         category: result.category,
@@ -126,8 +140,12 @@ export function FacilityFormPage() {
       }
       setForm(v)
       setBase(v)
-      if (edit) setMessage('편의시설 정보가 저장되었습니다.')
-      else navigate('/admin/facilities', { replace: true })
+      if (pendingImage) URL.revokeObjectURL(pendingImage.previewUrl)
+      setPendingImage(null)
+      navigate('/admin/facilities', {
+        replace: true,
+        state: { toast: edit ? '편의시설 정보가 수정되었습니다.' : '편의시설이 등록되었습니다.' },
+      })
     } catch (err) {
       const a = err as AdminApiError
       if (a.status === 409) setErrors((x) => ({ ...x, name: '이미 등록된 편의시설명입니다.' }))
@@ -188,21 +206,14 @@ export function FacilityFormPage() {
               </span>
             </AdminField>
           </section>
-          <section className="grid gap-5 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_auto] md:p-6">
-            <div>
-              <h2 className="mt-0 border-b border-slate-100 pb-4 text-base font-semibold text-[#172b44]">
-                노출 정보
-              </h2>
-              <AdminField label="이미지 URL" error={errors.imageUrl}>
-                <input
-                  className={inputClass}
-                  type="url"
-                  maxLength={512}
-                  placeholder="https://example.com/image.jpg"
-                  value={form.imageUrl}
-                  onChange={(e) => set('imageUrl', e.target.value)}
-                />
-              </AdminField>
+          <SingleImageField
+            currentUrl={form.imageUrl}
+            pending={pendingImage}
+            onChange={setPendingImage}
+            disabled={pending}
+          />
+          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+              <h2 className="mt-0 border-b border-slate-100 pb-4 text-base font-semibold text-[#172b44]">노출 정보</h2>
               <label className="mt-5 flex min-h-11 items-center gap-3 text-sm">
                 <input
                   type="checkbox"
@@ -212,15 +223,7 @@ export function FacilityFormPage() {
                 />
                 일반 서비스에 노출
               </label>
-            </div>
-            <ImageThumb src={form.imageUrl} alt="이미지 미리보기" />
           </section>
-          {edit && base.imageUrl && !form.imageUrl && (
-            <Notice>
-              현재 API 계약에서는 저장된 이미지 URL을 완전히 삭제할 수 없습니다. 다른 URL로 교체해
-              주세요.
-            </Notice>
-          )}
           <div className="fixed inset-x-0 bottom-0 z-10 flex justify-end gap-2 border-t border-slate-200 bg-white p-4 shadow-lg md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             <button
               type="button"
