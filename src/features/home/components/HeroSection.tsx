@@ -7,7 +7,7 @@ export function HeroSection({ onSearch }: { onSearch: (form: AvailabilityRequest
   return (
     <section
       data-section
-      className="landing-hero relative min-h-[960px] bg-cover bg-center text-white after:absolute after:inset-0 after:bg-[linear-gradient(90deg,rgb(14_34_57/0.76),rgb(14_34_57/0.14)_72%,transparent)] after:content-[''] md:min-h-[820px]"
+      className="landing-hero relative z-10 min-h-[960px] bg-cover bg-center text-white after:absolute after:inset-0 after:bg-[linear-gradient(90deg,rgb(14_34_57/0.76),rgb(14_34_57/0.14)_72%,transparent)] after:content-[''] md:min-h-[820px]"
       style={{ backgroundImage: `url(${homeMedia.hero})` }}
     >
       <div
