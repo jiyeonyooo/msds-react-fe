@@ -10,15 +10,24 @@ import {
   inputClass,
 } from '../../admin/shared'
 import { ApiError } from '../../../lib/apiError'
-import { createProgram, deleteProgram, getPrograms, updateProgram } from '../program'
+import { createProgram, deleteProgram, getPrograms, uploadProgramImage } from '../program'
 import type { ProgramCreateRequest, ProgramResponse, ProgramStatus } from '../types'
+import { isAxiosError } from 'axios'
 
 type StatusFilter = 'ALL' | ProgramStatus
 
 const emptyForm: ProgramCreateRequest = { name: '', pictureUrl: '', capacity: 10 }
 
 function errorMessage(error: unknown) {
-  if (error instanceof ApiError && error.status === 403) return '관리자 권한이 필요합니다.'
+  if (isAxiosError(error)) {
+    if (error.response?.status === 403) return '관리자 권한이 필요합니다.'
+    const backendMessage = error.response?.data?.message
+    if (typeof backendMessage === 'string' && backendMessage) return backendMessage
+  }
+  if (error instanceof ApiError) {
+    if (error.status === 403) return '관리자 권한이 필요합니다.'
+    if (error.message) return error.message
+  }
   return error instanceof Error && error.message ? error.message : '요청을 처리하지 못했습니다.'
 }
 
@@ -26,10 +35,25 @@ export function AdminProgramPage() {
   const [programs, setPrograms] = useState<ProgramResponse[]>([])
   const [filter, setFilter] = useState<StatusFilter>('ALL')
   const [form, setForm] = useState<ProgramCreateRequest>(emptyForm)
-  const [editingId, setEditingId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [uploading, setUploading] = useState(false)
+
+  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      const imageUrl = await uploadProgramImage(file)
+      setForm((prev) => ({ ...prev, pictureUrl: imageUrl }))
+    } catch (uploadError) {
+      setError(errorMessage(uploadError))
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const loadPrograms = async () => {
     try {
@@ -71,7 +95,6 @@ export function AdminProgramPage() {
 
   const resetForm = () => {
     setForm(emptyForm)
-    setEditingId(null)
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -84,8 +107,7 @@ export function AdminProgramPage() {
         name: form.name.trim(),
         pictureUrl: form.pictureUrl?.trim() || undefined,
       }
-      if (editingId) await updateProgram(editingId, request)
-      else await createProgram(request)
+      await createProgram(request)
       resetForm()
       await loadPrograms()
     } catch (saveError) {
@@ -95,18 +117,8 @@ export function AdminProgramPage() {
     }
   }
 
-  const startEdit = (program: ProgramResponse) => {
-    setEditingId(program.id)
-    setForm({
-      name: program.name,
-      pictureUrl: program.pictureUrl ?? '',
-      capacity: program.capacity,
-    })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   const handleDelete = async (program: ProgramResponse) => {
-    if (!window.confirm(`‘${program.name}’ 프로그램을 삭제할까요?`)) return
+    if (!window.confirm(`'${program.name}' 프로그램을 삭제할까요?`)) return
     try {
       setError('')
       await deleteProgram(program.id)
@@ -145,20 +157,7 @@ export function AdminProgramPage() {
       </div>
 
       <div className="mt-4">
-        <AdminPanel
-          action={
-            editingId ? (
-              <button
-                className="text-xs text-slate-600 underline"
-                onClick={resetForm}
-                type="button"
-              >
-                수정 취소
-              </button>
-            ) : undefined
-          }
-          title={editingId ? '프로그램 수정' : '새 프로그램 등록'}
-        >
+        <AdminPanel title="새 프로그램 등록">
           <form
             className="grid gap-4 lg:grid-cols-[1fr_1fr_140px_auto] lg:items-end"
             onSubmit={handleSubmit}
@@ -174,14 +173,21 @@ export function AdminProgramPage() {
               />
             </label>
             <label className="text-sm font-medium text-slate-700">
-              이미지 URL
+              이미지 업로드
               <input
                 className={inputClass}
-                onChange={(event) => setForm({ ...form, pictureUrl: event.target.value })}
-                placeholder="선택 입력"
-                type="url"
-                value={form.pictureUrl}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                disabled={uploading}
               />
+              {form.pictureUrl && (
+                <img
+                  src={form.pictureUrl}
+                  alt="미리보기"
+                  className="mt-2 h-20 w-20 rounded-sm object-cover"
+                />
+              )}
             </label>
             <label className="text-sm font-medium text-slate-700">
               정원
@@ -195,7 +201,7 @@ export function AdminProgramPage() {
               />
             </label>
             <Button className="h-11" disabled={saving} type="submit">
-              {saving ? '저장 중…' : editingId ? '변경 저장' : '프로그램 등록'}
+              {saving ? '저장 중…' : '프로그램 등록'}
             </Button>
           </form>
         </AdminPanel>
@@ -270,7 +276,7 @@ export function AdminProgramPage() {
                     <p className="mt-2 text-xs text-slate-600">
                       정원 {program.capacity}명 · 신청 {reserved}명 · 잔여 {program.remain}명
                     </p>
-                    <div className="mt-3 h-1.5 max-w-sm overflow-hidden rounded-full bg-slate-200">
+                    <div className="mt-3 h-1.5 max-w-[384px] overflow-hidden rounded-full bg-slate-200">
                       <div
                         className="h-full bg-[#a77f3b]"
                         style={{
@@ -286,13 +292,6 @@ export function AdminProgramPage() {
                     >
                       신청자 보기
                     </Link>
-                    <button
-                      className="min-h-10 rounded-sm border border-slate-300 px-4 text-[11px] text-slate-700"
-                      onClick={() => startEdit(program)}
-                      type="button"
-                    >
-                      수정
-                    </button>
                     <button
                       className="min-h-10 rounded-sm border border-error-border px-4 text-[11px] text-error"
                       onClick={() => void handleDelete(program)}

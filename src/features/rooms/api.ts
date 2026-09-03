@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { publicApiClient } from '../../lib/apiClient'
+import { uniqueBy } from '../../lib/collections'
 import type { RoomDetail, RoomSummary } from './types'
 
 type ApiResponse<T> = { code: string; message: string; data: T }
@@ -33,6 +34,6 @@ async function get<T>(path: string): Promise<T> {
 }
 
 export const roomsApi = {
-  list: () => get<RoomSummary[]>('/rooms'),
+  list: async () => uniqueBy(await get<RoomSummary[]>('/rooms'), (room) => room.roomId),
   detail: (roomId: number) => get<RoomDetail>(`/rooms/${roomId}`),
 }

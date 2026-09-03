@@ -4,7 +4,6 @@ import { internalNavigationEvent, scrollLayoutReadyEvent } from '../lib/navigati
 
 type ScrollPosition = { left: number; top: number }
 type StoredScrollPosition = ScrollPosition & { savedAt: number }
-type HistoryStateWithScroll = { __msdsScrollPosition?: unknown }
 
 const storagePrefix = 'msds:scroll-position:'
 
@@ -12,8 +11,8 @@ function storageKey(locationKey: string) {
   return `${storagePrefix}${locationKey}`
 }
 
-function currentUrlKey() {
-  return `url:${window.location.pathname}${window.location.search}${window.location.hash}`
+function urlKey(pathname: string, search: string, hash: string) {
+  return `url:${pathname}${search}${hash}`
 }
 
 function asStoredScrollPosition(value: unknown): StoredScrollPosition | null {
@@ -39,29 +38,27 @@ function readStoredPosition(key: string) {
   }
 }
 
-function savePosition(locationKey: string) {
+function savePosition(locationKey: string, locationUrlKey: string) {
   const position: StoredScrollPosition = {
     left: window.scrollX,
     top: window.scrollY,
     savedAt: Date.now(),
   }
   const serialized = JSON.stringify(position)
-  const currentState = (window.history.state ?? {}) as HistoryStateWithScroll
-  window.history.replaceState({ ...currentState, __msdsScrollPosition: position }, '')
   sessionStorage.setItem(storageKey(locationKey), serialized)
-  sessionStorage.setItem(storageKey(currentUrlKey()), serialized)
+  sessionStorage.setItem(storageKey(locationUrlKey), serialized)
 }
 
-function readPosition(locationKey: string): ScrollPosition | null {
-  const historyPosition = asStoredScrollPosition(
-    (window.history.state as HistoryStateWithScroll | null)?.__msdsScrollPosition,
-  )
-  if (historyPosition) return historyPosition
+function readPosition(locationKey: string, locationUrlKey: string, preferUrl: boolean) {
+  if (preferUrl) {
+    const urlPosition = readStoredPosition(locationUrlKey)
+    if (urlPosition) return urlPosition
+  }
 
   const entryPosition = readStoredPosition(locationKey)
   if (entryPosition) return entryPosition
 
-  return readStoredPosition(currentUrlKey())
+  return readStoredPosition(locationUrlKey)
 }
 
 /**
@@ -73,7 +70,8 @@ export function ScrollRestoration() {
   const navigationType = useNavigationType()
   const canSavePosition = useRef(false)
   const initialLocationKey = useRef(location.key)
-  const restorationTarget = useRef<{ key: string; position: ScrollPosition } | null>(null)
+  const pendingInternalNavigation = useRef(false)
+  const locationUrlKey = urlKey(location.pathname, location.search, location.hash)
 
   useLayoutEffect(() => {
     const previousScrollRestoration = history.scrollRestoration
@@ -84,42 +82,63 @@ export function ScrollRestoration() {
   }, [])
 
   useLayoutEffect(() => {
+    let scheduledSave = 0
+    canSavePosition.current = false
+
     const saveCurrentPosition = () => {
-      if (canSavePosition.current) savePosition(location.key)
+      if (canSavePosition.current) savePosition(location.key, locationUrlKey)
+    }
+    const scheduleCurrentPositionSave = () => {
+      if (!canSavePosition.current || scheduledSave) return
+      scheduledSave = requestAnimationFrame(() => {
+        scheduledSave = 0
+        saveCurrentPosition()
+      })
+    }
+    const flushCurrentPosition = () => {
+      if (scheduledSave) {
+        cancelAnimationFrame(scheduledSave)
+        scheduledSave = 0
+      }
+      saveCurrentPosition()
     }
     const scrollToTop = () => {
-      saveCurrentPosition()
+      flushCurrentPosition()
+      pendingInternalNavigation.current = true
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     }
 
-    window.addEventListener('scroll', saveCurrentPosition, { passive: true })
-    window.addEventListener('pagehide', saveCurrentPosition)
-    window.addEventListener('beforeunload', saveCurrentPosition)
+    window.addEventListener('scroll', scheduleCurrentPositionSave, { passive: true })
+    window.addEventListener('pagehide', flushCurrentPosition)
+    window.addEventListener('beforeunload', flushCurrentPosition)
     window.addEventListener(internalNavigationEvent, scrollToTop)
     return () => {
-      saveCurrentPosition()
-      window.removeEventListener('scroll', saveCurrentPosition)
-      window.removeEventListener('pagehide', saveCurrentPosition)
-      window.removeEventListener('beforeunload', saveCurrentPosition)
+      flushCurrentPosition()
+      window.removeEventListener('scroll', scheduleCurrentPositionSave)
+      window.removeEventListener('pagehide', flushCurrentPosition)
+      window.removeEventListener('beforeunload', flushCurrentPosition)
       window.removeEventListener(internalNavigationEvent, scrollToTop)
     }
-  }, [location.key])
+  }, [location.key, locationUrlKey])
 
   useLayoutEffect(() => {
     const isInitialRender = location.key === initialLocationKey.current
-    if (!isInitialRender && navigationType !== 'POP') {
+    // The app's navigation helper updates history directly, which React Router
+    // observes as POP. Keep it distinct from an actual browser back/forward
+    // navigation so stale per-entry positions are never restored.
+    const isInternalNavigation = pendingInternalNavigation.current
+    pendingInternalNavigation.current = false
+    if (isInternalNavigation || (!isInitialRender && navigationType !== 'POP')) {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      canSavePosition.current = true
       return
     }
 
-    const cachedTarget = restorationTarget.current
-    const position =
-      cachedTarget?.key === location.key ? cachedTarget.position : readPosition(location.key)
+    const position = readPosition(location.key, locationUrlKey, isInitialRender)
     if (!position) {
       canSavePosition.current = true
       return
     }
-    restorationTarget.current = { key: location.key, position }
 
     const restore = () => {
       window.scrollTo({ ...position, behavior: 'auto' })
@@ -143,7 +162,7 @@ export function ScrollRestoration() {
       resizeObserver.disconnect()
       window.removeEventListener(scrollLayoutReadyEvent, restore)
     }
-  }, [location.key, navigationType])
+  }, [location.key, locationUrlKey, navigationType])
 
   return null
 }
