@@ -1,28 +1,33 @@
-import { type FormEvent, type ReactNode, useEffect, useState } from 'react'
-import {
-  BookingField,
-  Button,
-  RoomMediaCard,
-  Select,
-  StatusBadge,
-  TextInput,
-} from '../../components/ui'
+import { useEffect, useRef, useState } from 'react'
+import { Button, RoomMediaCard, StatusBadge } from '../../components/ui'
 import { navigate } from '../../lib/navigation'
 import type { AvailabilityRequest } from './types'
 import { useReservationAvailability } from './hooks'
+import { ReservationSearchBar } from './ReservationSearchBar'
+import { defaultAvailability } from './reservationSearchDefaults'
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
-const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
-const query = new URLSearchParams(window.location.search)
-const initialForm: AvailabilityRequest = {
-  check_in_date: query.get('check_in_date') || today,
-  check_out_date: query.get('check_out_date') || '',
-  guest_count: Number(query.get('guest_count')) || 2,
+
+function initialAvailability(): AvailabilityRequest {
+  const query = new URLSearchParams(window.location.search)
+  return {
+    check_in_date: query.get('check_in_date') || defaultAvailability.check_in_date,
+    check_out_date: query.get('check_out_date') || '',
+    guest_count: Number(query.get('guest_count')) || 2,
+  }
 }
-const searchFromQuery = Boolean(query.get('check_in_date') && query.get('check_out_date'))
+
+function shouldSearchFromQuery() {
+  const query = new URLSearchParams(window.location.search)
+  return (
+    query.get('search') === '1' ||
+    Boolean(query.get('check_in_date') && query.get('check_out_date'))
+  )
+}
 
 export function ReservationPage() {
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(initialAvailability)
+  const searchedFromQuery = useRef(false)
   const {
     rooms,
     errors,
@@ -32,29 +37,20 @@ export function ReservationPage() {
     setMessage,
     search: searchAvailability,
   } = useReservationAvailability()
-  useEffect(() => {
-    if (searchFromQuery) void searchAvailability(initialForm)
-  }, [searchAvailability])
-  const update = <K extends keyof AvailabilityRequest>(key: K, value: AvailabilityRequest[K]) => {
-    setForm((current) => ({ ...current, [key]: value }))
-    setErrors((current) => ({ ...current, [key]: '' }))
+
+  async function search(value: AvailabilityRequest) {
+    setForm(value)
+    setErrors({})
     setMessage('')
+    await searchAvailability(value)
   }
-  async function search(event: FormEvent) {
-    event.preventDefault()
-    const next: Record<string, string> = {}
-    if (form.check_in_date < today)
-      next.check_in_date = '체크인은 오늘 또는 이후 날짜를 선택해 주세요.'
-    if (!form.check_out_date || form.check_out_date <= form.check_in_date)
-      next.check_out_date = '체크아웃은 체크인 이후 날짜여야 합니다.'
-    if (form.guest_count < 1) next.guest_count = '투숙 인원은 1명 이상이어야 합니다.'
-    if (Object.keys(next).length) {
-      setErrors(next)
-      return
-    }
-    await searchAvailability(form)
-  }
-  const ready = Boolean(form.check_in_date && form.check_out_date && form.guest_count >= 1)
+
+  useEffect(() => {
+    if (!shouldSearchFromQuery() || searchedFromQuery.current) return
+    searchedFromQuery.current = true
+    void searchAvailability(initialAvailability())
+  }, [searchAvailability])
+
   return (
     <main className="mx-auto max-w-7xl px-6 pt-[58px] pb-[110px] md:pt-[90px]">
       <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">MAKE A RESERVATION</p>
@@ -62,49 +58,13 @@ export function ReservationPage() {
         예약하기
       </h1>
       <p className="text-sm text-muted">원하시는 머무름의 시간과 인원을 선택해 주세요.</p>
-      <form
-        className="mt-[38px] grid grid-cols-1 gap-3 border border-border-subtle bg-white p-[26px] md:grid-cols-[1fr_1fr_1fr_auto]"
-        onSubmit={search}
-        noValidate
-      >
-        <Field label="CHECK-IN" error={errors.check_in_date}>
-          <TextInput
-            aria-invalid={Boolean(errors.check_in_date)}
-            className="border-0 bg-transparent p-0"
-            type="date"
-            min={today}
-            value={form.check_in_date}
-            onChange={(event) => update('check_in_date', event.target.value)}
-          />
-        </Field>
-        <Field label="CHECK-OUT" error={errors.check_out_date}>
-          <TextInput
-            aria-invalid={Boolean(errors.check_out_date)}
-            className="border-0 bg-transparent p-0"
-            type="date"
-            min={form.check_in_date}
-            value={form.check_out_date}
-            onChange={(event) => update('check_out_date', event.target.value)}
-          />
-        </Field>
-        <Field label="GUESTS" error={errors.guest_count}>
-          <Select
-            aria-invalid={Boolean(errors.guest_count)}
-            className="border-0 bg-transparent p-0"
-            value={form.guest_count}
-            onChange={(event) => update('guest_count', Number(event.target.value))}
-          >
-            {[1, 2, 3, 4].map((count) => (
-              <option key={count} value={count}>
-                성인 {count}명
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Button type="submit" disabled={loading || !ready}>
-          {loading ? '조회 중…' : '예약 가능 객실 보기'}
-        </Button>
-      </form>
+      <ReservationSearchBar
+        className="mt-[38px]"
+        initialValue={form}
+        loading={loading}
+        serverErrors={errors}
+        onSearch={search}
+      />
       {message && (
         <p className="mt-[14px] text-[13px] text-error" role="alert">
           {message}
@@ -176,17 +136,5 @@ export function ReservationPage() {
         </p>
       )}
     </main>
-  )
-}
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
-  return (
-    <div>
-      <BookingField label={label}>{children}</BookingField>
-      {error && (
-        <p className="mt-1 text-xs text-error" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
   )
 }
