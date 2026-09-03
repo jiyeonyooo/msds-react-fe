@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react'
+import {
+  AdminEmptyState,
+  AdminPageHeading,
+  AdminPanel,
+  AdminSummaryCard,
+  Notice,
+} from '../../admin/shared'
 import { adminWellnessApi } from './api'
 import type { AdminWellnessStatistics } from './types'
 
 const periods = [7, 30, 90] as const
 
 const stageLabels = {
-  BEFORE_STAY: 'BEFORE_STAY',
-  DURING_STAY: 'DURING_STAY',
-  AFTER_STAY: 'AFTER_STAY',
-  GENERAL: 'GENERAL',
+  BEFORE_STAY: '숙박 전',
+  DURING_STAY: '숙박 중',
+  AFTER_STAY: '숙박 후',
+  GENERAL: '일반',
 } as const
+
+/** 점수 축은 0–100 고정이다. 데이터에 따라 축이 늘었다 줄면 기간을 바꿀 때마다 막대 길이가 거짓말을 한다. */
+const scaleMax = 100
+const gridLines = [25, 50, 75]
 
 function isoDate(date: Date) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(date)
@@ -52,27 +63,16 @@ export function AdminWellnessStatisticsPage() {
   const stages = statistics?.stageAverages ?? []
   const levels = statistics?.levelDistribution ?? []
   const categories = statistics?.categoryAverages ?? []
-  const categoryColumns = [categories.slice(0, 4), categories.slice(4)]
+  const change = statistics?.afterStayAverageChange ?? 0
 
   return (
-    <main className="min-h-[1020px] bg-subtle px-6 py-10 lg:px-12">
-      <section className="mx-auto max-w-[1084px]">
-        <div className="flex min-h-28 flex-col justify-between gap-6 bg-white py-4 lg:flex-row lg:items-center lg:py-0">
-          <div>
-            <p className="text-[10px] font-medium tracking-[1.6px] text-gold-500">
-              ANONYMIZED WELLNESS OVERVIEW
-            </p>
-            <h1 className="mt-1 text-[32px] font-medium leading-[46px] text-navy-900">
-              웰니스 통계
-            </h1>
-            <p className="text-sm leading-5 text-ink-700">
-              숙박객 전체의 마음상태 점수와 숙박 단계별 변화를 개인 식별정보 없이 집계합니다.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center justify-end gap-3">
+    <section>
+      <AdminPageHeading
+        action={
+          <label className="text-sm font-medium text-slate-700">
+            통계 기간
             <select
-              aria-label="통계 기간"
-              className="h-11 w-[126px] border border-gold-300 bg-white px-3.5 text-xs font-medium outline-none"
+              className="mt-2 block h-11 min-w-[140px] rounded-sm border border-slate-300 bg-white px-3 text-sm"
               onChange={(event) => {
                 setLoading(true)
                 setError('')
@@ -86,194 +86,185 @@ export function AdminWellnessStatisticsPage() {
                 </option>
               ))}
             </select>
-            <div className="flex h-[76px] w-[270px] flex-col justify-center border border-gold-300 bg-white px-3.5">
-              <p className="text-[10px] font-medium tracking-[1.3px] text-gold-500">
-                ADMIN STATS API
-              </p>
-              <p className="mt-1 text-xs text-ink-700">관리자 비식별 집계 API 연결 완료</p>
-            </div>
-          </div>
-        </div>
+          </label>
+        }
+        description="숙박객 전체의 마음상태 점수와 숙박 단계별 변화를 개인 식별정보 없이 집계합니다."
+        eyebrow="ANONYMIZED WELLNESS OVERVIEW"
+        title="웰니스 통계"
+      />
 
-        {error && (
-          <div
-            className="mt-5 border border-error-border bg-white p-5 text-sm text-error"
-            role="alert"
-          >
-            {error}
-          </div>
-        )}
+      {error && <Notice error>{error}</Notice>}
+      {!loading && !error && suppressed && (
+        <Notice>
+          개인정보 보호를 위해 참여 회원이 최소 {statistics?.minimumMembers ?? 5}명 이상일 때만 집계
+          통계를 표시합니다.
+        </Notice>
+      )}
 
-        {!loading && !error && suppressed && (
-          <div className="mt-5 border border-gold-300 bg-white p-5 text-sm leading-6 text-ink-700">
-            개인정보 보호를 위해 참여 회원이 최소 {statistics?.minimumMembers ?? 5}명 이상일 때만
-            집계 통계를 표시합니다.
-          </div>
-        )}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="웰니스 핵심 지표">
+        <AdminSummaryCard
+          caption={`최근 ${period}일 · 비식별 집계`}
+          label="평균 마음상태 점수"
+          value={loading ? '…' : displayNumber(statistics?.averageScore ?? 0, hasData)}
+        />
+        <AdminSummaryCard
+          caption={`참여 회원 ${statistics?.uniqueMembers ?? 0}명 · 비식별 검사 건수`}
+          label="참여 기록"
+          unit="건"
+          value={loading ? '…' : (statistics?.totalChecks ?? 0)}
+        />
+        <AdminSummaryCard
+          caption="숙박 전 → 숙박 후 · 낮아질수록 개선"
+          emphasis={hasData && change < 0}
+          label="숙박 후 평균 변화"
+          value={loading ? '…' : hasData ? `${change > 0 ? '+' : ''}${change}` : '—'}
+        />
+      </div>
 
-        <section className="mt-5 grid gap-[23px] md:grid-cols-3" aria-label="웰니스 핵심 지표">
-          <MetricCard
-            footnote={`최근 ${period}일 · 비식별 집계`}
-            label="평균 마음상태 점수"
-            loading={loading}
-            value={displayNumber(statistics?.averageScore ?? 0, hasData)}
-          />
-          <MetricCard
-            footnote={`참여 회원 ${statistics?.uniqueMembers ?? 0}명 · 비식별 검사 건수`}
-            label="참여 기록"
-            loading={loading}
-            value={loading ? '…' : String(statistics?.totalChecks ?? 0)}
-          />
-          <MetricCard
-            footnote="BEFORE → AFTER · 낮아질수록 개선"
-            label="숙박 후 평균 변화"
-            loading={loading}
-            value={
-              hasData
-                ? `${(statistics?.afterStayAverageChange ?? 0) > 0 ? '+' : ''}${statistics?.afterStayAverageChange ?? 0}`
-                : '—'
-            }
-          />
-        </section>
-
-        <section className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,660px)_minmax(320px,400px)]">
-          <article className="border border-gold-300 bg-white p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium">숙박 단계별 평균 점수</h2>
-                <p className="mt-0.5 text-[11px] text-ink-700">
-                  점수가 낮을수록 더 편안한 상태 · 실제 집계
-                </p>
-              </div>
-              <span className="bg-subtle px-5 py-1 text-[9px] font-medium text-gold-500">LIVE</span>
-            </div>
-            <div className="mt-4 flex h-[242px] items-end justify-around bg-subtle px-5 pb-2 pt-3">
-              {stages.map((item) => (
-                <div
-                  className="flex h-[210px] w-[120px] flex-col items-center justify-end gap-1.5"
-                  key={item.stage}
-                >
-                  <strong className="text-base font-medium">
-                    {item.count ? item.averageScore : '—'}
-                  </strong>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <AdminPanel meta="점수가 낮을수록 편안한 상태 · 0–100" title="숙박 단계별 평균 점수">
+          {stages.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">집계된 단계가 없습니다.</p>
+          ) : (
+            <div>
+              {/* 막대 길이는 눈금(0–100)에만 비례한다. 값 라벨 자리는 축에서 빼 두어
+                  100점짜리 막대가 라벨을 밀어내지 않게 한다. */}
+              <div className="relative h-[200px]">
+                {gridLines.map((value) => (
                   <span
-                    className={`w-[72px] ${item.stage === 'AFTER_STAY' ? 'bg-gold-500' : 'bg-navy-900'}`}
-                    style={{ height: `${item.count ? Math.max(10, item.averageScore * 2) : 2}px` }}
+                    aria-hidden="true"
+                    className="absolute inset-x-0 z-0 border-t border-dashed border-slate-200"
+                    key={value}
+                    style={{ bottom: `calc((100% - 1.5rem) * ${value / scaleMax})` }}
                   />
-                  <span className="text-[9px] font-medium tracking-[0.45px] text-ink-700">
+                ))}
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 bottom-0 z-0 border-t border-slate-300"
+                />
+                <div className="relative z-10 flex h-full items-end justify-around gap-2">
+                  {stages.map((item) => {
+                    const measured = item.count > 0
+                    const ratio = measured ? Math.max(0.02, item.averageScore / scaleMax) : 0
+                    return (
+                      <div
+                        className="flex h-full w-full max-w-[104px] flex-col items-center justify-end"
+                        key={item.stage}
+                        title={`${stageLabels[item.stage]} · 평균 ${measured ? item.averageScore : '측정 없음'} · ${item.count}건`}
+                      >
+                        <span className="h-6 text-sm font-semibold text-[#172b44]">
+                          {measured ? item.averageScore : '—'}
+                        </span>
+                        <span
+                          className={`w-14 rounded-t-[4px] ${item.stage === 'AFTER_STAY' ? 'bg-[#a77f3b]' : 'bg-[#172b44]'}`}
+                          style={{ height: `calc((100% - 1.5rem) * ${ratio})` }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="mt-2 flex justify-around gap-2">
+                {stages.map((item) => (
+                  <span
+                    className="w-full max-w-[104px] text-center text-xs text-slate-600"
+                    key={item.stage}
+                  >
                     {stageLabels[item.stage]}
                   </span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </article>
+          )}
+        </AdminPanel>
 
-          <article className="border border-gold-300 bg-white p-6">
-            <h2 className="text-lg font-medium">WellnessLevel 분포</h2>
-            <p className="mt-2 text-[11px] text-ink-700">최근 {period}일 · 비식별 실제 집계</p>
-            <div className="mt-4 space-y-3.5">
+        <AdminPanel meta={`최근 ${period}일`} title="마음상태 수준 분포">
+          {levels.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">집계된 분포가 없습니다.</p>
+          ) : (
+            <div className="space-y-4">
               {levels.map((item) => (
                 <ProgressRow
                   accent={item.level === 'NORMAL'}
                   key={item.level}
                   label={item.label}
+                  suffix="%"
                   value={item.percentage}
                 />
               ))}
             </div>
-          </article>
-        </section>
+          )}
+        </AdminPanel>
+      </div>
 
-        <section className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,660px)_minmax(320px,400px)]">
-          <article className="border border-gold-300 bg-white px-6 py-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-[17px] font-medium">카테고리별 평균</h2>
-              <span className="text-[10px] text-ink-700">0–100 · 실제 집계</span>
-            </div>
-            <div className="mt-3 grid gap-5 sm:grid-cols-2">
-              {categoryColumns.map((column, index) => (
-                <div className="space-y-2" key={index}>
-                  {column.map((item) => (
-                    <ProgressRow
-                      accent={item.category === 'OVERALL'}
-                      key={item.category}
-                      label={item.category}
-                      value={item.averageScore}
-                    />
-                  ))}
-                </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <AdminPanel meta="0–100 · 낮을수록 편안" title="카테고리별 평균">
+          {categories.length === 0 ? (
+            <p className="py-10 text-center text-sm text-slate-500">집계된 카테고리가 없습니다.</p>
+          ) : (
+            <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              {categories.map((item) => (
+                <ProgressRow
+                  accent={item.category === 'OVERALL'}
+                  key={item.category}
+                  label={item.category}
+                  value={item.averageScore}
+                />
               ))}
             </div>
-          </article>
+          )}
+        </AdminPanel>
 
-          <article className="bg-navy-900 px-[22px] py-5 text-white">
-            <p className="text-[10px] font-medium tracking-[1.4px] text-gold-500">PRIVACY FIRST</p>
-            <h2 className="mt-2 text-lg font-medium">통계 제공 원칙</h2>
-            <ul className="mt-3 space-y-2 text-[11px] leading-[15px]">
-              <li>· 최소 집계 인원 기준 적용</li>
-              <li>· 이름·연락처 등 식별정보 제외</li>
-              <li>· 의료 진단이 아닌 웰니스 참고 정보</li>
-            </ul>
-            <div className="my-3 h-px bg-gold-300" />
-            <p className="text-[11px] leading-[15px]">
-              기간·단계·카테고리 기준의 관리자 집계 API와 실제 데이터가 연결되어 있습니다.
-            </p>
-          </article>
-        </section>
-
-        {!loading && !error && !hasData && !suppressed && (
-          <p className="mt-5 text-center text-xs text-ink-700">
-            아직 저장된 회원 웰니스 검사 기록이 없어 지표를 0 또는 빈 값으로 표시합니다.
+        <AdminPanel title="통계 제공 원칙">
+          <ul className="m-0 grid list-none gap-3 p-0 text-sm leading-6 text-slate-600">
+            <li>· 최소 집계 인원 기준을 적용합니다.</li>
+            <li>· 이름·연락처 등 식별정보는 집계에서 제외합니다.</li>
+            <li>· 의료 진단이 아닌 웰니스 참고 정보입니다.</li>
+          </ul>
+          <p className="mt-4 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-500">
+            기간·단계·카테고리 기준의 관리자 집계 API와 실제 데이터가 연결되어 있습니다.
           </p>
-        )}
-      </section>
-    </main>
-  )
-}
-
-function MetricCard({
-  label,
-  value,
-  footnote,
-  loading,
-}: {
-  label: string
-  value: string
-  footnote: string
-  loading: boolean
-}) {
-  return (
-    <article className="flex h-36 flex-col gap-2 rounded-sm border border-gold-300 bg-white p-6">
-      <div className="flex h-6 items-center justify-between">
-        <p className="text-xs font-medium text-ink-700">{label}</p>
-        <span className="h-0.5 w-7 bg-gold-500" />
+        </AdminPanel>
       </div>
-      <strong className="text-[34px] font-medium leading-[49px]">{loading ? '…' : value}</strong>
-      <p className="text-[11px] leading-4 text-ink-700">{footnote}</p>
-    </article>
+
+      {!loading && !error && !hasData && !suppressed && (
+        <div className="mt-4">
+          <AdminEmptyState>
+            아직 저장된 회원 웰니스 검사 기록이 없어 지표를 0 또는 빈 값으로 표시합니다.
+          </AdminEmptyState>
+        </div>
+      )}
+    </section>
   )
 }
 
+/** 값을 항상 숫자로도 적는다. 색만으로 크기를 읽게 두지 않는다. */
 function ProgressRow({
   label,
   value,
   accent = false,
+  suffix = '',
 }: {
   label: string
   value: number
   accent?: boolean
+  suffix?: string
 }) {
   const safeValue = Math.max(0, Math.min(100, value))
   return (
     <div>
-      <div className="flex items-center justify-between text-[11px] font-medium">
-        <span>{label}</span>
-        <span className="text-ink-700">{safeValue.toFixed(safeValue % 1 === 0 ? 0 : 1)}%</span>
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium text-slate-700">{label}</span>
+        <span className="text-slate-600">
+          {safeValue.toFixed(safeValue % 1 === 0 ? 0 : 1)}
+          {suffix}
+        </span>
       </div>
-      <div className="mt-1.5 h-[7px] overflow-hidden bg-subtle">
+      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
         <span
-          className={`block h-full ${accent ? 'bg-gold-500' : 'bg-navy-900'}`}
+          className={`block h-full rounded-full ${accent ? 'bg-[#a77f3b]' : 'bg-[#172b44]'}`}
           style={{ width: `${safeValue}%` }}
+          title={`${label} ${safeValue}${suffix}`}
         />
       </div>
     </div>

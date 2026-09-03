@@ -5,6 +5,7 @@ import { ApiError } from '../../lib/apiError'
 import { setReturnPath } from '../auth/session'
 import type { Inquiry, InquiryStatus } from '../inquiry/types'
 import { adminInquiryApi } from './inquiryApi'
+import { AdminPageHeading } from './shared'
 
 type StatusFilter = 'ALL' | InquiryStatus
 
@@ -100,7 +101,7 @@ function AdminInquiryListPage() {
   function reset() { setKeyword(''); setSearchParams({}) }
 
   return <section>
-    <PageHeading description="회원이 남긴 문의를 확인하고 답변을 등록합니다." title="문의 관리" />
+    <AdminPageHeading description="회원이 남긴 문의를 확인하고 답변을 등록합니다." title="문의 관리" />
     <div className="grid gap-3 sm:grid-cols-3">
       <SummaryCard label="전체 문의" value={counts.ALL} />
       <SummaryCard emphasis label="답변 대기" value={counts.WAITING} />
@@ -207,7 +208,7 @@ function AdminInquiryDetailPage({ inquiryId }: { inquiryId: string }) {
 
   if (loading) return <p className="py-16 text-center text-sm text-slate-600">문의 정보를 불러오는 중입니다.</p>
   if (!inquiry) return <section>
-    <PageHeading description="문의 내용을 확인하고 답변을 등록합니다." title="문의 상세" />
+    <AdminPageHeading description="문의 내용을 확인하고 답변을 등록합니다." title="문의 상세" />
     <MessageBox message={message || '문의를 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/inquiries">문의 목록으로 돌아가기</Link></MessageBox>
   </section>
 
@@ -216,7 +217,7 @@ function AdminInquiryDetailPage({ inquiryId }: { inquiryId: string }) {
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/inquiries">← 문의 목록</Link>
       <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">PATCH /api/admin/inquiries/{inquiry.inquiryId}/answer</code>
     </div>
-    <PageHeading description="회원 문의를 확인하고 답변을 등록합니다. 등록한 답변은 회원 문의 상세에서 바로 보입니다." title="문의 상세 · 답변" />
+    <AdminPageHeading description="회원 문의를 확인하고 답변을 등록합니다. 등록한 답변은 회원 문의 상세에서 바로 보입니다." title="문의 상세 · 답변" />
     {message && <p className="mb-4 rounded-sm border border-error-border bg-[#fffaf8] px-4 py-3 text-sm text-error" role="alert">{message}</p>}
     {notice && <p className="mb-4 rounded-sm border border-[#d7c59e] bg-[#fffdf6] px-4 py-3 text-sm text-[#5f4b28]" role="status">{notice}</p>}
     <div className="grid items-start gap-6 lg:grid-cols-[1.45fr_1fr]">
@@ -297,5 +298,4 @@ function SummaryCard({ label, value, emphasis = false }: { label: string; value:
   </div>
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) { return <header className="mt-5 mb-5 border-b border-slate-300 pb-6"><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">ADMINISTRATION</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#172b44]">{title}</h2><p className="mt-2 text-sm text-slate-600">{description}</p></header> }
 function MessageBox({ message, children }: { message: string; children?: ReactNode }) { return <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-600" role="alert"><p>{message}</p>{children}</div> }
