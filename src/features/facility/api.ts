@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { publicApiClient } from '../../lib/apiClient'
+import { uniqueBy } from '../../lib/collections'
 import type { Facility, FacilityCategory, FacilityListResponse } from './types'
 
 export class FacilityApiError extends Error {
@@ -21,7 +22,7 @@ export async function getFacilities(category?: FacilityCategory): Promise<Facili
     if (!response.data || !Array.isArray(response.data.data)) {
       throw new FacilityApiError(response.status, 'API_INVALID_RESPONSE', '편의시설 정보를 확인할 수 없습니다.')
     }
-    return response.data.data
+    return uniqueBy(response.data.data, (facility) => facility.facilityId)
   } catch (error) {
     if (error instanceof FacilityApiError) throw error
     if (axios.isAxiosError<FacilityListResponse>(error)) {
