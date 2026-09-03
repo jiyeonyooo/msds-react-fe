@@ -1,8 +1,16 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { wellnessApi } from './api'
+import { recommendWellnessNext } from './recommendation'
+import { readLastResult } from './wellnessDraft'
 import { ScoreDisc, SectionLabel } from './WellnessShared'
-import { categoryCopy, categoryScores, formatDateTime, scoreDescription } from './wellnessFormat'
+import {
+  categoryCopy,
+  categoryScores,
+  formatDateTime,
+  scoreDescription,
+  toAnswerDetails,
+} from './wellnessFormat'
 import type {
   ResultRouteState,
   WellnessAnswerDetail,
@@ -18,7 +26,10 @@ export function WellnessResultPage() {
   const { isMember } = useWellnessMember()
   const { checkId } = useParams()
   const { state } = useLocation()
-  const routeState = state as ResultRouteState | null
+  // 라우트 state 는 새로고침에서 사라진다. 서버에 기록이 없는 비회원 결과를 위해 세션 사본을 함께 본다.
+  const [routeState] = useState<ResultRouteState | null>(
+    () => (state as ResultRouteState | null) ?? readLastResult(),
+  )
   const [detail, setDetail] = useState<WellnessCheckDetail | null>(null)
   const [error, setError] = useState('')
 
@@ -51,17 +62,7 @@ export function WellnessResultPage() {
 
   const answers = useMemo<WellnessAnswerDetail[]>(() => {
     if (detail) return detail.answers
-    if (!routeState?.answers || !routeState.questions) return []
-    return routeState.answers.map((answer) => {
-      const question = routeState.questions?.find((item) => item.questionId === answer.questionId)
-      return {
-        questionId: answer.questionId,
-        category: question?.category ?? 'OVERALL',
-        content: question?.content ?? '',
-        answerValue: answer.value,
-        convertedValue: answer.value,
-      }
-    })
+    return toAnswerDetails(routeState?.answers, routeState?.questions)
   }, [detail, routeState])
 
   const insightScores = categoryScores(answers)
@@ -70,6 +71,11 @@ export function WellnessResultPage() {
     category,
     score: insightScores.find((item) => item.category === category)?.score ?? fallbackScore,
   }))
+  // 고정 문구 대신 이번 답변에서 가장 두드러진 항목으로 다음 걸음을 고른다.
+  const recommendation = recommendWellnessNext({
+    scores: insightScores,
+    totalScore: result?.totalScore ?? null,
+  })
 
   if (!result && !checkId) {
     return (
@@ -105,7 +111,9 @@ export function WellnessResultPage() {
           <ScoreDisc
             score={result.totalScore}
             label={result.levelLabel}
-            note={result.saved ? '✓ 나의 웰니스 기록에 저장됨' : '비회원 결과 · 저장되지 않음'}
+            note={
+              result.saved ? '✓ 나의 웰니스 기록에 저장됨' : '비회원 결과 · 서버에 저장되지 않음'
+            }
           />
           <div>
             <SectionLabel>YOUR MIND, AT THIS MOMENT</SectionLabel>
@@ -158,7 +166,7 @@ export function WellnessResultPage() {
               <p className="mt-4 text-xs text-secondary">{scoreDescription(score)}</p>
               <div className="mt-5 h-1 rounded-full bg-subtle">
                 <i
-                  className="block h-full rounded-full bg-gold-500"
+                  className="block h-full rounded-full bg-gold-500 transition-[width] duration-[760ms] ease-calm"
                   style={{ width: `${score}%` }}
                 />
               </div>
@@ -167,24 +175,25 @@ export function WellnessResultPage() {
         </div>
         <article className="mt-8 flex flex-col items-start justify-between gap-7 rounded-lg bg-navy-900 p-8 text-white md:flex-row md:items-center">
           <div className="flex items-center gap-7">
-            <span className="flex size-20 shrink-0 items-center justify-center rounded-full border border-gold-500 font-display text-4xl text-gold-300">
-              ⌒
+            <span
+              aria-hidden="true"
+              className="flex size-20 shrink-0 items-center justify-center rounded-full border border-gold-500 font-display text-4xl text-gold-300"
+            >
+              {recommendation.symbol}
             </span>
             <div>
-              <SectionLabel>YOUR NEXT STEP</SectionLabel>
-              <h3 className="mt-3 text-2xl font-medium">
-                10분 호흡 명상으로 생각의 속도를 낮춰보세요.
-              </h3>
+              <SectionLabel>{recommendation.eyebrow}</SectionLabel>
+              <h3 className="mt-3 text-2xl font-medium">{recommendation.title}</h3>
               <p className="mt-3 text-xs text-white/60">
-                현재 결과와 머무는 단계에 맞춘 추천입니다. 객실에서도 바로 시작할 수 있어요.
+                {recommendation.body} 현재 결과와 머무는 단계에 맞춘 추천입니다.
               </p>
             </div>
           </div>
           <Link
             className="shrink-0 rounded-sm bg-white px-7 py-4 text-xs font-medium text-navy-900"
-            to="/programs"
+            to={recommendation.to}
           >
-            START 10 MIN
+            {recommendation.ctaLabel}
           </Link>
         </article>
       </section>

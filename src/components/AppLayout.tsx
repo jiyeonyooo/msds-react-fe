@@ -1,17 +1,18 @@
 import { Outlet } from 'react-router-dom'
-import { BackToTop, RouteFade, ScrollProgress } from './motion'
-import { Footer, Header } from './ui'
+import { BackToTop, RouteFade } from './motion'
+import { BookingSummaryBar, Footer, Header, ToastHost } from './ui'
 
 export function AppLayout() {
   return (
     <div className="min-h-screen">
-      <ScrollProgress />
       <Header />
+      <BookingSummaryBar />
       <RouteFade>
         <Outlet />
       </RouteFade>
       <Footer />
       <BackToTop />
+      <ToastHost />
     </div>
   )
 }

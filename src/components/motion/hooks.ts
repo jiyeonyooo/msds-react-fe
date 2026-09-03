@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 
 export const reducedMotion = () =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -78,4 +78,47 @@ export function useRevealAll(routeKey: string) {
     nodes.forEach((node) => observer.observe(node))
     return () => observer.disconnect()
   }, [routeKey])
+}
+
+/**
+ * 라우트가 바뀔 때 읽는 위치를 정리한다.
+ *
+ * react-router 는 스크롤을 되돌려 주지 않아서, 목록 하단에서 상세로 들어가면 페이지
+ * 중간부터 보였다. 해시가 있으면 그 자리로, 없으면 맨 위로 옮기고 본문에 포커스를 준다.
+ * 포커스까지 옮겨야 키보드·스크린 리더 사용자도 새 화면의 처음부터 읽는다.
+ */
+export function useRouteReset(
+  pathname: string,
+  hash: string,
+  container: RefObject<HTMLElement | null>,
+) {
+  useEffect(() => {
+    const focusContainer = () => container.current?.focus({ preventScroll: true })
+
+    if (!hash) {
+      scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      focusContainer()
+      return
+    }
+
+    // 앵커 대상이 데이터 도착 후에 그려지는 화면이 있어 잠시 기다렸다 다시 찾는다.
+    const targetId = decodeURIComponent(hash.slice(1))
+    let attempts = 0
+    const findTarget = () => {
+      const target = document.getElementById(targetId)
+      if (target) {
+        target.scrollIntoView({ behavior: reducedMotion() ? 'auto' : 'smooth', block: 'start' })
+        focusContainer()
+        return
+      }
+      if (++attempts > 12) {
+        scrollTo({ top: 0, left: 0, behavior: 'auto' })
+        focusContainer()
+        return
+      }
+      timer = setTimeout(findTarget, 120)
+    }
+    let timer = setTimeout(findTarget, 0)
+    return () => clearTimeout(timer)
+  }, [container, hash, pathname])
 }

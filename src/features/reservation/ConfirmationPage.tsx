@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Button } from '../../components/ui'
 import { navigate } from '../../lib/navigation'
+import { showToast } from '../../lib/toast'
+import { clearSelectedRoom } from './bookingStore'
 import { ApiError, reservationApi } from './api'
 import type { AvailableRoom } from './types'
 
@@ -20,8 +22,8 @@ export function ConfirmationPage() {
   async function create() {
     if (!room) return
     setSaving(true)
-    try { const saved = await reservationApi.create({ room_id: roomId, check_in_date: checkIn, check_out_date: checkOut, guest_count: guests }); navigate(`/my-reservations/${saved.resv_id}`) }
-    catch (e) { const err = e as ApiError; if (err.status === 401) { sessionStorage.setItem('return_path', location.pathname + location.search); navigate('/login') } else if (err.code === 'ROOM_NOT_AVAILABLE') setError('방금 다른 예약이 발생했습니다. 예약 가능 객실을 다시 조회해 주세요.'); else setError(err.message) }
+    try { const saved = await reservationApi.create({ room_id: roomId, check_in_date: checkIn, check_out_date: checkOut, guest_count: guests }); clearSelectedRoom(); showToast('예약이 확정되었습니다. 마이페이지에서 확인할 수 있습니다.'); navigate(`/my-reservations/${saved.resv_id}`) }
+    catch (e) { const err = e as ApiError; if (err.status === 401) { sessionStorage.setItem('return_path', location.pathname + location.search); showToast('로그인 후 예약을 이어서 진행할 수 있습니다.'); navigate('/login') } else if (err.code === 'ROOM_NOT_AVAILABLE') { setError('방금 다른 예약이 발생했습니다. 예약 가능 객실을 다시 조회해 주세요.'); showToast('방금 다른 예약이 먼저 처리되었습니다.', 'error') } else { setError(err.message); showToast(err.message, 'error') } }
     finally { setSaving(false) }
   }
   const displayError = invalid ? '예약 정보가 올바르지 않습니다.' : error
