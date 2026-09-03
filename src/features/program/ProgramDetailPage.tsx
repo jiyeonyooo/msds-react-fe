@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
+import { showToast } from '../../lib/toast'
+import { SeatGauge } from './SeatGauge'
 import { getProgram, getPrograms, reserveProgram } from './program'
 import { getProgramPresentation, instructorMark } from './programPresentation'
 import type { ProgramResponse } from './types'
@@ -69,14 +71,16 @@ export default function ProgramDetailPage() {
       await reserveProgram({ programId: program.id, quantity: 1 })
       setProgram(await getProgram(program.id))
       setNotice('프로그램 신청이 완료되었습니다. 마이페이지에서 신청 내역을 확인해 주세요.')
+      showToast('프로그램 신청이 완료되었습니다.')
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError('프로그램 신청은 로그인 후 이용할 수 있습니다.')
-      } else if (err instanceof ApiError) {
-        setError(err.message || '프로그램 신청에 실패했습니다.')
-      } else {
-        setError('프로그램 신청 중 오류가 발생했습니다.')
-      }
+      const message =
+        err instanceof ApiError && err.status === 401
+          ? '프로그램 신청은 로그인 후 이용할 수 있습니다.'
+          : err instanceof ApiError
+            ? err.message || '프로그램 신청에 실패했습니다.'
+            : '프로그램 신청 중 오류가 발생했습니다.'
+      setError(message)
+      showToast(message, 'error')
     } finally {
       setJoining(false)
     }
@@ -140,9 +144,10 @@ export default function ProgramDetailPage() {
             <p className="mt-3 font-display text-[28px] leading-[33px] font-semibold text-[#0b1a2e]">
               Tomorrow · {presentation.time}
             </p>
-            <p className="mt-3 text-xs leading-[19px] text-[#3d403d]">
-              {program.remain} seats left · 숙박객 무료
-            </p>
+            <div className="mt-3">
+              <SeatGauge capacity={program.capacity} remain={program.remain} />
+            </div>
+            <p className="mt-2 text-xs leading-[19px] text-[#3d403d]">숙박객 무료</p>
             <Button
               className="mt-[13px] h-[50px] w-full"
               disabled={isClosed || joining}

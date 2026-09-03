@@ -5,6 +5,12 @@ import roomImage2 from '../../assets/rooms2.png'
 import roomImage3 from '../../assets/rooms3.png'
 import roomImage4 from '../../assets/rooms4.png'
 import roomImage5 from '../../assets/rooms5.png'
+import {
+  bookingToQuery,
+  setBooking,
+  useBooking,
+  withFallbackCheckOut,
+} from '../reservation/bookingStore'
 import { RoomApiError, roomsApi } from './api'
 import type { RoomDetail, RoomStatus, RoomSummary, RoomType } from './types'
 
@@ -19,12 +25,14 @@ export function RoomDetailPage() {
   const invalidId = !Number.isInteger(id) || id < 1
   const [room, setRoom] = useState<RoomDetail | null>(null)
   const [related, setRelated] = useState<RoomSummary[]>([])
+  const booking = useBooking()
   const [loading, setLoading] = useState(!invalidId)
   const [error, setError] = useState(invalidId ? '올바르지 않은 객실 번호입니다.' : '')
 
   useEffect(() => {
     let active = true
     if (invalidId) return () => { active = false }
+    setBooking({ room_id: id })
     Promise.all([roomsApi.detail(id), roomsApi.list()])
       .then(([detail, list]) => {
         if (!active) return
@@ -39,6 +47,10 @@ export function RoomDetailPage() {
   if (loading) return <main className="mx-auto max-w-[1240px] px-6 py-24 text-center text-sm text-muted" role="status">객실 정보를 불러오는 중입니다…</main>
   if (error || !room) return <main className="mx-auto max-w-[1240px] px-6 py-24 text-center"><p className="text-sm text-error" role="alert">{error}</p><Link className="mt-7 inline-block border-b border-navy-900 pb-1 text-xs tracking-[0.08em]" to="/rooms">객실 목록으로 돌아가기</Link></main>
 
+  const availabilityQuery = bookingToQuery(
+    withFallbackCheckOut({ ...booking, room_id: room.roomId }),
+    { search: '1' },
+  )
   const apiImages = room.images.map((image) => image.imageUrl).filter(Boolean)
   const gallery = [...apiImages, ...fallbackImages.filter((image) => !apiImages.includes(image))].slice(0, 3)
   const specs = room.roomSpecs
@@ -56,7 +68,7 @@ export function RoomDetailPage() {
           <aside className="rounded-lg border border-ivory-200 bg-white p-5">
             <strong className="font-display text-[28px] font-medium">{won.format(room.basePrice)} <small className="font-sans text-[11px] font-normal text-ink-500">/ night</small></strong>
             <p className="mt-2 text-[10px] text-ink-500">세금 포함 · 무료 취소 정책 별도</p>
-            <Link aria-disabled={room.status !== 'AVAILABLE'} className={`mt-4 block rounded-sm px-5 py-3 text-center text-[10px] font-medium tracking-[0.06em] text-white ${room.status === 'AVAILABLE' ? 'bg-navy-900 hover:bg-navy-700' : 'pointer-events-none bg-ink-500/45'}`} to={`/reservations?room_id=${room.roomId}`}>{room.status === 'AVAILABLE' ? 'CHECK AVAILABILITY' : statusName[room.status]}</Link>
+            <Link aria-disabled={room.status !== 'AVAILABLE'} className={`mt-4 block rounded-sm px-5 py-3 text-center text-[10px] font-medium tracking-[0.06em] text-white ${room.status === 'AVAILABLE' ? 'bg-navy-900 hover:bg-navy-700' : 'pointer-events-none bg-ink-500/45'}`} to={`/reservations?${availabilityQuery}`}>{room.status === 'AVAILABLE' ? 'CHECK AVAILABILITY' : statusName[room.status]}</Link>
           </aside>
         </div>
 
@@ -83,7 +95,7 @@ export function RoomDetailPage() {
             <p className="mt-1 text-[10px] text-ink-500">1박 기준 · 세금 포함</p>
             <dl className="mt-5 grid grid-cols-2 gap-y-4 border-y border-ivory-200 py-5 text-[10px]"><dt className="text-gold-500">CAPACITY</dt><dd className="text-right">최대 {room.capacity.maxGuests}인</dd><dt className="text-gold-500">BED</dt><dd className="text-right">{specs.bedType ? `${specs.bedType} ${specs.bedCount ?? ''}` : '정보 없음'}</dd><dt className="text-gold-500">ROOM SIZE</dt><dd className="text-right">{specs.areaM2 == null ? '—' : `${specs.areaM2}㎡`}</dd></dl>
             <p className="mt-5 text-[9px] leading-5 text-ink-500">체크인·체크아웃 시간과 취소 정책은 선택한 일정의 예약 단계에서 확인해 주세요.</p>
-            <Link className="mt-5 block rounded-sm bg-navy-900 px-5 py-3 text-center text-[10px] font-medium text-white" to={`/reservations?room_id=${room.roomId}`}>CHECK AVAILABILITY</Link>
+            <Link className="mt-5 block rounded-sm bg-navy-900 px-5 py-3 text-center text-[10px] font-medium text-white" to={`/reservations?${availabilityQuery}`}>CHECK AVAILABILITY</Link>
           </aside>
         </section>
       </section>

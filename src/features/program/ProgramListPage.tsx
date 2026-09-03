@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/ui";
 import { getPrograms, reserveProgram } from "./program.ts";
 import { ApiError } from "../../lib/apiError.ts";
+import { showToast } from "../../lib/toast.ts";
+import { SeatGauge } from "./SeatGauge.tsx";
+import { SkeletonCards } from "../../components/motion";
 import type { ProgramResponse } from "./types.ts";
 
 export default function ProgramListPage() {
@@ -31,13 +34,17 @@ export default function ProgramListPage() {
     try {
       await reserveProgram({ programId, quantity: 1 });
       setNotice("예약이 완료되었습니다.");
+      showToast("프로그램 신청이 완료되었습니다. 마이페이지에서 확인할 수 있습니다.");
       loadPrograms();
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
-        setError("예약하려면 먼저 로그인해 주세요.");
-      } else {
-        setError(err instanceof ApiError && err.message ? err.message : "예약 중 오류가 발생했습니다.");
-      }
+      const message =
+        err instanceof ApiError && err.status === 401
+          ? "예약하려면 먼저 로그인해 주세요."
+          : err instanceof ApiError && err.message
+            ? err.message
+            : "예약 중 오류가 발생했습니다.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setReservingId(null);
     }
@@ -86,7 +93,9 @@ export default function ProgramListPage() {
             </p>
           )}
 
-          {loading && <p className="py-12 text-sm text-ink-500">불러오는 중…</p>}
+          {loading && (
+            <SkeletonCards className="grid gap-6 md:grid-cols-2" count={4} mediaClassName="h-[200px]" />
+          )}
 
           {!loading && programs.length === 0 && (
             <div className="border border-dashed border-[#c7bfad] px-6 py-24 text-center text-sm leading-7 text-ink-500">
@@ -113,9 +122,9 @@ export default function ProgramListPage() {
                       {p.status === "OPEN" ? "모집중" : "마감"}
                     </p>
                     <h3 className="font-display text-2xl font-semibold text-navy-900">{p.name}</h3>
-                    <p className="mt-auto text-xs font-medium text-ink-500">
-                      잔여 {p.remain} / 정원 {p.capacity}
-                    </p>
+                    <div className="mt-auto">
+                      <SeatGauge capacity={p.capacity} remain={p.remain} />
+                    </div>
                     <Button
                       disabled={p.status !== "OPEN" || reservingId === p.id}
                       onClick={() => handleReserve(p.id)}

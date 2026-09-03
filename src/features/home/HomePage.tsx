@@ -4,6 +4,7 @@ import type { Facility } from '../facility/types'
 import { roomsApi } from '../rooms/api'
 import type { RoomSummary } from '../rooms/types'
 import type { AvailabilityRequest } from '../reservation/types'
+import { bookingToQuery, setBooking } from '../reservation/bookingStore'
 import { navigate } from '../../lib/navigation'
 import { ExperienceSections } from './components/ExperienceSections'
 import { HeroSection } from './components/HeroSection'
@@ -34,12 +35,8 @@ export function HomePage() {
   }, [])
 
   const goToReservation = (form: AvailabilityRequest) => {
-    const query = new URLSearchParams({
-      ...form,
-      guest_count: String(form.guest_count),
-      search: '1',
-    })
-    navigate(`/reservations?${query.toString()}`)
+    // 히어로에서 채운 조건이 예약 화면까지 그대로 이어지도록 컨텍스트에 먼저 남긴다.
+    navigate(`/reservations?${bookingToQuery(setBooking(form), { search: '1' })}`)
   }
 
   const featuredFacilities = facilities

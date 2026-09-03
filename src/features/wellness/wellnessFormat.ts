@@ -4,6 +4,7 @@ import type {
   WellnessAnswerDetail,
   WellnessCategory,
   WellnessLevel,
+  WellnessQuestion,
 } from './types'
 
 export const levelLabel: Record<WellnessLevel, string> = {
@@ -80,4 +81,21 @@ export function scoreDescription(score: number) {
   if (score <= 60) return '보통'
   if (score <= 80) return '조금 높음'
   return '높음'
+}
+
+/** 라우트 state/세션에 남은 응답을 카테고리 계산이 가능한 형태로 되돌린다. */
+export function toAnswerDetails(
+  answers: { questionId: number; value: number }[] = [],
+  questions: WellnessQuestion[] = [],
+): WellnessAnswerDetail[] {
+  return answers.map((answer) => {
+    const question = questions.find((item) => item.questionId === answer.questionId)
+    return {
+      questionId: answer.questionId,
+      category: question?.category ?? 'OVERALL',
+      content: question?.content ?? '',
+      answerValue: answer.value,
+      convertedValue: answer.value,
+    }
+  })
 }

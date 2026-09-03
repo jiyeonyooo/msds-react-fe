@@ -1,40 +1,51 @@
 import { type FormEvent, useState } from 'react'
 import { BookingField, Button, DatePicker, Select } from '../../components/ui'
 import type { AvailabilityRequest } from './types'
-import { defaultAvailability, seoulToday } from './reservationSearchDefaults'
+import { seoulToday } from './reservationSearchDefaults'
+import { nightsBetween, setBooking, useBooking } from './bookingStore'
 
 type ReservationSearchBarProps = {
   className?: string
-  initialValue?: AvailabilityRequest
   loading?: boolean
   serverErrors?: Record<string, string>
   onSearch: (value: AvailabilityRequest) => void | Promise<void>
 }
 
+/**
+ * 예약 조건 입력 바. 값은 화면이 아니라 예약 컨텍스트에 바로 쓰인다.
+ * 히어로에서 채운 날짜가 객실·예약 화면까지 그대로 따라가야 하기 때문이다.
+ */
 export function ReservationSearchBar({
   className = '',
-  initialValue = defaultAvailability,
   loading = false,
   onSearch,
   serverErrors = {},
 }: ReservationSearchBarProps) {
-  const [form, setForm] = useState(initialValue)
+  const booking = useBooking()
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({})
   const errors = { ...serverErrors, ...clientErrors }
+  const nights = nightsBetween(booking.check_in_date, booking.check_out_date)
+
   const update = <K extends keyof AvailabilityRequest>(key: K, value: AvailabilityRequest[K]) => {
-    setForm((current) => ({ ...current, [key]: value }))
+    setBooking({ [key]: value })
     setClientErrors((current) => ({ ...current, [key]: '' }))
   }
+
   const submit = (event: FormEvent) => {
     event.preventDefault()
     const next: Record<string, string> = {}
-    if (form.check_in_date < seoulToday())
+    if (booking.check_in_date < seoulToday())
       next.check_in_date = '체크인은 오늘 또는 이후 날짜를 선택해 주세요.'
-    if (!form.check_out_date || form.check_out_date <= form.check_in_date)
+    if (!booking.check_out_date || booking.check_out_date <= booking.check_in_date)
       next.check_out_date = '체크아웃은 체크인 이후 날짜여야 합니다.'
-    if (form.guest_count < 1) next.guest_count = '투숙 인원은 1명 이상이어야 합니다.'
+    if (booking.guest_count < 1) next.guest_count = '투숙 인원은 1명 이상이어야 합니다.'
     setClientErrors(next)
-    if (!Object.keys(next).length) void onSearch(form)
+    if (Object.keys(next).length) return
+    void onSearch({
+      check_in_date: booking.check_in_date,
+      check_out_date: booking.check_out_date,
+      guest_count: booking.guest_count,
+    })
   }
 
   return (
@@ -49,23 +60,26 @@ export function ReservationSearchBar({
           label="체크인"
           min={seoulToday()}
           onChange={(value) => update('check_in_date', value)}
-          value={form.check_in_date}
+          value={booking.check_in_date}
         />
       </SearchField>
-      <SearchField label="CHECK-OUT" error={errors.check_out_date}>
+      <SearchField
+        label={nights > 0 ? `CHECK-OUT · ${nights}박` : 'CHECK-OUT'}
+        error={errors.check_out_date}
+      >
         <DatePicker
           aria-invalid={Boolean(errors.check_out_date)}
           label="체크아웃"
-          min={form.check_in_date}
+          min={booking.check_in_date}
           onChange={(value) => update('check_out_date', value)}
-          value={form.check_out_date}
+          value={booking.check_out_date}
         />
       </SearchField>
       <SearchField label="GUESTS" error={errors.guest_count}>
         <Select
           aria-invalid={Boolean(errors.guest_count)}
           className="h-8 w-full border-0 bg-transparent px-0 text-sm"
-          value={form.guest_count}
+          value={booking.guest_count}
           onValueChange={(value) => update('guest_count', Number(value))}
         >
           {[1, 2, 3, 4].map((count) => (

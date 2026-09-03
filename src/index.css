@@ -79,6 +79,7 @@
   --animate-ken-burns: ken-burns 22s var(--ease-calm) forwards;
   --animate-breathe: breathe 9s ease-in-out infinite;
   --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+  --animate-toast-in: toast-in var(--duration-settle) var(--ease-calm);
 }
 
 @keyframes ken-burns {
@@ -94,6 +95,11 @@
 @keyframes shimmer {
   0%, 100% { opacity: 0.55; }
   50% { opacity: 1; }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
 @layer components {

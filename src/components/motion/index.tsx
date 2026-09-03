@@ -1,6 +1,6 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation } from 'react-router-dom'
-import { reducedMotion, useReveal, useRevealAll, useScrollRatio } from './hooks'
+import { reducedMotion, useReveal, useRevealAll, useRouteReset, useScrollRatio } from './hooks'
 
 /** 스크롤 진입 시 드러나는 래퍼. delay로 카드들을 순차로 띄운다. */
 export function Reveal({
@@ -23,19 +23,6 @@ export function Reveal({
     >
       {children}
     </Tag>
-  )
-}
-
-/** 화면 최상단 읽기 진행 바. 얇은 금색 선 하나로 위치만 알린다. */
-export function ScrollProgress() {
-  const ratio = useScrollRatio()
-  return (
-    <div aria-hidden="true" className="fixed inset-x-0 top-0 z-50 h-0.5 bg-transparent">
-      <div
-        className="h-full origin-left bg-gold-500 transition-transform duration-150 ease-out"
-        style={{ transform: `scaleX(${ratio})` }}
-      />
-    </div>
   )
 }
 
@@ -120,13 +107,48 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   )
 }
 
-/** 라우트가 바뀔 때 본문을 짧게 크로스페이드한다. */
+/**
+ * 라우트가 바뀔 때 본문을 짧게 크로스페이드하고, 읽는 위치와 포커스를 처음으로 되돌린다.
+ * tabIndex={-1} 은 포커스를 받기 위한 것이라 탭 순서에는 끼지 않는다.
+ */
 export function RouteFade({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation()
+  const { hash, pathname } = useLocation()
+  const container = useRef<HTMLDivElement>(null)
   useRevealAll(pathname)
+  useRouteReset(pathname, hash, container)
   return (
-    <div className="route-fade" key={pathname}>
+    <div className="route-fade outline-none" key={pathname} ref={container} tabIndex={-1}>
       {children}
+    </div>
+  )
+}
+
+/** 카드 목록이 도착하기 전 자리를 잡아 두는 스켈레톤. 데이터가 오면 레이아웃이 튀지 않는다. */
+export function SkeletonCards({
+  count = 6,
+  className = 'grid gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3',
+  mediaClassName = 'h-[170px]',
+}: {
+  count?: number
+  className?: string
+  mediaClassName?: string
+}) {
+  return (
+    <div className={className} role="status">
+      <span className="sr-only">불러오는 중입니다</span>
+      {Array.from({ length: count }).map((_, index) => (
+        <div
+          className="overflow-hidden rounded-lg border border-border-subtle bg-white"
+          key={index}
+        >
+          <Skeleton className={`w-full rounded-none ${mediaClassName}`} />
+          <div className="grid gap-2 px-4 py-4">
+            <Skeleton className="h-5 w-2/3" />
+            <Skeleton className="h-3 w-5/6" />
+            <Skeleton className="h-3 w-1/3" />
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
