@@ -40,21 +40,57 @@ function pointOnSkyArc(progress: number, radius: number) {
 
 function getTimeAtmosphere(hour: number) {
   if (hour < 5) {
-    return { label: '깊은 밤', sky: '#0a1b30', glow: '#8da3c4', orbit: '#7188a6' }
+    return {
+      label: '깊은 밤',
+      sky: '#07172a',
+      glow: '#8da3c4',
+      glowOpacity: 0.1,
+      orbit: '#7188a6',
+    }
   }
   if (hour < 7) {
-    return { label: '새벽', sky: '#273248', glow: '#d8ad72', orbit: '#b48b5d' }
+    return {
+      label: '새벽',
+      sky: '#443d4c',
+      glow: '#efb078',
+      glowOpacity: 0.28,
+      orbit: '#c39868',
+    }
   }
   if (hour < 11) {
-    return { label: '아침', sky: '#364154', glow: '#ecd28f', orbit: '#cbae72' }
+    return {
+      label: '아침',
+      sky: '#66685f',
+      glow: '#f6d58c',
+      glowOpacity: 0.4,
+      orbit: '#ddbd79',
+    }
   }
   if (hour < 16) {
-    return { label: '한낮', sky: '#445066', glow: '#f3d98b', orbit: '#d7bb78' }
+    return {
+      label: '한낮',
+      sky: '#8b8068',
+      glow: '#ffe4a0',
+      glowOpacity: 0.52,
+      orbit: '#efd18a',
+    }
   }
   if (hour < 20) {
-    return { label: '저녁', sky: '#332c42', glow: '#d69a68', orbit: '#b9825c' }
+    return {
+      label: '저녁',
+      sky: '#5a3946',
+      glow: '#efa16f',
+      glowOpacity: 0.34,
+      orbit: '#d09267',
+    }
   }
-  return { label: '밤', sky: '#101f36', glow: '#9aaed0', orbit: '#758aa9' }
+  return {
+    label: '밤',
+    sky: '#0c1f38',
+    glow: '#9aaed0',
+    glowOpacity: 0.13,
+    orbit: '#758aa9',
+  }
 }
 
 type Props = {
@@ -197,9 +233,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
               cx={dialCenter}
               cy={dialCenter - 18}
               fill={atmosphere.glow}
-              opacity="0.08"
-              r="58"
-              style={{ transition: 'fill 700ms ease' }}
+              opacity={atmosphere.glowOpacity}
+              r="68"
+              style={{ transition: 'fill 700ms ease, opacity 700ms ease' }}
             />
             {!daytime && (
               <g fill="#d9e2ef" opacity="0.32">
