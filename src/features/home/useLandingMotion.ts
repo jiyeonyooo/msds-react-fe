@@ -337,7 +337,7 @@ export function useLandingMotion(scope: RefObject<HTMLElement | null>) {
           scale: 0.95,
           rotationX: 8,
           autoAlpha: 0.28,
-          boxShadow: needsEdgeShadow ? '0 32px 90px rgb(14 34 57 / 0.34)' : 'none',
+          boxShadow: needsEdgeShadow ? '0 42px 118px rgb(14 34 57 / 0.42)' : 'none',
           ease: 'none',
           scrollTrigger: {
             trigger: transitionsIntoRooms ? section : nextSection,
@@ -347,7 +347,7 @@ export function useLandingMotion(scope: RefObject<HTMLElement | null>) {
                 ? 'top 55%'
                 : 'top 67%',
             end: transitionsIntoRooms ? 'bottom 40%' : 'top 40%',
-            scrub: 0.45,
+            scrub: 0.25,
             invalidateOnRefresh: true,
           },
         })

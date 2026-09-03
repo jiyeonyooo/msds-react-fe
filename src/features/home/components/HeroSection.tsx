@@ -7,13 +7,17 @@ export function HeroSection({ onSearch }: { onSearch: (form: AvailabilityRequest
   return (
     <section
       data-section
-      className="landing-hero relative min-h-[960px] overflow-hidden text-white after:absolute after:inset-0 after:bg-[linear-gradient(90deg,rgb(14_34_57/0.76),rgb(14_34_57/0.14)_72%,transparent)] after:content-[''] md:min-h-[820px]"
+      className="landing-hero relative z-10 min-h-[960px] text-white after:absolute after:inset-0 after:bg-[linear-gradient(90deg,rgb(14_34_57/0.76),rgb(14_34_57/0.14)_72%,transparent)] after:content-[''] md:min-h-[820px]"
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 animate-ken-burns bg-cover bg-center"
-        style={{ backgroundImage: `url(${homeMedia.hero})` }}
-      />
+        className="absolute inset-0 overflow-hidden"
+      >
+        <div
+          className="size-full animate-ken-burns bg-cover bg-center"
+          style={{ backgroundImage: `url(${homeMedia.hero})` }}
+        />
+      </div>
       <div
         className="relative z-[1] mx-auto w-[min(1088px,calc(100%_-_48px))] pt-[72px] md:pt-[86px]"
         data-hero-content
