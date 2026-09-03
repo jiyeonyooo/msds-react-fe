@@ -46,8 +46,8 @@
 | `/rooms/:roomId`            | 객실 상세           | `src/features/rooms/RoomDetailPage.tsx`           |
 | `/reservations`             | 예약 가능 객실 조회 | `src/features/reservation/ReservationPage.tsx`    |
 | `/reservations/confirm`     | 예약 확인·생성      | `src/features/reservation/ConfirmationPage.tsx`   |
-| `/my-reservations`          | 내 예약 목록        | `src/features/reservation/MyReservationsPage.tsx` |
-| `/my-reservations/:resv_id` | 예약 상세·취소      | `src/features/reservation/MyReservationsPage.tsx` |
+| `/mypage/reservations`          | 내 예약 목록        | `src/features/account/MyReservationsPage.tsx` |
+| `/mypage/reservations/:resv_id` | 예약 상세·취소      | `src/features/reservation/MyReservationsPage.tsx` |
 | `/login`                    | 로그인              | `src/features/auth/LoginPage.tsx`                 |
 | `/signup`                   | 회원가입            | `src/features/auth/SignupPage.tsx`                |
 | `/mypage`                   | 마이페이지          | `src/features/account/MyPage.tsx`                 |
@@ -74,7 +74,7 @@ HTTP 호출은 `src/lib/apiClient.ts`의 axios 인스턴스 두 개로 통일합
 
 ## 헤더 정보 구조
 
-`HOME · ROOMS · RESERVATION · PROGRAM · WELLNESS · ABOUT`을 사용합니다. `ROOMS`는 예약 가능 객실 검색(`/reservations`), `RESERVATION`은 내 예약(`/my-reservations`)으로 연결됩니다. 데스크톱 헤더는 3열 그리드로 구성해 로고는 좌측, 메뉴는 화면 중앙, 로그인 버튼은 우측에 고정합니다. 로그인 전에도 보호된 경로가 인증 흐름으로 전환하도록 기존 라우팅 정책을 유지합니다.
+`HOME · ROOMS · RESERVATION · PROGRAM · WELLNESS · ABOUT`을 사용합니다. `ROOMS`는 예약 가능 객실 검색(`/reservations`), `RESERVATION`은 내 예약(`/mypage/reservations`)으로 연결됩니다. 데스크톱 헤더는 3열 그리드로 구성해 로고는 좌측, 메뉴는 화면 중앙, 로그인 버튼은 우측에 고정합니다. 로그인 전에도 보호된 경로가 인증 흐름으로 전환하도록 기존 라우팅 정책을 유지합니다.
 
 ## 개발 도구 모드
 

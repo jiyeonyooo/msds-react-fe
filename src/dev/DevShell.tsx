@@ -14,7 +14,7 @@ const routes = [
   { path: '/admin/inquiries', label: 'ADMIN · INQUIRIES' },
   { path: '/', label: '홈' },
   { path: '/reservations', label: '예약 조회' },
-  { path: '/my-reservations', label: '내 예약' },
+  { path: '/mypage/reservations', label: '내 예약' },
   { path: '/login', label: '로그인' },
   { path: '/signup', label: '회원가입' },
   { path: '/__dev/components', label: '컴포넌트' },

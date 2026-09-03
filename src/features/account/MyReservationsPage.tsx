@@ -20,7 +20,7 @@ const statusFilters: { value: 'ALL' | ReservationStatus; label: string }[] = [
 /**
  * 계정 영역의 예약 내역.
  * 회원정보 안에 최근 몇 건만 얹어 두면 목록이 길어질수록 정보가 묻히므로 별도 화면으로 분리했다.
- * 취소·상세 조작은 기존 /my-reservations 화면이 그대로 담당한다.
+ * 취소·상세 조작은 /mypage/reservations/:resvId 화면에서 담당한다.
  */
 export function MyAccountReservationsPage() {
   const [items, setItems] = useState<Reservation[]>([])
@@ -133,7 +133,7 @@ export function MyAccountReservationsPage() {
                   <StatusBadge status={reservation.status} />
                   <Link
                     className="text-[11px] font-medium tracking-[0.08em] text-gold-500"
-                    to={`/my-reservations/${reservation.resv_id}`}
+                    to={`/mypage/reservations/${reservation.resv_id}`}
                   >
                     상세 →
                   </Link>

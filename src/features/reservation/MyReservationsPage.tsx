@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { Button, StatusBadge } from '../../components/ui'
 import { navigate } from '../../lib/navigation'
 import { ApiError, reservationApi } from './api'
@@ -6,7 +7,7 @@ import type { Reservation, ReservationStatus } from './types'
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
 export function MyReservationsPage() {
-  const id = window.location.pathname.split('/')[2]
+  const { resvId: id } = useParams()
   const [items, setItems] = useState<Reservation[]>([])
   const [detail, setDetail] = useState<Reservation | null>(null)
   const [status, setStatus] = useState<'ALL' | ReservationStatus>('ALL')
@@ -81,7 +82,7 @@ export function MyReservationsPage() {
         <h1 className="my-2.5 font-display text-[52px] leading-[0.95] tracking-[-0.125rem] md:text-[62px]">
           {message}
         </h1>
-        <Button onClick={() => navigate(id ? '/my-reservations' : '/reservations')}>
+        <Button onClick={() => navigate(id ? '/mypage/reservations' : '/reservations')}>
           돌아가기
         </Button>
       </main>
@@ -93,7 +94,7 @@ export function MyReservationsPage() {
         new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
     return (
       <main className="mx-auto max-w-[850px] px-6 pt-[58px] pb-[110px] md:pt-[90px]">
-        <Button className="mb-[25px]" variant="text" onClick={() => navigate('/my-reservations')}>
+        <Button className="mb-[25px]" variant="text" onClick={() => navigate('/mypage/reservations')}>
           ← 나의 예약으로
         </Button>
         <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">
@@ -177,7 +178,7 @@ export function MyReservationsPage() {
               <ReservationCard
                 key={item.resv_id}
                 reservation={item}
-                onClick={() => navigate(`/my-reservations/${item.resv_id}`)}
+                onClick={() => navigate(`/mypage/reservations/${item.resv_id}`)}
               />
             ))}
           </div>

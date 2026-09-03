@@ -72,8 +72,6 @@ export default function App() {
           <Route path="rooms/:roomId" element={<RoomDetailPage />} />
           <Route path="reservations" element={<ReservationPage />} />
           <Route path="reservations/confirm" element={<ConfirmationPage />} />
-          <Route path="my-reservations" element={<MyReservationsPage />} />
-          <Route path="my-reservations/:resvId" element={<MyReservationsPage />} />
           <Route path="my-programs" element={<MyProgramReservationsPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route path="signup" element={<SignupPage />} />
@@ -105,6 +103,14 @@ export default function App() {
             element={
               <RequireMemberMyPage>
                 <MyAccountReservationsPage />
+              </RequireMemberMyPage>
+            }
+          />
+          <Route
+            path="mypage/reservations/:resvId"
+            element={
+              <RequireMemberMyPage>
+                <MyReservationsPage />
               </RequireMemberMyPage>
             }
           />
