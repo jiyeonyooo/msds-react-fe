@@ -30,6 +30,7 @@ export default function ProgramDetailPage() {
   const [related, setRelated] = useState<ProgramResponse[]>([])
   const [loading, setLoading] = useState(!invalidId)
   const [joining, setJoining] = useState(false)
+  const [joined, setJoined] = useState(false)
   const [error, setError] = useState(invalidId ? '올바르지 않은 프로그램 번호입니다.' : '')
   const [notice, setNotice] = useState('')
 
@@ -70,6 +71,7 @@ export default function ProgramDetailPage() {
     try {
       await reserveProgram({ programId: program.id, quantity: 1 })
       setProgram(await getProgram(program.id))
+      setJoined(true)
       setNotice('프로그램 신청이 완료되었습니다. 마이페이지에서 신청 내역을 확인해 주세요.')
       showToast('프로그램 신청이 완료되었습니다.')
     } catch (err) {
@@ -150,24 +152,32 @@ export default function ProgramDetailPage() {
             <p className="mt-2 text-xs leading-[19px] text-[#3d403d]">숙박객 무료</p>
             <Button
               className="mt-[13px] h-[50px] w-full"
-              disabled={isClosed || joining}
+              disabled={isClosed || joining || joined}
               onClick={() => void handleJoin()}
             >
-              {joining ? '신청 중…' : isClosed ? 'PROGRAM CLOSED' : 'JOIN PROGRAM'}
+              {joining
+                ? '신청 중…'
+                : joined
+                  ? '신청 완료'
+                  : isClosed
+                    ? 'PROGRAM CLOSED'
+                    : 'JOIN PROGRAM'}
             </Button>
             <p className="mt-[13px] text-[10px] leading-[17px] text-[#3d403d]">
               신청 내역은 마이페이지에서 확인할 수 있습니다.
             </p>
-            {notice && (
-              <p className="mt-3 text-xs leading-5 text-[#4f6b48]" role="status">
-                {notice}
-              </p>
-            )}
-            {error && (
-              <p className="mt-3 text-xs leading-5 text-error" role="alert">
-                {error}
-              </p>
-            )}
+            <div aria-live="polite" className="mt-3 min-h-10">
+              {notice && (
+                <p className="text-xs leading-5 text-[#4f6b48]" role="status">
+                  {notice}
+                </p>
+              )}
+              {error && (
+                <p className="text-xs leading-5 text-error" role="alert">
+                  {error}
+                </p>
+              )}
+            </div>
           </aside>
         </div>
       </section>
