@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useRevealAll } from '../../components/motion/hooks'
 import roomImage1 from '../../assets/rooms1.png'
 import roomImage2 from '../../assets/rooms2.png'
 import roomImage3 from '../../assets/rooms3.png'
@@ -42,6 +43,8 @@ export function RoomsPage() {
     if (sort === 'price-desc') return [...filtered].sort((a, b) => b.basePrice - a.basePrice)
     return filtered
   }, [rooms, sort, types])
+  // 목록이 도착한 뒤에 그려지므로 길이를 키로 리빌 관찰을 다시 건다.
+  useRevealAll(`rooms-${visibleRooms.length}`)
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault()
@@ -89,7 +92,7 @@ export function RoomsPage() {
             {loading && <div className="py-24 text-center text-sm text-muted" role="status">객실을 불러오는 중입니다…</div>}
             {!loading && error && <div className="border border-error-border bg-white px-6 py-16 text-center text-sm text-error" role="alert">{error}</div>}
             {!loading && !error && visibleRooms.length === 0 && <div className="border border-dashed border-gold-300 px-6 py-20 text-center text-sm text-muted">조건에 맞는 객실이 없습니다.</div>}
-            {!loading && !error && visibleRooms.length > 0 && <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">{visibleRooms.map((room, index) => <Link className="overflow-hidden rounded-lg border border-ivory-200 bg-white shadow-card transition hover:-translate-y-1" key={room.roomId} to={`/rooms/${room.roomId}`}><img alt={`${room.name} 객실`} className="h-[170px] w-full object-cover" src={room.mainImageUrl || roomImages[index % roomImages.length]} /><div className="px-4 py-3"><h3 className="font-display text-xl font-semibold">{room.name}</h3><p className="mt-1 line-clamp-1 text-[10px] text-ink-700">{room.standardGuests} guests · 최대 {room.maxGuests}명 · {typeName[room.roomType]}</p><p className="mt-2 text-[10px] font-medium text-gold-500">{won.format(room.basePrice)} / night</p></div></Link>)}</div>}
+            {!loading && !error && visibleRooms.length > 0 && <div className="grid gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">{visibleRooms.map((room, index) => <Link className="reveal group overflow-hidden rounded-lg border border-ivory-200 bg-white shadow-card transition duration-500 ease-calm hover:-translate-y-1" key={room.roomId} style={{ '--reveal-delay': `${Math.min(index, 5) * 70}ms` } as React.CSSProperties} to={`/rooms/${room.roomId}`}><span className="block h-[170px] w-full overflow-hidden"><img alt={`${room.name} 객실`} className="h-full w-full object-cover transition duration-[1200ms] ease-calm group-hover:scale-[1.05]" loading="lazy" src={room.mainImageUrl || roomImages[index % roomImages.length]} /></span><div className="px-4 py-3"><h3 className="font-display text-xl font-semibold">{room.name}</h3><p className="mt-1 line-clamp-1 text-[10px] text-ink-700">{room.standardGuests} guests · 최대 {room.maxGuests}명 · {typeName[room.roomType]}</p><p className="mt-2 text-[10px] font-medium text-gold-500">{won.format(room.basePrice)} / night</p></div></Link>)}</div>}
           </div>
         </div>
       </section>

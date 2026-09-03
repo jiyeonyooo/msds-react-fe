@@ -4,6 +4,7 @@ import { Button, StatusBadge } from '../../components/ui'
 import type { ApiError } from '../../lib/apiError'
 import { reservationApi } from '../reservation/api'
 import type { Reservation, ReservationStatus } from '../reservation/types'
+import { SkeletonRows } from '../../components/motion'
 import { AccountLayout } from './AccountLayout'
 import { AccountEmptyState, AccountPanel, AccountPanelAction } from './AccountPanel'
 
@@ -99,9 +100,7 @@ export function MyAccountReservationsPage() {
           </p>
         )}
         {!error && loading && (
-          <p className="py-10 text-center text-[13px] text-muted" role="status">
-            예약 내역을 불러오는 중입니다…
-          </p>
+          <SkeletonRows rows={3} />
         )}
         {!error && !loading && items.length === 0 && (
           <AccountEmptyState

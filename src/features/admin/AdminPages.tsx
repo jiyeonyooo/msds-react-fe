@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { CountUp } from '../../components/motion'
 import { adminInquiryApi } from './inquiryApi'
 import { adminMemberApi } from './memberApi'
 import { adminReservationApi } from './reservationApi'
@@ -169,7 +170,7 @@ function MetricTile({
       <p
         className={`mt-1.5 font-display text-[32px] leading-none font-medium ${highlight ? 'text-gold-500' : 'text-navy-900'}`}
       >
-        {loading ? '–' : (value?.toLocaleString('ko-KR') ?? '–')}
+        {loading ? '–' : <CountUp value={value} />}
         <span className="ml-1 font-sans text-xs font-normal text-ink-500">{unit}</span>
       </p>
       <p className="mt-2.5 text-[11px] leading-4 text-ink-500">{caption}</p>
