@@ -6,7 +6,7 @@ import { signOut } from '../auth/api'
 const menu = [
   { label: '회원정보', to: '/mypage', end: false },
   { label: '문의 내역', to: '/inquiries', end: false },
-  { label: '마음 기록', to: '/wellness/history', end: false },
+  { label: '마음 기록', to: '/mypage/wellness', end: false },
 ]
 
 type AccountLayoutProps = {

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Button } from '../../components/ui'
+import { Button, StatusBadge } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
 import { signOut } from '../auth/api'
 import type { UserProfile } from '../auth/types'
 import { useSession } from '../auth/useSession'
+import { reservationApi } from '../reservation/api'
+import type { Reservation } from '../reservation/types'
 import { accountApi } from './api'
 import { AccountLayout } from './AccountLayout'
 
@@ -32,6 +34,8 @@ const quickLinks = [
   },
 ]
 const dateOf = (value?: string) => value?.slice(0, 10) ?? '-'
+const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
+const RECENT_RESERVATION_COUNT = 3
 
 /** 마이페이지. GET /api/users/me 로 받은 회원 정보를 보여 준다. */
 export function MyPage() {
@@ -39,12 +43,37 @@ export function MyPage() {
   const session = useSession()
   const [profile, setProfile] = useState<UserProfile | null>(session?.user ?? null)
   const [error, setError] = useState('')
+  const [reservations, setReservations] = useState<Reservation[]>([])
+  const [reservationTotal, setReservationTotal] = useState(0)
+  const [reservationLoading, setReservationLoading] = useState(true)
+  const [reservationError, setReservationError] = useState('')
 
   useEffect(() => {
     void accountApi
       .me()
       .then((response) => setProfile(response.data))
       .catch((cause) => setError((cause as ApiError).message))
+  }, [])
+
+  // 예약 내역은 회원 정보와 별개로 실패할 수 있으므로 오류를 따로 들고 있는다.
+  // 예약 조회가 실패해도 회원 정보는 그대로 보여야 한다.
+  useEffect(() => {
+    let active = true
+    void reservationApi
+      .mine({ pageSize: RECENT_RESERVATION_COUNT })
+      .then((result) => {
+        if (!active) return
+        setReservations(result.content)
+        setReservationTotal(result.total_elements)
+      })
+      .catch((cause) => {
+        if (!active) return
+        setReservationError((cause as ApiError).message || '예약 내역을 불러오지 못했습니다.')
+      })
+      .finally(() => active && setReservationLoading(false))
+    return () => {
+      active = false
+    }
   }, [])
 
   const fields = [
@@ -114,6 +143,73 @@ export function MyPage() {
             </div>
           ))}
         </dl>
+      </article>
+      <article className="rounded-xl border border-border-subtle bg-white px-8 py-7">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center">
+          <div className="flex-1">
+            <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
+              예약 내역
+            </h2>
+            <p className="text-[10px] tracking-[0.08em] text-muted">
+              {reservationTotal > 0
+                ? `전체 ${reservationTotal.toLocaleString('ko-KR')}건 중 최근 ${Math.min(reservations.length, RECENT_RESERVATION_COUNT)}건입니다.`
+                : '머무름을 예약하면 여기에서 확인할 수 있습니다.'}
+            </p>
+          </div>
+          <Link
+            className="text-[11px] font-medium tracking-[0.08em] text-navy-900"
+            to="/my-reservations"
+          >
+            전체 예약 보기 →
+          </Link>
+        </div>
+        <span className="my-4 block h-px w-full bg-border-subtle" />
+        {reservationError && (
+          <p className="text-[13px] text-error" role="alert">
+            {reservationError}
+          </p>
+        )}
+        {!reservationError && reservationLoading && (
+          <p className="py-8 text-center text-[13px] text-muted" role="status">
+            예약 내역을 불러오는 중입니다…
+          </p>
+        )}
+        {!reservationError && !reservationLoading && reservations.length === 0 && (
+          <div className="grid justify-items-center gap-4 py-8 text-center">
+            <p className="text-[13px] text-muted">아직 예약한 머무름이 없습니다.</p>
+            <Link to="/reservations">
+              <Button size="sm">객실 둘러보기</Button>
+            </Link>
+          </div>
+        )}
+        {!reservationError && !reservationLoading && reservations.length > 0 && (
+          <ul className="grid gap-0">
+            {reservations.map((reservation) => (
+              <li
+                className="grid gap-2 border-b border-border-subtle py-4 last:border-0 md:grid-cols-[1.3fr_1.2fr_0.9fr_auto] md:items-center"
+                key={reservation.resv_id}
+              >
+                <div className="grid gap-0.5">
+                  <span className="text-[15px] text-navy-900">{reservation.room_name}</span>
+                  <span className="text-[11px] text-muted">{reservation.reservation_number}</span>
+                </div>
+                <span className="text-[13px] text-secondary">
+                  {reservation.check_in_date} ~ {reservation.check_out_date}
+                </span>
+                <span className="text-[13px] text-navy-900">{won(reservation.total_price)}</span>
+                <div className="flex items-center gap-3 md:justify-self-end">
+                  <StatusBadge status={reservation.status} />
+                  <Link
+                    className="text-[11px] font-medium tracking-[0.08em] text-gold-500"
+                    to={`/my-reservations/${reservation.resv_id}`}
+                  >
+                    상세 →
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </article>
       <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
         {quickLinks.map((link, index) => (

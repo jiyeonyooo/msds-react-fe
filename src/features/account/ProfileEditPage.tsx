@@ -86,18 +86,13 @@ export function ProfileEditPage() {
         noValidate
         onSubmit={submit}
       >
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="flex-1">
-            <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              Profile Details
-            </h2>
-            <p className="text-xs leading-5 text-secondary">
-              변경할 항목만 수정하고 저장하세요. 비워 둔 항목은 기존 값이 유지됩니다.
-            </p>
-          </div>
-          <span className="flex h-8 items-center rounded-full bg-subtle px-4 text-[9px] font-medium tracking-[0.07em] text-gold-500">
-            PATCH /api/users/me
-          </span>
+        <div>
+          <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
+            Profile Details
+          </h2>
+          <p className="text-xs leading-5 text-secondary">
+            변경할 항목만 수정하고 저장하세요. 비워 둔 항목은 기존 값이 유지됩니다.
+          </p>
         </div>
         <span className="h-px w-full bg-border-subtle" />
         <div className="grid gap-2">
