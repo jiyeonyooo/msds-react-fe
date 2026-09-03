@@ -11,6 +11,7 @@ import {
 import type {
   NoiseDevice,
   NoiseDeviceStatus,
+  NoiseMeasurement,
   QuietSpace,
   QuietSpaceType,
   QuietnessLevel,
@@ -292,7 +293,16 @@ export function AdminQuietnessPage() {
         <MeasurementCard
           activeDevices={activeDevices}
           onError={fail}
-          onSuccess={(deviceName) => notify(`${deviceName} 측정값을 등록했습니다.`)}
+          onSuccess={(deviceName, measurement) => {
+            setDevices((current) =>
+              current.map((device) =>
+                device.deviceId === measurement.deviceId
+                  ? { ...device, lastConnectedAt: measurement.measuredAt }
+                  : device,
+              ),
+            )
+            notify(`${deviceName} 측정값을 등록했습니다.`)
+          }}
         />
         <ThresholdCard
           onChange={setThresholds}
@@ -356,24 +366,25 @@ function MeasurementCard({
 }: {
   activeDevices: NoiseDevice[]
   onError: (error: unknown) => void
-  onSuccess: (deviceName: string) => void
+  onSuccess: (deviceName: string, measurement: NoiseMeasurement) => void
 }) {
   const [submitting, setSubmitting] = useState(false)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
+    const formElement = event.currentTarget
+    const form = new FormData(formElement)
     const deviceId = Number(form.get('deviceId'))
     const device = activeDevices.find((item) => item.deviceId === deviceId)
     setSubmitting(true)
     try {
-      await adminQuietnessApi.createMeasurement({
+      const measurement = await adminQuietnessApi.createMeasurement({
         deviceId,
         decibel: Number(form.get('decibel')),
         measuredAt: String(form.get('measuredAt') || '') || undefined,
       })
-      event.currentTarget.reset()
-      onSuccess(device?.deviceName ?? `기기 #${deviceId}`)
+      formElement.reset()
+      onSuccess(device?.deviceName ?? `기기 #${deviceId}`, measurement)
     } catch (requestError) {
       onError(requestError)
     } finally {
