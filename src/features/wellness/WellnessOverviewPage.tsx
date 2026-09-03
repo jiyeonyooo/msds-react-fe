@@ -79,10 +79,10 @@ export function WellnessOverviewPage() {
         <div className="mx-auto grid max-w-[1240px] gap-12 px-6 py-16 md:grid-cols-[1.2fr_0.8fr] md:items-center md:px-12 md:py-20">
           <div>
             <SectionLabel>YOUR WELLNESS STAY · 오늘의 마음</SectionLabel>
-            <h1 className="mt-5 max-w-[620px] font-display text-6xl leading-[0.92] tracking-[-0.035em] md:text-[70px]">
-              How quiet is your
+            <h1 className="mt-5 max-w-[620px] text-5xl font-medium leading-[1.15] tracking-[-0.035em] md:text-[62px]">
+              오늘, 마음은 얼마나
               <br />
-              mind today?
+              편안한가요?
             </h1>
             <p className="mt-6 text-sm leading-7 text-secondary">
               잠시 멈춰 지금의 마음을 살펴보세요. 10개의 짧은 질문으로
@@ -116,8 +116,8 @@ export function WellnessOverviewPage() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
           <div>
             <SectionLabel>YOUR CHANGE · 나의 변화</SectionLabel>
-            <h2 className="mt-4 font-display text-[44px] leading-none">
-              A quieter rhythm, day by day
+            <h2 className="mt-4 text-[40px] font-medium leading-tight">
+              하루하루, 더 편안해지는 마음
             </h2>
           </div>
           {latest && (
@@ -171,8 +171,8 @@ export function WellnessOverviewPage() {
           <div className="flex items-end justify-between">
             <div>
               <SectionLabel>LIVE QUIETNESS · 지금의 고요</SectionLabel>
-              <h2 className="mt-4 font-display text-[44px] leading-none">
-                Find the quietest place, right now
+              <h2 className="mt-4 text-[40px] font-medium leading-tight">
+                지금 가장 조용한 공간을 찾아보세요
               </h2>
             </div>
             {summary?.latestMeasuredAt && (

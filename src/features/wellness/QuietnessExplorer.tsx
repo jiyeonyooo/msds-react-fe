@@ -15,18 +15,8 @@ import { quietnessLabel, toLocalDateTime } from './wellnessFormat'
 const hoursOfDay = Array.from({ length: 24 }, (_, hour) => hour)
 const ringSize = 240
 const ringRadius = 96
-const center = ringSize / 2
-
-const polar = (radius: number, degree: number) => {
-  const radian = ((degree - 90) * Math.PI) / 180
-  return [center + radius * Math.cos(radian), center + radius * Math.sin(radian)] as const
-}
-
-const arcPath = (radius: number, startDegree: number, endDegree: number) => {
-  const [x1, y1] = polar(radius, startDegree)
-  const [x2, y2] = polar(radius, endDegree)
-  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${radius} ${radius} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`
-}
+const ringCircumference = 2 * Math.PI * ringRadius
+const gaugeMaxDecibel = 80
 
 type Props = {
   spaces: SpaceQuietness[]
@@ -39,6 +29,13 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
     () => [...spaces].sort((a, b) => a.decibel - b.decibel)[0] ?? null,
     [spaces],
   )
+  const latestSpace = useMemo(
+    () =>
+      [...spaces].sort(
+        (a, b) => new Date(b.measuredAt).getTime() - new Date(a.measuredAt).getTime(),
+      )[0] ?? null,
+    [spaces],
+  )
   const [spaceId, setSpaceId] = useState<number | null>(null)
   // 응답이 도착했을 때만 갱신하고, 화면에 필요한 로딩 여부는 여기서 파생시킨다.
   const [loaded, setLoaded] = useState<{
@@ -48,7 +45,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
   }>({ spaceId: null, status: 'ready', data: [] })
   const [selectedHour, setSelectedHour] = useState(() => new Date().getHours())
 
-  const activeSpaceId = spaceId ?? quietestSpace?.spaceId ?? null
+  // 처음 열 때는 가장 낮은 과거값이 아니라 가장 최근에 측정된 공간을 보여 준다.
+  // 관리자가 방금 값을 등록한 뒤에도 빈 시간대가 기본 선택되는 혼란을 막는다.
+  const activeSpaceId = spaceId ?? latestSpace?.spaceId ?? null
   const activeSpace = spaces.find((space) => space.spaceId === activeSpaceId) ?? null
 
   useEffect(() => {
@@ -99,14 +98,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
 
   const selected = byHour.get(selectedHour) ?? null
   const pad = (hour: number) => `${String(hour).padStart(2, '0')}:00`
-
-  const toneFor = (item: HourlyQuietness | undefined) => {
-    if (!item || !range) return { color: '#e7e0d5', opacity: 1 }
-    // 조용할수록 옅게. 색이 아니라 농도로 표현해야 화면이 시끄러워지지 않는다.
-    const span = range.max - range.min
-    const ratio = span === 0 ? 0.5 : (item.averageDecibel - range.min) / span
-    return { color: '#b79a67', opacity: 0.25 + ratio * 0.7 }
-  }
+  const gaugeProgress = selected
+    ? Math.min(1, Math.max(0, selected.averageDecibel / gaugeMaxDecibel))
+    : 0
 
   if (loading) {
     return (
@@ -137,7 +131,10 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
     <div className="grid gap-5 lg:grid-cols-[minmax(0,340px)_1fr]">
       <article className="rounded-lg bg-navy-900 p-8 text-white">
         <p className="text-[11px] font-medium tracking-[0.18em] text-gold-500">
-          QUIETNESS BY HOUR · 시간대별 고요
+          HOURLY AVERAGE · 시간대별 평균 소음
+        </p>
+        <p className="mt-3 text-xs leading-6 text-white/55">
+          선택한 시간에 등록된 측정값을 1시간 단위로 평균한 수치입니다.
         </p>
         <div className="relative mt-6 grid place-items-center">
           <svg
@@ -145,42 +142,31 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
             className="w-full max-w-[280px]"
             viewBox={`0 0 ${ringSize} ${ringSize}`}
           >
-            {hoursOfDay.map((hour) => {
-              const item = byHour.get(hour)
-              const tone = toneFor(item)
-              const isSelected = hour === selectedHour
-              return (
-                <path
-                  d={arcPath(ringRadius, hour * 15 + 1.6, (hour + 1) * 15 - 1.6)}
-                  fill="none"
-                  key={hour}
-                  stroke={isSelected ? '#fff' : tone.color}
-                  strokeDasharray={item ? undefined : '2 4'}
-                  strokeLinecap="round"
-                  strokeOpacity={isSelected ? 1 : tone.opacity}
-                  strokeWidth={isSelected ? 16 : 12}
-                />
-              )
-            })}
-            {[0, 6, 12, 18].map((hour) => {
-              const [x, y] = polar(ringRadius - 26, hour * 15 + 7.5)
-              return (
-                <text
-                  className="fill-white/40 font-sans text-[9px]"
-                  key={hour}
-                  textAnchor="middle"
-                  x={x}
-                  y={y + 3}
-                >
-                  {pad(hour)}
-                </text>
-              )
-            })}
+            <circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              fill="none"
+              r={ringRadius}
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth="12"
+            />
+            <circle
+              className="transition-[stroke-dashoffset] duration-700 ease-calm"
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              fill="none"
+              r={ringRadius}
+              stroke={selected ? '#c6a86b' : 'rgba(255,255,255,0.18)'}
+              strokeDasharray={ringCircumference}
+              strokeDashoffset={ringCircumference * (1 - gaugeProgress)}
+              strokeLinecap="round"
+              strokeWidth="14"
+              transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
+            />
           </svg>
           <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-            <span className="animate-breathe absolute inset-[62px] rounded-full border border-gold-300/20" />
             <span className="relative text-[10px] tracking-[0.16em] text-white/50">
-              {pad(selectedHour)}
+              {pad(selectedHour)} 평균
             </span>
             <strong className="relative mt-1 font-display text-4xl font-normal">
               {selected ? selected.averageDecibel.toFixed(1) : '—'}
@@ -190,6 +176,10 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
               {selected ? quietnessLabel[selected.level] : '측정값 없음'}
             </span>
           </div>
+        </div>
+        <div className="mt-2 flex justify-between text-[10px] text-white/40">
+          <span>0 dB · 거의 무음</span>
+          <span>80+ dB · 매우 시끄러움</span>
         </div>
         <label className="mt-7 block text-[10px] tracking-[0.14em] text-white/50">
           시간대 선택
@@ -205,8 +195,13 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
         </label>
         {selected && (
           <p className="mt-4 text-xs leading-6 text-white/60">
-            {pad(selectedHour)} 기준 최저 {selected.minimumDecibel.toFixed(1)} · 최고{' '}
-            {selected.maximumDecibel.toFixed(1)} dB · 측정 {selected.sampleCount}회
+            등록된 {selected.sampleCount}개 값 · 최저 {selected.minimumDecibel.toFixed(1)} · 최고{' '}
+            {selected.maximumDecibel.toFixed(1)} dB
+          </p>
+        )}
+        {!selected && (
+          <p className="mt-4 text-xs leading-6 text-white/60">
+            이 시간에는 등록된 측정값이 없습니다. 관리자 화면에서 값을 등록하면 표시됩니다.
           </p>
         )}
       </article>
@@ -249,8 +244,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
         <div className="mt-7 space-y-6">
           {quietestSpace && (
             <p className="rounded-md bg-subtle px-5 py-4 text-sm leading-6 text-ink-700">
-              지금 가장 조용한 공간은 <b className="text-navy-900">{quietestSpace.spaceName}</b>
-              입니다 · {quietestSpace.decibel.toFixed(1)} dB · {quietnessLabel[quietestSpace.level]}
+              각 공간의 최신 측정값 중 <b className="text-navy-900">{quietestSpace.spaceName}</b>
+              이 가장 낮습니다 · {quietestSpace.decibel.toFixed(1)} dB ·{' '}
+              {quietnessLabel[quietestSpace.level]}
             </p>
           )}
 
