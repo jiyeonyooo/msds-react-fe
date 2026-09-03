@@ -173,7 +173,9 @@
     margin-inline: auto;
     border-radius: 999px;
     background: rgb(14 34 57 / 0%);
-    transition: background-color 240ms cubic-bezier(0.22, 1, 0.36, 1), transform 120ms linear;
+    transition:
+      background-color 240ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 120ms linear;
   }
   .global-scrollbar:hover .global-scrollbar__thumb,
   .global-scrollbar--visible .global-scrollbar__thumb {
@@ -184,5 +186,31 @@
   }
   .global-scrollbar--dragging .global-scrollbar__thumb {
     transition: none;
+  }
+}
+
+.landing-auto-scroll,
+.landing-auto-scroll * {
+  scroll-behavior: auto !important;
+}
+
+/* GSAP section transitions need a shared 3D rendering context. */
+.landing-page [data-section] {
+  position: relative;
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+}
+
+/* Recover content from GSAP's inline animation state when motion is reduced. */
+@media (prefers-reduced-motion: reduce) {
+  [data-story-copy],
+  [data-story-image],
+  [data-value-card],
+  [data-showcase-slide],
+  [data-sequence-item],
+  [data-final-content] {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
   }
 }
