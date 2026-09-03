@@ -45,6 +45,6 @@ export const getMyProgramReservations = async (): Promise<ProgramReservationResp
 };
 
 export const getProgram = async (programId: number): Promise<ProgramResponse> => {
-  const res = await authApiClient.get<ApiResponse<ProgramResponse>>(`/meditation/program/detail/${programId}`);
+  const res = await publicApiClient.get<ApiResponse<ProgramResponse>>(`/meditation/program/detail/${programId}`);
   return res.data.data;
 };
