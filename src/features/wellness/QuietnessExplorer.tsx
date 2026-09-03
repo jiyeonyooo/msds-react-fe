@@ -17,6 +17,16 @@ const ringSize = 240
 const ringRadius = 96
 const ringCircumference = 2 * Math.PI * ringRadius
 const gaugeMaxDecibel = 80
+const dialCenter = ringSize / 2
+const dialTickOuterRadius = 82
+
+function pointOnDial(hour: number, radius: number) {
+  const angle = (hour / 24) * Math.PI * 2 - Math.PI / 2
+  return {
+    x: dialCenter + Math.cos(angle) * radius,
+    y: dialCenter + Math.sin(angle) * radius,
+  }
+}
 
 type Props = {
   spaces: SpaceQuietness[]
@@ -76,6 +86,13 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
   }, [awaitingHourly, loaded])
 
   const measured = useMemo(() => [...byHour.values()], [byHour])
+  const quietestMeasuredHour = useMemo(() => {
+    if (measured.length === 0) return null
+    const quietest = measured.reduce((best, item) =>
+      item.averageDecibel < best.averageDecibel ? item : best,
+    )
+    return new Date(quietest.hourStart).getHours()
+  }, [measured])
   const range = useMemo(() => {
     if (measured.length === 0) return null
     const values = measured.map((item) => item.averageDecibel)
@@ -134,7 +151,7 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
           HOURLY AVERAGE · 시간대별 평균 소음
         </p>
         <p className="mt-3 text-xs leading-6 text-white/55">
-          선택한 시간에 등록된 측정값을 1시간 단위로 평균한 수치입니다.
+          바늘은 선택한 시간을, 금색 원호는 해당 시간의 평균 소음을 나타냅니다.
         </p>
         <div className="relative mt-6 grid place-items-center">
           <svg
@@ -163,16 +180,56 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
               strokeWidth="14"
               transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
             />
+            {hoursOfDay.map((hour) => {
+              const majorTick = hour % 6 === 0
+              const inner = pointOnDial(hour, majorTick ? 72 : 76)
+              const outer = pointOnDial(hour, dialTickOuterRadius)
+              const isQuietest = hour === quietestMeasuredHour
+
+              return (
+                <g key={hour}>
+                  <line
+                    stroke={isQuietest ? '#c6a86b' : 'rgba(255,255,255,0.34)'}
+                    strokeLinecap="round"
+                    strokeWidth={majorTick || isQuietest ? 1.8 : 1}
+                    x1={inner.x}
+                    x2={outer.x}
+                    y1={inner.y}
+                    y2={outer.y}
+                  />
+                  {isQuietest && <circle cx={outer.x} cy={outer.y} fill="#c6a86b" r="3.2" />}
+                </g>
+              )
+            })}
+            <g
+              className="transition-transform duration-500 ease-calm motion-reduce:transition-none"
+              style={{
+                transform: `rotate(${selectedHour * 15}deg)`,
+                transformOrigin: `${dialCenter}px ${dialCenter}px`,
+              }}
+            >
+              <line
+                stroke="rgba(255,255,255,0.82)"
+                strokeLinecap="round"
+                strokeWidth="2"
+                x1={dialCenter}
+                x2={dialCenter}
+                y1={dialCenter + 7}
+                y2={dialCenter - 61}
+              />
+              <circle cx={dialCenter} cy={dialCenter - 61} fill="#f4ead6" r="2.8" />
+            </g>
+            <circle cx={dialCenter} cy={dialCenter} fill="#c6a86b" r="4.5" />
           </svg>
           <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-            <span className="relative text-[10px] tracking-[0.16em] text-white/50">
+            <span className="relative justify-self-center bg-navy-900/90 px-2 text-[10px] tracking-[0.16em] text-white/50">
               {pad(selectedHour)} 평균
             </span>
-            <strong className="relative mt-1 font-display text-4xl font-normal">
+            <strong className="relative mt-1 bg-navy-900/90 px-2 font-display text-4xl font-normal">
               {selected ? selected.averageDecibel.toFixed(1) : '—'}
               <small className="ml-1 font-sans text-xs text-white/50">dB</small>
             </strong>
-            <span className="relative mt-1 text-xs text-gold-300">
+            <span className="relative mt-1 justify-self-center bg-navy-900/90 px-2 text-xs text-gold-300">
               {selected ? quietnessLabel[selected.level] : '측정값 없음'}
             </span>
           </div>
@@ -244,8 +301,8 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
         <div className="mt-7 space-y-6">
           {quietestSpace && (
             <p className="rounded-md bg-subtle px-5 py-4 text-sm leading-6 text-ink-700">
-              각 공간의 최신 측정값 중 <b className="text-navy-900">{quietestSpace.spaceName}</b>
-              이 가장 낮습니다 · {quietestSpace.decibel.toFixed(1)} dB ·{' '}
+              각 공간의 최신 측정값 중 <b className="text-navy-900">{quietestSpace.spaceName}</b>이
+              가장 낮습니다 · {quietestSpace.decibel.toFixed(1)} dB ·{' '}
               {quietnessLabel[quietestSpace.level]}
             </p>
           )}
