@@ -6,6 +6,11 @@ import { ApiError, reservationApi } from './api'
 import type { Reservation, ReservationStatus } from './types'
 
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
+
+function formatDateTime(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/)
+  return match ? `${match[1]}. ${match[2]}. ${match[3]}. ${match[4]}:${match[5]}` : value
+}
 export function MyReservationsPage() {
   const { resvId: id } = useParams()
   const [items, setItems] = useState<Reservation[]>([])
@@ -250,10 +255,16 @@ function ReservationCard({
         <dd>성인 {reservation.guest_count}명</dd>
         <dt>총 예약 금액</dt>
         <dd className="text-gold-500">{won(reservation.total_price)}</dd>
+        {detail && reservation.created_at && (
+          <>
+            <dt>예약 일시</dt>
+            <dd>{formatDateTime(reservation.created_at)}</dd>
+          </>
+        )}
         {detail && reservation.cancelled_at && (
           <>
             <dt>취소 일시</dt>
-            <dd>{reservation.cancelled_at}</dd>
+            <dd>{formatDateTime(reservation.cancelled_at)}</dd>
           </>
         )}
       </dl>

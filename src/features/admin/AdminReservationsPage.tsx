@@ -11,7 +11,23 @@ type FilterForm = {
   keyword: string
 }
 
+type RoomTypeColor = {
+  background: string
+  border: string
+  text: string
+}
+
 const emptyFilters: FilterForm = { keyword: '' }
+function roomTypeColor(index: number, count: number): RoomTypeColor {
+  // Evenly distribute hues across the full wheel instead of cycling a finite
+  // palette, so two room types never receive the same color.
+  const hue = Math.round((index * 360) / Math.max(count, 1))
+  return {
+    background: `hsl(${hue} 52% 94%)`,
+    border: `hsl(${hue} 38% 58%)`,
+    text: `hsl(${hue} 42% 28%)`,
+  }
+}
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
 const seoulToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date())
 const currentMonth = () => {
@@ -47,11 +63,6 @@ function calendarDays(month: string) {
   })
 }
 
-function nextDate(date: string) {
-  const value = new Date(`${date}T00:00:00`); value.setDate(value.getDate() + 1)
-  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
-}
-
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof ApiError ? error.message || fallback : fallback
 }
@@ -79,84 +90,86 @@ function AdminReservationListPage() {
   const [items, setItems] = useState<AdminReservation[]>([])
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
-  const [activeRooms, setActiveRooms] = useState<string[]>([])
+  // null means every room is selected. This keeps the all-room state distinct
+  // from a user intentionally clearing individual room selections.
+  const [activeRooms, setActiveRooms] = useState<string[] | null>(null)
   const [activeStatuses, setActiveStatuses] = useState<AdminReservationStatus[]>(['RESERVED', 'CANCELLED'])
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
   const monthInputRef = useRef<HTMLInputElement>(null)
-
   const month = /^\d{4}-\d{2}$/.test(searchParams.get('month') ?? '') ? searchParams.get('month')! : currentMonth()
   const range = monthRange(month)
+
   useEffect(() => {
-    const filters: AdminReservationFilters = {
-      ...(searchParams.get('keyword') ? { keyword: searchParams.get('keyword')! } : {}),
-      search_from_date: range.from,
-      search_to_date: range.to,
-      page_num: 0,
-      page_size: 100,
-    }
+    const filters: AdminReservationFilters = { ...(searchParams.get('keyword') ? { keyword: searchParams.get('keyword')! } : {}), search_from_date: range.from, search_to_date: range.to, page_num: 0, page_size: 100 }
     const load = async () => {
       setLoading(true); setMessage('')
-      try {
-        const result = await adminReservationApi.list(filters)
-        setItems(result.resv_list)
-      } catch (error) {
+      try { setItems((await adminReservationApi.list(filters)).resv_list) }
+      catch (error) {
         const apiError = error as ApiError
-        if (apiError.status === 401) {
-          setReturnPath(`/admin/reservations${searchParams.size ? `?${searchParams}` : ''}`)
-          navigate('/login', { replace: true })
-          return
-        }
-        setItems([])
-        setMessage(apiError.status === 403 ? '예약 관리 권한이 없습니다.' : errorMessage(error, '예약 목록을 불러오지 못했습니다.'))
+        if (apiError.status === 401) { setReturnPath(`/admin/reservations${searchParams.size ? `?${searchParams}` : ''}`); navigate('/login', { replace: true }); return }
+        setItems([]); setMessage(apiError.status === 403 ? '예약 관리 권한이 없습니다.' : errorMessage(error, '예약 목록을 불러오지 못했습니다.'))
       } finally { setLoading(false) }
     }
     void load()
   }, [navigate, range.from, range.to, searchParams])
 
-  function updateForm(name: keyof FilterForm, value: string) {
-    setForm((current) => ({ ...current, [name]: value }))
-  }
-  function search(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const next = new URLSearchParams()
-    if (form.keyword.trim()) next.set('keyword', form.keyword.trim())
-    next.set('month', month)
-    setSearchParams(next)
-  }
-  function reset() { setForm(emptyFilters); setActiveRooms([]); setActiveStatuses(['RESERVED', 'CANCELLED']); setSearchParams({ month }) }
-  function moveMonth(amount: number) {
-    const next = new URLSearchParams(searchParams); next.set('month', shiftMonth(month, amount)); setSearchParams(next)
-  }
-  const rooms = [...new Map(items.map((item) => [`${item.room_name} · ${item.room_number}호`, item])).entries()].map(([label]) => label)
-  const visibleItems = items.filter((item) => activeStatuses.includes(item.resv_status) && (!activeRooms.length || activeRooms.includes(`${item.room_name} · ${item.room_number}호`)))
+  const roomGroups = Array.from(items.reduce((groups, item) => {
+    const key = item.room_name
+    const roomKey = `${item.room_name}::${item.room_number}`
+    const group = groups.get(key) ?? { room_name: item.room_name, rooms: [] as { key: string; room_number: string }[] }
+    if (!group.rooms.some((room) => room.key === roomKey)) group.rooms.push({ key: roomKey, room_number: item.room_number })
+    groups.set(key, group)
+    return groups
+  }, new Map<string, { room_name: string; rooms: { key: string; room_number: string }[] }>()).values())
+  const allRoomKeys = roomGroups.flatMap((group) => group.rooms.map((room) => room.key))
+  const selectedRoomCount = activeRooms?.length ?? allRoomKeys.length
+  const colorsByRoomType = Object.fromEntries(roomGroups.map((group, index) => [group.room_name, roomTypeColor(index, roomGroups.length)])) as Record<string, RoomTypeColor>
+  const visibleItems = items.filter((item) => activeStatuses.includes(item.resv_status) && (activeRooms === null || activeRooms.includes(`${item.room_name}::${item.room_number}`)))
   const days = calendarDays(month)
-  function toggleRoom(room: string) { setActiveRooms((current) => current.includes(room) ? current.filter((item) => item !== room) : [...current, room]) }
-  function toggleStatus(status: AdminReservationStatus) { setActiveStatuses((current) => current.includes(status) ? current.filter((item) => item !== status) : [...current, status]) }
-  function openMonthPicker() { monthInputRef.current?.showPicker() }
+  const updateForm = (name: keyof FilterForm, value: string) => setForm((current) => ({ ...current, [name]: value }))
+  const search = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const next = new URLSearchParams(); if (form.keyword.trim()) next.set('keyword', form.keyword.trim()); next.set('month', month); setSearchParams(next) }
+  const reset = () => { setForm(emptyFilters); setActiveRooms(null); setActiveStatuses(['RESERVED', 'CANCELLED']); setSearchParams({ month }) }
+  const moveMonth = (amount: number) => { const next = new URLSearchParams(searchParams); next.set('month', shiftMonth(month, amount)); setSearchParams(next) }
+  const toggleStatus = (status: AdminReservationStatus) => setActiveStatuses((current) => current.includes(status) ? current.filter((item) => item !== status) : [...current, status])
+  const openMonthPicker = () => monthInputRef.current?.showPicker()
+  const toggleRoomKeys = (keys: string[]) => setActiveRooms((current) => {
+    const selected = new Set(current ?? allRoomKeys)
+    const allSelected = keys.every((key) => selected.has(key))
+    keys.forEach((key) => allSelected ? selected.delete(key) : selected.add(key))
+    return selected.size === allRoomKeys.length ? null : [...selected]
+  })
 
   return <section>
     <AdminPageHeading title="예약 관리" description="객실별 월간 일정에서 예약 현황을 확인하고 관리합니다." />
-    <form className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm" onSubmit={search} noValidate>
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="flex flex-1 items-center gap-3 text-xs font-medium text-slate-700"><span className="whitespace-nowrap">키워드</span><input className="h-[44px] min-w-48 flex-1 rounded-sm border border-slate-300 px-3 py-2 text-sm font-normal" value={form.keyword} onChange={(event) => updateForm('keyword', event.target.value)} placeholder="예약번호 또는 회원명" /></label>
-        <div className="flex gap-2"><Button className="min-h-9 px-4 py-2" size="sm" type="submit">검색</Button><Button className="min-h-9 px-4 py-2" size="sm" type="button" variant="secondary" onClick={reset}>초기화</Button></div>
-      </div>
+    <form className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm" noValidate onSubmit={search}>
+      <div className="flex flex-wrap items-center gap-2"><label className="flex flex-1 items-center gap-3 text-xs font-medium text-slate-700"><span className="whitespace-nowrap">키워드</span><input className="h-[44px] min-w-48 flex-1 rounded-sm border border-slate-300 px-3 py-2 text-sm font-normal" onChange={(event) => updateForm('keyword', event.target.value)} placeholder="예약번호 또는 회원명" value={form.keyword} /></label><div className="flex gap-2"><Button className="min-h-9 px-4 py-2" size="sm" type="submit">검색</Button><Button className="min-h-9 px-4 py-2" onClick={reset} size="sm" type="button" variant="secondary">초기화</Button></div></div>
     </form>
-    {message ? <MessageBox message={message} /> : loading ? <p className="py-16 text-center text-sm text-slate-600">예약 목록을 불러오는 중입니다.</p> : <>
-      <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div className="flex h-7 items-center gap-0.5"><button aria-label="이전 달" className="grid h-6 w-6 translate-y-px place-items-center rounded-sm bg-transparent p-0 text-[#172b44] hover:bg-slate-100" onClick={() => moveMonth(-1)} type="button"><svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" strokeLinecap="round" strokeLinejoin="round" /></svg></button><button aria-label="표시할 연도와 월 선택" className="flex h-7 items-center gap-2 rounded-sm bg-transparent px-1 text-lg font-semibold text-[#172b44] hover:bg-slate-100" onClick={openMonthPicker} type="button"><span>{month.replace('-', '년 ')}월</span><svg aria-hidden="true" className="h-4 w-4 translate-y-px" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect height="16" rx="2" width="16" x="4" y="5" /><path d="M8 3v4m8-4v4M4 10h16" strokeLinecap="round" /></svg></button><input aria-label="표시할 연도와 월" className="sr-only" onChange={(event) => { const next = new URLSearchParams(searchParams); next.set('month', event.target.value); setSearchParams(next) }} ref={monthInputRef} type="month" value={month} /><button aria-label="다음 달" className="grid h-6 w-6 translate-y-px place-items-center rounded-sm bg-transparent p-0 text-[#172b44] hover:bg-slate-100" onClick={() => moveMonth(1)} type="button"><svg aria-hidden="true" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" strokeLinecap="round" strokeLinejoin="round" /></svg></button><div className="ml-2 flex items-center gap-1.5 border-l border-slate-200 pl-3" aria-label="예약 상태 필터"><button aria-pressed={activeStatuses.includes('RESERVED')} className={`inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-medium ${activeStatuses.includes('RESERVED') ? 'border-[#d7c59e] bg-[#fff8e8] text-[#5f4b28]' : 'border-slate-200 bg-white text-slate-400'}`} onClick={() => toggleStatus('RESERVED')} type="button"><i aria-hidden="true" className="h-2 w-2 rounded-sm bg-[#d7b96b]" />예약됨</button><button aria-pressed={activeStatuses.includes('CANCELLED')} className={`inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-medium ${activeStatuses.includes('CANCELLED') ? 'border-slate-300 bg-slate-100 text-slate-600' : 'border-slate-200 bg-white text-slate-400'}`} onClick={() => toggleStatus('CANCELLED')} type="button"><i aria-hidden="true" className="h-2 w-2 rounded-sm bg-slate-400" />취소됨</button></div></div><p className="text-sm text-slate-600">이번 달 예약 <strong className="text-[#172b44]">{visibleItems.length.toLocaleString('ko-KR')}건</strong></p></div><div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3" aria-label="객실 필터"><button className={`rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap ${activeRooms.length === 0 ? 'border-[#172b44] bg-[#172b44] text-white' : 'border-slate-300 text-slate-700'}`} onClick={() => setActiveRooms([])} type="button">전체 객실</button>{rooms.map((room) => <button aria-pressed={activeRooms.includes(room)} className={`rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap ${activeRooms.includes(room) ? 'border-[#b79a67] bg-[#fff9eb] text-[#172b44]' : 'border-slate-300 text-slate-700 hover:border-[#b79a67]'}`} key={room} onClick={() => toggleRoom(room)} type="button">{room}</button>)}</div>{items.length === 0 ? <MessageBox message="이 달의 예약이 없습니다." /> : <Calendar days={days} reservations={visibleItems} />}</section>
-    </>}
+    {message ? <MessageBox message={message} /> : loading ? <p className="py-16 text-center text-sm text-slate-600">예약 목록을 불러오는 중입니다.</p> : <section className="mt-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3"><div className="flex h-7 items-center gap-0.5"><button aria-label="이전 달" className="grid h-6 w-6 place-items-center rounded-sm hover:bg-slate-100" onClick={() => moveMonth(-1)} type="button">‹</button><button aria-label="표시할 연도와 월 선택" className="flex h-7 items-center gap-2 rounded-sm px-1 text-lg font-semibold text-[#172b44] hover:bg-slate-100" onClick={openMonthPicker} type="button">{month.replace('-', '년 ')}월</button><input aria-label="표시할 연도와 월" className="sr-only" onChange={(event) => { const next = new URLSearchParams(searchParams); next.set('month', event.target.value); setSearchParams(next) }} ref={monthInputRef} type="month" value={month} /><button aria-label="다음 달" className="grid h-6 w-6 place-items-center rounded-sm hover:bg-slate-100" onClick={() => moveMonth(1)} type="button">›</button><div aria-label="예약 상태 필터" className="ml-2 flex items-center gap-1.5 border-l border-slate-200 pl-3"><button aria-pressed={activeStatuses.includes('RESERVED')} className={`inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-medium ${activeStatuses.includes('RESERVED') ? 'border-[#d7c59e] bg-[#fff8e8] text-[#5f4b28]' : 'border-slate-200 bg-white text-slate-400'}`} onClick={() => toggleStatus('RESERVED')} type="button"><i aria-hidden="true" className="h-2 w-2 rounded-sm bg-[#d7b96b]" />예약됨</button><button aria-pressed={activeStatuses.includes('CANCELLED')} className={`inline-flex h-7 items-center gap-1 rounded-full border px-2 text-xs font-medium ${activeStatuses.includes('CANCELLED') ? 'border-slate-300 bg-slate-100 text-slate-600' : 'border-slate-200 bg-white text-slate-400'}`} onClick={() => toggleStatus('CANCELLED')} type="button"><i aria-hidden="true" className="h-2 w-2 rounded-sm bg-slate-400" />취소됨</button></div></div><p className="text-sm text-slate-600">이번 달 예약 <strong className="text-[#172b44]">{visibleItems.length.toLocaleString('ko-KR')}건</strong></p></div>
+      <fieldset className="mt-4 border-t border-slate-100 pt-4"><legend className="sr-only">객실 필터</legend><div className="flex flex-wrap items-center justify-between gap-2"><div className="flex items-baseline gap-2"><span className="text-xs font-semibold text-slate-700">객실 필터</span><span className="text-[11px] text-slate-500">{selectedRoomCount}/{allRoomKeys.length}개 선택</span></div><div className="flex items-center gap-2"><button aria-controls="room-filter-options" aria-expanded={filtersExpanded} className="rounded-sm border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-[#b79a67]" onClick={() => setFiltersExpanded((current) => !current)} type="button">{filtersExpanded ? '필터 접기' : '필터 펼치기'}</button><button aria-pressed={activeRooms === null} className={`rounded-sm border px-3 py-1.5 text-xs font-medium ${activeRooms === null ? 'border-[#172b44] bg-[#172b44] text-white' : 'border-slate-300 text-slate-700 hover:border-[#b79a67]'}`} onClick={() => setActiveRooms(null)} type="button">전체 객실 선택</button></div></div>{filtersExpanded && <div className="mt-3 grid gap-2 lg:grid-cols-2 2xl:grid-cols-3" id="room-filter-options">{roomGroups.map((group) => { const keys = group.rooms.map((room) => room.key); const typeSelected = activeRooms === null || keys.every((key) => activeRooms.includes(key)); const selectedCount = activeRooms === null ? keys.length : keys.filter((key) => activeRooms.includes(key)).length; const color = colorsByRoomType[group.room_name]; return <section className="grid overflow-hidden rounded-md border border-slate-200 bg-white sm:grid-cols-[minmax(190px,0.7fr)_1fr]" key={group.room_name}><button aria-pressed={typeSelected} className="flex min-h-12 items-center gap-2 border-b border-slate-200 px-4 text-left text-xs font-semibold transition hover:brightness-95 sm:border-r sm:border-b-0" onClick={() => toggleRoomKeys(keys)} style={{ backgroundColor: typeSelected ? color.background : '#f8fafc', color: typeSelected ? color.text : '#475569' }} type="button"><i aria-hidden="true" className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color.border }} /><span className="min-w-0 whitespace-normal break-keep">{group.room_name}</span><span className="ml-auto shrink-0 text-[11px] font-normal opacity-80">{selectedCount}/{keys.length}</span></button><div aria-label={`${group.room_name} 호수 선택`} className="flex flex-wrap content-center gap-2 p-2.5">{group.rooms.map((room) => { const selected = activeRooms === null || activeRooms.includes(room.key); return <button aria-pressed={selected} className="min-w-12 rounded-sm border px-2.5 py-1.5 text-xs font-medium transition" key={room.key} onClick={() => toggleRoomKeys([room.key])} style={selected ? { backgroundColor: color.background, borderColor: color.border, color: color.text } : undefined} type="button">{room.room_number}호</button> })}</div></section> })}</div>}</fieldset>
+      {items.length === 0 ? <MessageBox message="이 달의 예약이 없습니다." /> : visibleItems.length === 0 ? <MessageBox message="선택한 필터에 맞는 예약이 없습니다." /> : <Calendar colorsByRoomType={colorsByRoomType} days={days} reservations={visibleItems} />}
+    </section>}
   </section>
 }
 
-function Calendar({ days, reservations }: { days: ReturnType<typeof calendarDays>; reservations: AdminReservation[] }) {
+type ReservationSegment = { reservation: AdminReservation; start: number; end: number; lane: number }
+
+function weekSegments(days: ReturnType<typeof calendarDays>, reservations: AdminReservation[]) {
+  const lanes: boolean[][] = []
+  return reservations.filter((reservation) => reservation.check_in_date <= days[6].date && reservation.check_out_date > days[0].date).sort((a, b) => a.check_in_date.localeCompare(b.check_in_date)).map((reservation) => {
+    const start = Math.max(0, days.findIndex((day) => day.date >= reservation.check_in_date))
+    const firstAfterEnd = days.findIndex((day) => day.date >= reservation.check_out_date)
+    const end = firstAfterEnd === -1 ? 7 : firstAfterEnd
+    let lane = lanes.findIndex((occupied) => !occupied.slice(start, end).some(Boolean))
+    if (lane === -1) { lane = lanes.length; lanes.push(Array(7).fill(false)) }
+    for (let index = start; index < end; index += 1) lanes[lane][index] = true
+    return { reservation, start, end, lane }
+  }) as ReservationSegment[]
+}
+
+function Calendar({ colorsByRoomType, days, reservations }: { colorsByRoomType: Record<string, RoomTypeColor>; days: ReturnType<typeof calendarDays>; reservations: AdminReservation[] }) {
   const weekdays = ['일', '월', '화', '수', '목', '금', '토']
-  return <div className="mt-4 overflow-x-auto"><div className="min-w-[840px]"><div className="grid grid-cols-7 border-l border-t border-slate-200">{weekdays.map((day, index) => <div className={`border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium ${index === 0 ? 'text-error' : index === 6 ? 'text-[#466a9c]' : 'text-slate-600'}`} key={day}>{day}</div>)}{days.map((day, index) => {
-    const dayReservations = reservations.filter((reservation) => reservation.check_in_date <= day.date && reservation.check_out_date > day.date)
-    return <div className={`min-h-28 border-b border-r border-slate-200 p-2 ${day.inMonth ? 'bg-white' : 'bg-slate-50/70'}`} key={day.date}><p className={`mb-2 text-xs ${day.inMonth ? 'text-slate-700' : 'text-slate-400'} ${index % 7 === 0 ? 'text-error' : index % 7 === 6 ? 'text-[#466a9c]' : ''}`}>{day.day}</p><div className="grid gap-1">{dayReservations.map((reservation) => {
-      const starts = reservation.check_in_date === day.date || index % 7 === 0
-      const ends = reservation.check_out_date === nextDate(day.date) || index % 7 === 6
-      return <Link aria-label={`${reservation.resv_number} 예약 상세`} className={`block truncate border-y px-2 py-1 text-[11px] font-medium no-underline ${reservation.resv_status === 'CANCELLED' ? 'border-slate-300 bg-slate-100 text-slate-500 line-through' : 'border-[#d7c59e] bg-[#fff8e8] text-[#5f4b28]'} ${starts ? 'rounded-l-sm border-l' : ''} ${ends ? 'rounded-r-sm border-r' : ''}`} key={reservation.resv_id} title={`${reservation.room_name} ${reservation.room_number}호 · ${reservation.member_name} · ${reservation.guest_count}명`} to={`/admin/reservations/${reservation.resv_id}`}>{starts ? `${reservation.room_number}호 · ${reservation.member_name} · ${reservation.guest_count}명` : `↳ ${reservation.guest_count}명`}</Link>
-    })}</div></div>
-  })}</div></div></div>
+  return <div className="mt-4 overflow-x-auto"><div className="min-w-[840px]"><div className="grid grid-cols-7 border-l border-t border-slate-200">{weekdays.map((day, index) => <div className={`border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-medium ${index === 0 ? 'text-error' : index === 6 ? 'text-[#466a9c]' : 'text-slate-600'}`} key={day}>{day}</div>)}</div>{Array.from({ length: 6 }, (_, weekIndex) => { const week = days.slice(weekIndex * 7, weekIndex * 7 + 7); const segments = weekSegments(week, reservations); const laneCount = Math.max(1, ...segments.map((segment) => segment.lane + 1)); return <div className="grid grid-cols-7 border-l border-b border-slate-200" key={week[0].date} style={{ gridTemplateRows: `30px repeat(${laneCount}, 28px)` }}>{week.map((day, index) => <div className={`z-0 border-r border-slate-200 p-2 ${day.inMonth ? 'bg-white' : 'bg-slate-50/70'}`} key={day.date} style={{ gridColumn: index + 1, gridRow: `1 / span ${laneCount + 1}` }}><p className={`text-xs ${day.inMonth ? 'text-slate-700' : 'text-slate-400'} ${index === 0 ? 'text-error' : index === 6 ? 'text-[#466a9c]' : ''}`}>{day.day}</p></div>)}{segments.map(({ reservation, start, end, lane }) => { const color = colorsByRoomType[reservation.room_name] ?? roomTypeColor(0, 1); const cancelled = reservation.resv_status === 'CANCELLED'; return <Link aria-label={`${reservation.resv_number} 예약 상세`} className={`z-10 mx-px self-center truncate border px-2 py-1 text-[11px] font-medium no-underline ${cancelled ? 'border-slate-300 bg-slate-100 text-slate-500 line-through' : ''} ${start === 0 ? 'rounded-l-none border-l-0' : 'rounded-l-sm'} ${end === 7 ? 'rounded-r-none border-r-0' : 'rounded-r-sm'}`} key={reservation.resv_id} style={{ ...(cancelled ? {} : { backgroundColor: color.background, borderColor: color.border, color: color.text }), gridColumn: `${start + 1} / ${end + 1}`, gridRow: lane + 2 }} title={`${reservation.room_name} ${reservation.room_number}호 · ${reservation.member_name} · ${reservation.guest_count}명`} to={`/admin/reservations/${reservation.resv_id}`}>{reservation.room_name} · {reservation.room_number}호 · {reservation.member_name} · {reservation.guest_count}명</Link> })}</div> })}</div></div>
 }
 
 function AdminReservationDetailPage({ resvId }: { resvId: string }) {

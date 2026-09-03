@@ -11,6 +11,12 @@ import { AccountEmptyState, AccountPanel, AccountPanelAction } from './AccountPa
 const won = (value: number) => `${value.toLocaleString('ko-KR')}원`
 const PAGE_SIZE = 10
 
+function formatDateTime(value?: string) {
+  if (!value) return '-'
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/)
+  return match ? `${match[1]}. ${match[2]}. ${match[3]}. ${match[4]}:${match[5]}` : value
+}
+
 const statusFilters: { value: 'ALL' | ReservationStatus; label: string }[] = [
   { value: 'ALL', label: '전체' },
   { value: 'RESERVED', label: '예약 완료' },
@@ -117,7 +123,7 @@ export function MyAccountReservationsPage() {
           <ul className="grid gap-0">
             {items.map((reservation) => (
               <li
-                className="grid gap-2 border-b border-border-subtle py-4 last:border-0 md:grid-cols-[1.3fr_1.2fr_0.9fr_auto] md:items-center"
+                className="grid gap-2 border-b border-border-subtle py-4 last:border-0 md:grid-cols-[1.3fr_1.2fr_0.9fr_0.9fr_auto] md:items-center"
                 key={reservation.resv_id}
               >
                 <div className="grid gap-0.5">
@@ -128,7 +134,11 @@ export function MyAccountReservationsPage() {
                   {reservation.check_in_date} ~ {reservation.check_out_date}
                   <span className="ml-2 text-[11px] text-muted">{reservation.guest_count}인</span>
                 </span>
-                <span className="text-[13px] text-navy-900">{won(reservation.total_price)}</span>
+                <div className="grid gap-0.5">
+                  <span className="text-[11px] text-muted">예약 일시 {formatDateTime(reservation.created_at)}</span>
+                  {reservation.cancelled_at && <span className="text-[11px] text-muted">취소 일시 {formatDateTime(reservation.cancelled_at)}</span>}
+                  <span className="text-[13px] text-navy-900">{won(reservation.total_price)}</span>
+                </div>
                 <div className="flex items-center gap-3 md:justify-self-end">
                   <StatusBadge status={reservation.status} />
                   <Link
