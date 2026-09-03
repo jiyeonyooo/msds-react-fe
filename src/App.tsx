@@ -22,6 +22,7 @@ import { RequireMemberMyPage } from './features/account/RequireMemberMyPage'
 import { ProfileEditPage } from './features/account/ProfileEditPage'
 import { AccountDeletePage } from './features/account/AccountDeletePage'
 import { MyWellnessPage } from './features/account/MyWellnessPage'
+import { MyAccountReservationsPage } from './features/account/MyReservationsPage'
 import { InquiryListPage } from './features/inquiry/InquiryListPage'
 import { InquiryNewPage } from './features/inquiry/InquiryNewPage'
 import { InquiryDetailPage } from './features/inquiry/InquiryDetailPage'
@@ -94,6 +95,14 @@ export default function App() {
             element={
               <RequireMemberMyPage>
                 <ProfileEditPage />
+              </RequireMemberMyPage>
+            }
+          />
+          <Route
+            path="mypage/reservations"
+            element={
+              <RequireMemberMyPage>
+                <MyAccountReservationsPage />
               </RequireMemberMyPage>
             }
           />
