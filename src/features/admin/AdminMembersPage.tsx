@@ -113,8 +113,8 @@ function AdminMemberListPage() {
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       <SummaryCard label="전체 회원" value={stats?.total_users} />
       <SummaryCard label="관리자" value={stats?.admin_users} />
-      <SummaryCard emphasis label="오늘 가입 · 준비 중" />
-      <SummaryCard label="최근 7일 가입 · 준비 중" />
+      <SummaryCard emphasis label="오늘 가입" value={stats?.new_users_today} />
+      <SummaryCard label="최근 7일 가입" value={stats?.new_users_last_7_days} />
     </div>
     <form className="mt-4 rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm" onSubmit={submitSearch} noValidate>
       <div className="flex flex-wrap items-center gap-3">
@@ -223,7 +223,7 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/members">← 회원 목록</Link>
       <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">GET /api/admin/users/{member.user_id}</code>
     </div>
-    <PageHeading description="회원 기본 정보를 조회합니다. 수정·권한 변경·활동 이력은 백엔드 API 준비 후 연결됩니다." title="회원 상세" />
+    <PageHeading description="회원 기본 정보와 예약·문의 활동 이력을 조회합니다." title="회원 상세" />
     {message && <p className="mb-4 rounded-sm border border-error-border bg-[#fffaf8] px-4 py-3 text-sm text-error" role="alert">{message}</p>}
     <div className="grid items-start gap-6 lg:grid-cols-[1.45fr_1fr]">
       <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">

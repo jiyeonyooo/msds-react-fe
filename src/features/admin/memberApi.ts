@@ -1,6 +1,7 @@
 import { authApiClient } from '../../lib/apiClient'
 import { call } from '../../lib/apiError'
 import type {
+  AdminMember,
   AdminMemberActivity,
   AdminMemberDetail,
   AdminMemberFilters,
@@ -9,94 +10,50 @@ import type {
   AdminMemberStats,
 } from './memberTypes'
 
-type AdminUserWire = {
-  userId: number
-  email: string
-  name: string
-  phoneNumber: string
-  role: string
-  createdAt: string
-}
-
-type AdminUserDetailWire = AdminUserWire & { updatedAt: string | null }
-
-type AdminUserPageWire = {
-  content: AdminUserWire[]
-  pageNumber: number
-  pageSize: number
-  totalElements: number
-  totalPages: number
-  userCount: number
-  adminCount: number
-}
+/**
+ * 관리자 회원 API.
+ *
+ * 백엔드(member.user.dto)는 관리자 예약 API와 같은 snake_case 규격을 쓴다.
+ * memberTypes 의 화면 모델이 이미 그 규격과 1:1이라 변환할 것이 거의 없다.
+ * role 만 서버가 문자열로 들고 있어 대문자로 맞춰 준다.
+ */
 
 function toRole(role: string): AdminMemberRole {
-  return role.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER'
+  return role?.toUpperCase() === 'ADMIN' ? 'ADMIN' : 'USER'
 }
 
-function toMember(user: AdminUserWire) {
-  return {
-    user_id: user.userId,
-    email: user.email,
-    name: user.name,
-    phone_number: user.phoneNumber,
-    role: toRole(user.role),
-    reservation_count: 0,
-    inquiry_count: 0,
-    created_at: user.createdAt,
-  }
+function withRole<T extends { role: string }>(user: T) {
+  return { ...user, role: toRole(user.role) }
 }
 
-/** 현재 백엔드의 관리자 회원 목록·상세 계약을 화면 모델로 변환한다. */
 export const adminMemberApi = {
   list: async (filters: AdminMemberFilters) => {
-    const response = await call<AdminUserPageWire>(() => authApiClient.get('/admin/users', {
-      params: {
-        role: filters.role,
-        keyword: filters.keyword,
-        page: filters.page_num,
-        size: filters.page_size,
-      },
-    }))
+    const response = await call<AdminMemberPage>(() =>
+      authApiClient.get('/admin/users', {
+        params: {
+          role: filters.role,
+          keyword: filters.keyword,
+          page_num: filters.page_num,
+          page_size: filters.page_size,
+        },
+      }),
+    )
     const data: AdminMemberPage = {
-      user_list: response.data.content.map(toMember),
-      page_num: response.data.pageNumber,
-      page_size: response.data.pageSize,
-      total_elements: response.data.totalElements,
-      total_pages: response.data.totalPages,
+      ...response.data,
+      user_list: (response.data.user_list ?? []).map((user) => withRole(user) as AdminMember),
     }
     return { ...response, data }
   },
 
-  stats: async () => {
-    const response = await call<AdminUserPageWire>(() => authApiClient.get('/admin/users', {
-      params: { page: 0, size: 1 },
-    }))
-    const data: AdminMemberStats = {
-      total_users: response.data.totalElements,
-      admin_users: response.data.adminCount,
-      general_users: response.data.userCount,
-      new_users_today: 0,
-      new_users_last_7_days: 0,
-    }
-    return { ...response, data }
-  },
+  stats: () => call<AdminMemberStats>(() => authApiClient.get('/admin/users/stats')),
 
   detail: async (userId: string) => {
-    const response = await call<AdminUserDetailWire>(() => authApiClient.get(`/admin/users/${userId}`))
-    const data: AdminMemberDetail = {
-      ...toMember(response.data),
-      updated_at: response.data.updatedAt ?? response.data.createdAt,
-    }
-    return { ...response, data }
+    const response = await call<AdminMemberDetail>(() =>
+      authApiClient.get(`/admin/users/${userId}`),
+    )
+    return { ...response, data: withRole(response.data) as AdminMemberDetail }
   },
 
-  activity: async (userId: string) => {
-    const data: AdminMemberActivity = {
-      user_id: Number(userId),
-      reservations: [],
-      inquiries: [],
-    }
-    return { code: 'OK', message: '활동 이력 API 준비 중입니다.', data }
-  },
+  activity: (userId: string) =>
+    call<AdminMemberActivity>(() => authApiClient.get(`/admin/users/${userId}/activity`)),
 }

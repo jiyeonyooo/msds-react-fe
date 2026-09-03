@@ -1,12 +1,29 @@
 import type { ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/ui'
 import { signOut } from '../auth/api'
 
-const menu = [
-  { label: '회원정보', to: '/mypage', end: false },
+type MenuItem = {
+  label: string
+  to: string
+  end: boolean
+  /** 기본 경로 매칭으로 부족할 때만 쓰는 활성 판정. */
+  match?: (pathname: string) => boolean
+}
+
+const menu: MenuItem[] = [
+  // '회원정보'는 /mypage 접두사로 잡으면 예약 내역·마음 기록·회원 탈퇴에서도 같이 켜진다.
+  // 그래서 정확 매칭으로 두고, 하위 화면인 정보 수정만 따로 회원정보에 포함시킨다.
+  {
+    label: '회원정보',
+    to: '/mypage',
+    end: true,
+    match: (pathname) => pathname === '/mypage' || pathname.startsWith('/mypage/edit'),
+  },
+  { label: '예약 내역', to: '/mypage/reservations', end: false },
+  { label: '마음 기록', to: '/mypage/wellness', end: false },
   { label: '문의 내역', to: '/inquiries', end: false },
-  { label: '마음 기록', to: '/wellness/history', end: false },
+  { label: '회원 탈퇴', to: '/mypage/delete', end: false },
 ]
 
 type AccountLayoutProps = {
@@ -23,6 +40,7 @@ type AccountLayoutProps = {
  */
 export function AccountLayout({ eyebrow, title, description, hero, children }: AccountLayoutProps) {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   return (
     <div>
       <section className="flex flex-col gap-8 bg-navy-900 px-6 py-12 lg:flex-row lg:items-start lg:gap-16 lg:px-[100px] lg:pt-[68px] lg:pb-[58px]">
@@ -44,30 +62,35 @@ export function AccountLayout({ eyebrow, title, description, hero, children }: A
           </div>
           <span className="mt-6 block h-px w-full bg-border-subtle" />
           <nav aria-label="계정 메뉴" className="grid gap-1 pt-5">
-            {menu.map((item) => (
-              <NavLink
-                className={({ isActive }) =>
-                  `flex h-12 items-center gap-3 rounded-md text-sm transition ${
-                    isActive
-                      ? 'bg-subtle pr-4 pl-[14px] font-medium text-navy-900'
-                      : 'px-4 text-secondary hover:bg-subtle/60'
-                  }`
-                }
-                end={item.end}
-                key={item.to}
-                to={item.to}
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && <span className="h-5 w-0.5 bg-gold-500" />}
-                    {item.label}
-                  </>
-                )}
-              </NavLink>
-            ))}
+            {menu.map((item) => {
+              const override = item.match?.(pathname)
+              const activeOf = (isActive: boolean) => override ?? isActive
+              return (
+                <NavLink
+                  className={({ isActive }) =>
+                    `flex h-12 items-center gap-3 rounded-md text-sm transition ${
+                      activeOf(isActive)
+                        ? 'bg-subtle pr-4 pl-[14px] font-medium text-navy-900'
+                        : 'px-4 text-secondary hover:bg-subtle/60'
+                    }`
+                  }
+                  end={item.end}
+                  key={item.to}
+                  to={item.to}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {activeOf(isActive) && <span className="h-5 w-0.5 bg-gold-500" />}
+                      {item.label}
+                    </>
+                  )}
+                </NavLink>
+              )
+            })}
           </nav>
+          <span className="mt-3 block h-px w-full bg-border-subtle" />
           <button
-            className="mt-1 flex h-12 w-full items-center px-4 text-left text-sm text-secondary transition hover:bg-subtle/60"
+            className="mt-1 flex h-12 w-full items-center px-4 text-left text-sm text-muted transition hover:bg-subtle/60 hover:text-navy-900"
             onClick={() => void signOut().then(() => navigate('/'))}
             type="button"
           >

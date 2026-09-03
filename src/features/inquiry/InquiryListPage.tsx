@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ApiError } from '../../lib/apiError'
-import { AccountLayout, HeroAction } from '../account/AccountLayout'
+import { AccountLayout } from '../account/AccountLayout'
+import { AccountEmptyState, AccountPanel, AccountPanelAction } from '../account/AccountPanel'
 import { inquiryApi } from './api'
 import { InquiryStatusBadge } from './InquiryStatusBadge'
 import type { Inquiry } from './types'
@@ -22,33 +23,28 @@ export function InquiryListPage() {
     <AccountLayout
       description="머무름에 대해 남기신 문의와 답변을 한 곳에서 확인하실 수 있습니다."
       eyebrow="MEMBER SUPPORT"
-      hero={<HeroAction badge="NEW" label="새 문의 작성" to="/inquiries/new" />}
       title="문의 내역"
     >
-      <article className="rounded-xl border border-border-subtle bg-white px-8 py-7">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="flex-1">
-            <h2 className="font-display text-[28px] leading-[34px] font-medium text-navy-900">
-              문의 내역
-            </h2>
-            <p className="text-[10px] tracking-[0.08em] text-muted">
-              답변이 등록되면 상태가 ANSWERED로 바뀝니다.
-            </p>
-          </div>
-          <p className="text-xs text-secondary">
-            {inquiries ? `총 ${inquiries.length}건` : '불러오는 중…'}
-          </p>
-        </div>
-        <span className="my-4 block h-px w-full bg-border-subtle" />
+      <AccountPanel
+        action={<AccountPanelAction to="/inquiries/new">새 문의 작성</AccountPanelAction>}
+        meta={
+          inquiries
+            ? `총 ${inquiries.length}건 · 답변이 등록되면 상태가 ANSWERED로 바뀝니다.`
+            : '불러오는 중…'
+        }
+        title="문의 목록"
+      >
         {error && (
           <p className="text-[13px] text-error" role="alert">
             {error}
           </p>
         )}
         {inquiries?.length === 0 && (
-          <div className="border border-dashed border-gold-300 px-6 py-16 text-center text-sm leading-loose text-muted">
-            아직 남기신 문의가 없습니다. 궁금한 점을 편하게 남겨 주세요.
-          </div>
+          <AccountEmptyState
+            actionLabel="첫 문의 남기기"
+            actionTo="/inquiries/new"
+            message="아직 남기신 문의가 없습니다. 궁금한 점을 편하게 남겨 주세요."
+          />
         )}
         {inquiries && inquiries.length > 0 && (
           <ul className="grid gap-3">
@@ -68,7 +64,7 @@ export function InquiryListPage() {
             ))}
           </ul>
         )}
-      </article>
+      </AccountPanel>
     </AccountLayout>
   )
 }

@@ -11,10 +11,10 @@ import { AccountLayout } from './AccountLayout'
 const quickLinks = [
   {
     kicker: 'STAY',
-    title: '예약 조회',
-    description: '예약 가능한 객실을 확인하고 머무를 날짜를 정합니다.',
-    to: '/reservations',
-    action: '객실 보기 →',
+    title: '예약 내역',
+    description: '지금까지 예약한 머무름과 상태를 확인합니다.',
+    to: '/mypage/reservations',
+    action: '예약 보기 →',
   },
   {
     kicker: 'INQUIRY',
@@ -39,7 +39,6 @@ export function MyPage() {
   const session = useSession()
   const [profile, setProfile] = useState<UserProfile | null>(session?.user ?? null)
   const [error, setError] = useState('')
-
   useEffect(() => {
     void accountApi
       .me()
