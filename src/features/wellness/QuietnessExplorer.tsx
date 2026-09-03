@@ -13,6 +13,7 @@ import { quietnessLabel, toLocalDateTime } from './wellnessFormat'
  * 여기서는 hourly API 응답만으로 그리고, 값이 없는 시간대는 비어 있는 것으로 둔다.
  */
 const hoursOfDay = Array.from({ length: 24 }, (_, hour) => hour)
+const clockHours = Array.from({ length: 12 }, (_, hour) => hour)
 const ringSize = 240
 const ringRadius = 96
 const ringCircumference = 2 * Math.PI * ringRadius
@@ -21,11 +22,47 @@ const dialCenter = ringSize / 2
 const dialTickOuterRadius = 82
 
 function pointOnDial(hour: number, radius: number) {
-  const angle = (hour / 24) * Math.PI * 2 - Math.PI / 2
+  const angle = (hour / 12) * Math.PI * 2 - Math.PI / 2
   return {
     x: dialCenter + Math.cos(angle) * radius,
     y: dialCenter + Math.sin(angle) * radius,
   }
+}
+
+function TimeOfDayIcon({ daytime }: { daytime: boolean }) {
+  if (daytime) {
+    return (
+      <svg aria-hidden="true" className="size-3.5" viewBox="0 0 16 16">
+        <circle cx="8" cy="8" fill="none" r="2.8" stroke="currentColor" strokeWidth="1.2" />
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+          <line
+            key={angle}
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="1"
+            transform={`rotate(${angle} 8 8)`}
+            x1="8"
+            x2="8"
+            y1="1"
+            y2="2.7"
+          />
+        ))}
+      </svg>
+    )
+  }
+
+  return (
+    <svg aria-hidden="true" className="size-3.5" viewBox="0 0 16 16">
+      <path
+        d="M10.9 12.7A5.6 5.6 0 0 1 5.1 3.3a5.7 5.7 0 1 0 5.8 9.4Z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.2"
+      />
+    </svg>
+  )
 }
 
 type Props = {
@@ -86,13 +123,6 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
   }, [awaitingHourly, loaded])
 
   const measured = useMemo(() => [...byHour.values()], [byHour])
-  const quietestMeasuredHour = useMemo(() => {
-    if (measured.length === 0) return null
-    const quietest = measured.reduce((best, item) =>
-      item.averageDecibel < best.averageDecibel ? item : best,
-    )
-    return new Date(quietest.hourStart).getHours()
-  }, [measured])
   const range = useMemo(() => {
     if (measured.length === 0) return null
     const values = measured.map((item) => item.averageDecibel)
@@ -118,6 +148,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
   const gaugeProgress = selected
     ? Math.min(1, Math.max(0, selected.averageDecibel / gaugeMaxDecibel))
     : 0
+  const daytime = selectedHour >= 6 && selectedHour < 18
+  const meridiem = selectedHour < 12 ? '오전' : '오후'
+  const clockHour = selectedHour % 12 || 12
 
   if (loading) {
     return (
@@ -151,7 +184,7 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
           HOURLY AVERAGE · 시간대별 평균 소음
         </p>
         <p className="mt-3 text-xs leading-6 text-white/55">
-          바늘은 선택한 시간을, 금색 원호는 해당 시간의 평균 소음을 나타냅니다.
+          시계는 선택한 시간을, 금색 원호는 해당 시간의 평균 소음을 나타냅니다.
         </p>
         <div className="relative mt-6 grid place-items-center">
           <svg
@@ -180,31 +213,50 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
               strokeWidth="14"
               transform={`rotate(-90 ${ringSize / 2} ${ringSize / 2})`}
             />
-            {hoursOfDay.map((hour) => {
-              const majorTick = hour % 6 === 0
+            {clockHours.map((hour) => {
+              const majorTick = hour % 3 === 0
               const inner = pointOnDial(hour, majorTick ? 72 : 76)
               const outer = pointOnDial(hour, dialTickOuterRadius)
-              const isQuietest = hour === quietestMeasuredHour
 
               return (
                 <g key={hour}>
                   <line
-                    stroke={isQuietest ? '#c6a86b' : 'rgba(255,255,255,0.34)'}
+                    stroke="rgba(255,255,255,0.34)"
                     strokeLinecap="round"
-                    strokeWidth={majorTick || isQuietest ? 1.8 : 1}
+                    strokeWidth={majorTick ? 1.8 : 1}
                     x1={inner.x}
                     x2={outer.x}
                     y1={inner.y}
                     y2={outer.y}
                   />
-                  {isQuietest && <circle cx={outer.x} cy={outer.y} fill="#c6a86b" r="3.2" />}
                 </g>
+              )
+            })}
+            {[
+              { hour: 0, label: '12' },
+              { hour: 3, label: '3' },
+              { hour: 6, label: '6' },
+              { hour: 9, label: '9' },
+            ].map(({ hour, label }) => {
+              const point = pointOnDial(hour, 63)
+              return (
+                <text
+                  fill="rgba(255,255,255,0.42)"
+                  fontFamily="sans-serif"
+                  fontSize="7"
+                  key={hour}
+                  textAnchor="middle"
+                  x={point.x}
+                  y={point.y + 2.4}
+                >
+                  {label}
+                </text>
               )
             })}
             <g
               className="transition-transform duration-500 ease-calm motion-reduce:transition-none"
               style={{
-                transform: `rotate(${selectedHour * 15}deg)`,
+                transform: `rotate(${selectedHour * 30}deg)`,
                 transformOrigin: `${dialCenter}px ${dialCenter}px`,
               }}
             >
@@ -222,8 +274,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
             <circle cx={dialCenter} cy={dialCenter} fill="#c6a86b" r="4.5" />
           </svg>
           <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-            <span className="relative justify-self-center bg-navy-900/90 px-2 text-[10px] tracking-[0.16em] text-white/50">
-              {pad(selectedHour)} 평균
+            <span className="relative flex items-center gap-1.5 justify-self-center rounded-full bg-navy-900/95 px-2.5 py-1 text-[10px] tracking-[0.1em] text-gold-300">
+              <TimeOfDayIcon daytime={daytime} />
+              {meridiem} {clockHour}:00
             </span>
             <strong className="relative mt-1 bg-navy-900/90 px-2 font-display text-4xl font-normal">
               {selected ? selected.averageDecibel.toFixed(1) : '—'}
