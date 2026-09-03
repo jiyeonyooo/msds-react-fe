@@ -11,7 +11,7 @@ const links = [
   { label: 'HOME', path: '/' },
   { label: 'PROGRAM', path: '/programs' },
   { label: 'WELLNESS', path: '/wellness' },
-  { label: 'ABOUT', path: '/facility' },
+  { label: 'ABOUT', path: '/about' },
 ]
 
 export function Header() {
@@ -36,10 +36,8 @@ export function Header() {
   const signedIn = session !== null || devAuthState !== 'guest'
   const accountAction = signedIn
     ? {
-        to:
-          session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? '/admin' : '/mypage',
-        label:
-          session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? 'ADMIN' : 'MY PAGE',
+        to: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? '/admin' : '/mypage',
+        label: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? 'ADMIN' : 'MY PAGE',
       }
     : { to: '/login', label: 'LOGIN' }
   return (
@@ -60,17 +58,23 @@ export function Header() {
           <NavItem label={links[0].label} to={links[0].path} />
           <div className="group relative">
             <NavLink
-              className={`flex items-center gap-1 border-b px-4 py-3 text-xs tracking-[0.14em] transition-colors ${location.pathname.startsWith('/rooms') || location.pathname.startsWith('/facility') ? 'border-gold-500 text-navy-900' : 'border-transparent text-secondary hover:border-gold-300'}`}
+              className={`flex items-center gap-1.5 border-b px-4 py-3 text-xs tracking-[0.14em] transition-colors ${location.pathname.startsWith('/rooms') || location.pathname.startsWith('/facility') ? 'border-gold-500 text-navy-900' : 'border-transparent text-secondary hover:border-gold-300'}`}
               to="/rooms"
               aria-haspopup="menu"
             >
               STAY{' '}
-              <span
-                className="text-[9px] transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
+              <svg
                 aria-hidden="true"
+                className="h-1.5 w-2.5 shrink-0 translate-y-0.5px transition-transform duration-200 group-hover:rotate-180 group-focus-within:rotate-180"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="0.75"
+                viewBox="0 0 10 6"
               >
-                ⌄
-              </span>
+                <path d="m1 1 4 4 4-4" />
+              </svg>
             </NavLink>
             <div
               className="invisible absolute top-full left-1/2 min-w-[170px] -translate-x-1/2 translate-y-2 border border-border-subtle bg-white py-2 opacity-0 shadow-floating transition duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100"
