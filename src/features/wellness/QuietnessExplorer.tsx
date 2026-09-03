@@ -14,6 +14,7 @@ import { quietnessLabel, toLocalDateTime } from './wellnessFormat'
  */
 const hoursOfDay = Array.from({ length: 24 }, (_, hour) => hour)
 const clockHours = Array.from({ length: 12 }, (_, hour) => hour)
+const sunRayAngles = Array.from({ length: 8 }, (_, index) => index * 45)
 const ringSize = 240
 const ringRadius = 96
 const ringCircumference = 2 * Math.PI * ringRadius
@@ -29,40 +30,31 @@ function pointOnDial(hour: number, radius: number) {
   }
 }
 
-function TimeOfDayIcon({ daytime }: { daytime: boolean }) {
-  if (daytime) {
-    return (
-      <svg aria-hidden="true" className="size-3.5" viewBox="0 0 16 16">
-        <circle cx="8" cy="8" fill="none" r="2.8" stroke="currentColor" strokeWidth="1.2" />
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
-          <line
-            key={angle}
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeWidth="1"
-            transform={`rotate(${angle} 8 8)`}
-            x1="8"
-            x2="8"
-            y1="1"
-            y2="2.7"
-          />
-        ))}
-      </svg>
-    )
+function pointOnSkyArc(progress: number, radius: number) {
+  const angle = Math.PI + progress * Math.PI
+  return {
+    x: dialCenter + Math.cos(angle) * radius,
+    y: dialCenter + Math.sin(angle) * radius,
   }
+}
 
-  return (
-    <svg aria-hidden="true" className="size-3.5" viewBox="0 0 16 16">
-      <path
-        d="M10.9 12.7A5.6 5.6 0 0 1 5.1 3.3a5.7 5.7 0 1 0 5.8 9.4Z"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.2"
-      />
-    </svg>
-  )
+function getTimeAtmosphere(hour: number) {
+  if (hour < 5) {
+    return { label: '깊은 밤', sky: '#0a1b30', glow: '#8da3c4', orbit: '#7188a6' }
+  }
+  if (hour < 7) {
+    return { label: '새벽', sky: '#273248', glow: '#d8ad72', orbit: '#b48b5d' }
+  }
+  if (hour < 11) {
+    return { label: '아침', sky: '#364154', glow: '#ecd28f', orbit: '#cbae72' }
+  }
+  if (hour < 16) {
+    return { label: '한낮', sky: '#445066', glow: '#f3d98b', orbit: '#d7bb78' }
+  }
+  if (hour < 20) {
+    return { label: '저녁', sky: '#332c42', glow: '#d69a68', orbit: '#b9825c' }
+  }
+  return { label: '밤', sky: '#101f36', glow: '#9aaed0', orbit: '#758aa9' }
 }
 
 type Props = {
@@ -151,6 +143,9 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
   const daytime = selectedHour >= 6 && selectedHour < 18
   const meridiem = selectedHour < 12 ? '오전' : '오후'
   const clockHour = selectedHour % 12 || 12
+  const atmosphere = getTimeAtmosphere(selectedHour)
+  const celestialProgress = daytime ? (selectedHour - 6) / 12 : ((selectedHour - 18 + 24) % 24) / 12
+  const celestialPoint = pointOnSkyArc(celestialProgress, 56)
 
   if (loading) {
     return (
@@ -184,7 +179,7 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
           HOURLY AVERAGE · 시간대별 평균 소음
         </p>
         <p className="mt-3 text-xs leading-6 text-white/55">
-          시계는 선택한 시간을, 금색 원호는 해당 시간의 평균 소음을 나타냅니다.
+          바늘은 시간, 안쪽의 빛은 낮과 밤, 금색 원호는 평균 소음을 나타냅니다.
         </p>
         <div className="relative mt-6 grid place-items-center">
           <svg
@@ -192,6 +187,38 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
             className="w-full max-w-[280px]"
             viewBox={`0 0 ${ringSize} ${ringSize}`}
           >
+            <circle
+              cx={dialCenter}
+              cy={dialCenter}
+              r="87"
+              style={{ fill: atmosphere.sky, transition: 'fill 700ms ease' }}
+            />
+            <circle
+              cx={dialCenter}
+              cy={dialCenter - 18}
+              fill={atmosphere.glow}
+              opacity="0.08"
+              r="58"
+              style={{ transition: 'fill 700ms ease' }}
+            />
+            {!daytime && (
+              <g fill="#d9e2ef" opacity="0.32">
+                <circle cx="79" cy="92" r="1" />
+                <circle cx="101" cy="70" r="0.7" />
+                <circle cx="147" cy="76" r="0.9" />
+                <circle cx="168" cy="105" r="0.65" />
+              </g>
+            )}
+            <path
+              d={`M ${dialCenter - 56} ${dialCenter} A 56 56 0 0 1 ${dialCenter + 56} ${dialCenter}`}
+              fill="none"
+              opacity="0.34"
+              stroke={atmosphere.orbit}
+              strokeDasharray="2 4"
+              strokeLinecap="round"
+              strokeWidth="0.9"
+              style={{ transition: 'stroke 700ms ease' }}
+            />
             <circle
               cx={ringSize / 2}
               cy={ringSize / 2}
@@ -254,6 +281,35 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
               )
             })}
             <g
+              className="transition-transform duration-700 ease-calm motion-reduce:transition-none"
+              style={{
+                transform: `translate(${celestialPoint.x}px, ${celestialPoint.y}px)`,
+              }}
+            >
+              <circle fill={atmosphere.glow} opacity="0.16" r="13" />
+              {daytime ? (
+                <g fill="none" stroke="#e2c477" strokeLinecap="round">
+                  <circle fill="#d7b86d" r="4.2" stroke="none" />
+                  {sunRayAngles.map((angle) => (
+                    <line
+                      key={angle}
+                      strokeWidth="1"
+                      transform={`rotate(${angle})`}
+                      x1="0"
+                      x2="0"
+                      y1="-6"
+                      y2="-8"
+                    />
+                  ))}
+                </g>
+              ) : (
+                <path
+                  d="M 3.8 -5.8 A 6.4 6.4 0 1 0 3.8 5.8 A 5 5 0 0 1 3.8 -5.8 Z"
+                  fill="#d8c48f"
+                />
+              )}
+            </g>
+            <g
               className="transition-transform duration-500 ease-calm motion-reduce:transition-none"
               style={{
                 transform: `rotate(${selectedHour * 30}deg)`,
@@ -274,9 +330,8 @@ export function QuietnessExplorer({ spaces, loading = false, error = '' }: Props
             <circle cx={dialCenter} cy={dialCenter} fill="#c6a86b" r="4.5" />
           </svg>
           <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
-            <span className="relative flex items-center gap-1.5 justify-self-center rounded-full bg-navy-900/95 px-2.5 py-1 text-[10px] tracking-[0.1em] text-gold-300">
-              <TimeOfDayIcon daytime={daytime} />
-              {meridiem} {clockHour}:00
+            <span className="relative justify-self-center rounded-full bg-navy-900/90 px-2.5 py-1 text-[10px] tracking-[0.08em] text-gold-300">
+              {atmosphere.label} · {meridiem} {clockHour}:00
             </span>
             <strong className="relative mt-1 bg-navy-900/90 px-2 font-display text-4xl font-normal">
               {selected ? selected.averageDecibel.toFixed(1) : '—'}
