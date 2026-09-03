@@ -4,7 +4,6 @@ import { Button, StatusBadge } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
 import { setReturnPath } from '../auth/session'
 import { adminReservationApi } from './reservationApi'
-import { AdminPageHeading } from './shared'
 import type { AdminReservation, AdminReservationDetail, AdminReservationFilters, AdminReservationStatus } from './reservationTypes'
 
 type FilterForm = {
@@ -59,12 +58,6 @@ function errorMessage(error: unknown, fallback: string) {
 function formatDateTime(value: string) {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/)
   return match ? `${match[1]}. ${match[2]}. ${match[3]}. ${match[4]}:${match[5]}` : value
-}
-
-function reservationInfoRows(detail: AdminReservationDetail): Array<[string, string]> {
-  const rows: Array<[string, string]> = [['생성일', formatDateTime(detail.created_at)]]
-  if (detail.cancelled_at) rows.push(['취소일시', formatDateTime(detail.cancelled_at)])
-  return rows
 }
 
 export function AdminReservationsPage() {
@@ -134,7 +127,7 @@ function AdminReservationListPage() {
   function openMonthPicker() { monthInputRef.current?.showPicker() }
 
   return <section>
-    <AdminPageHeading title="예약 관리" description="객실별 월간 일정에서 예약 현황을 확인하고 관리합니다." />
+    <PageHeading title="예약 관리" description="객실별 월간 일정에서 예약 현황을 확인하고 관리합니다." />
     <form className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm" onSubmit={search} noValidate>
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex flex-1 items-center gap-3 text-xs font-medium text-slate-700"><span className="whitespace-nowrap">키워드</span><input className="h-[44px] min-w-48 flex-1 rounded-sm border border-slate-300 px-3 py-2 text-sm font-normal" value={form.keyword} onChange={(event) => updateForm('keyword', event.target.value)} placeholder="예약번호 또는 회원명" /></label>
@@ -210,15 +203,71 @@ function AdminReservationDetailPage({ resvId }: { resvId: string }) {
     } finally { setRestoring(false) }
   }
   if (loading) return <p className="py-16 text-center text-sm text-slate-600">예약 정보를 불러오는 중입니다.</p>
-  if (!detail) return <section><AdminPageHeading title="예약 상세" description="예약 상태와 상세 정보를 확인합니다." /><MessageBox message={message || '예약 정보를 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/reservations">예약 목록으로 돌아가기</Link></MessageBox></section>
-  return <section className="max-w-4xl"><Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/reservations">← 예약 목록</Link><AdminPageHeading title="예약 상세" description="예약 및 회원 정보를 확인하고 필요한 경우 예약을 취소합니다." />
-    {message && <p className="mb-4 text-sm text-error" role="alert">{message}</p>}
-    <article className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5"><div className="flex items-end gap-3"><div><p className="text-xs font-medium tracking-[0.12em] text-slate-500">RESERVATION NUMBER</p><h3 className="mt-1 text-xl font-semibold text-[#172b44]">{detail.resv_number}</h3></div><StatusBadge status={detail.resv_status} /></div><div className="text-right"><p className="text-xs font-medium tracking-[0.12em] text-slate-500">MEMBER</p><p className="mt-1 text-base font-semibold text-[#172b44]">{detail.member_name}</p></div></div><div className="grid gap-x-10 md:grid-cols-2"><DetailGroup title="예약 정보" rows={reservationInfoRows(detail)} /><DetailGroup title="회원 정보" rows={[["회원명", detail.member_name], ["전화번호", detail.phone_number]]} /><DetailGroup title="객실·숙박" rows={[["객실", `${detail.room_name} · ${detail.room_number}호`], ["체크인", detail.check_in_date], ["체크아웃", detail.check_out_date], ["숙박일수", `${detail.nights}박`], ["숙박 인원", `${detail.guest_count}명`]]} /><DetailGroup title="금액" rows={[["1박 가격", won(detail.price_per_night)], ["총 예약 금액", won(detail.total_price)]]} /></div></article>
-    {canCancel ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#ead8d2] bg-[#fffaf8] p-5"><p className="text-sm text-slate-700">체크인 전날까지 예약을 취소할 수 있습니다.</p><Button className="!min-h-9 px-3 py-1.5" variant="danger" onClick={() => setConfirming(true)}>예약 취소</Button></div> : detail.resv_status === 'CANCELLED' ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#d7c59e] bg-[#fffdf7] p-5"><p className="text-sm text-slate-700">취소된 예약입니다. 복구하면 예약 상태가 다시 예약으로 변경됩니다.</p><Button className="!min-h-9 px-3 py-1.5" onClick={() => setConfirmingRestore(true)} size="sm">예약 복구</Button></div> : <p className="mt-6 text-sm text-error">체크인 당일부터는 예약을 취소할 수 없습니다.</p>}
-    {confirming && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="cancel-description" aria-labelledby="cancel-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="cancel-title">예약을 취소하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="cancel-description">{detail.resv_number} 예약을 취소합니다. 취소 후에는 되돌릴 수 없습니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={cancelling} variant="secondary" onClick={() => setConfirming(false)}>닫기</Button><Button disabled={cancelling} variant="danger" onClick={() => void cancel()}>{cancelling ? '취소 처리 중' : '예약 취소'}</Button></div></section></div>}
-    {confirmingRestore && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="restore-description" aria-labelledby="restore-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="restore-title">예약을 복구하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="restore-description">{detail.resv_number} 예약을 다시 예약 상태로 변경합니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={restoring} variant="secondary" onClick={() => setConfirmingRestore(false)}>닫기</Button><Button disabled={restoring} onClick={() => void restore()}>{restoring ? '복구 처리 중' : '예약 복구'}</Button></div></section></div>}
-  </section>
+  if (!detail) return <section><PageHeading title="예약 상세" description="예약 상태와 상세 정보를 확인합니다." /><MessageBox message={message || '예약 정보를 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/reservations">예약 목록으로 돌아가기</Link></MessageBox></section>
+  return (
+    <section className="w-full">
+      <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/reservations">← 예약 목록</Link>
+      <PageHeading title="예약 상세" description="예약 및 회원 정보를 확인하고 필요한 경우 예약을 취소합니다." />
+      {message && <p className="mb-4 text-sm text-error" role="alert">{message}</p>}
+      <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+        <header className="grid gap-5 border-b border-slate-200 bg-slate-50 px-6 py-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:px-8">
+          <div>
+            <p className="text-[10px] font-semibold tracking-[0.15em] text-[#a77f3b]">RESERVATION NUMBER</p>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h3 className="text-2xl font-semibold tracking-tight text-[#172b44]">{detail.resv_number}</h3>
+              <StatusBadge status={detail.resv_status} />
+            </div>
+          </div>
+          <div className="md:text-right">
+            <p className="text-[10px] font-medium tracking-[0.12em] text-slate-500">TOTAL AMOUNT</p>
+            <p className="mt-1 text-2xl font-semibold text-[#172b44]">{won(detail.total_price)}</p>
+          </div>
+        </header>
+        <div className="grid lg:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
+          <section className="px-6 py-7 md:px-8 lg:border-r lg:border-slate-200">
+            <p className="text-[10px] font-semibold tracking-[0.13em] text-[#a77f3b]">STAY DETAILS</p>
+            <h4 className="mt-2 text-lg font-semibold text-[#172b44]">{detail.room_name} · {detail.room_number}호</h4>
+            <dl className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <ReservationMetric label="체크인" value={detail.check_in_date} />
+              <ReservationMetric label="체크아웃" value={detail.check_out_date} />
+              <ReservationMetric label="숙박일수" value={`${detail.nights}박`} />
+              <ReservationMetric label="숙박 인원" value={`${detail.guest_count}명`} />
+            </dl>
+          </section>
+          <section className="border-t border-slate-200 bg-[#fffdf8] px-6 py-7 md:px-8 lg:border-t-0">
+            <p className="text-[10px] font-semibold tracking-[0.13em] text-[#a77f3b]">MEMBER</p>
+            <h4 className="mt-2 text-lg font-semibold text-[#172b44]">{detail.member_name}</h4>
+            <dl className="mt-5 grid gap-3 text-sm">
+              <div className="flex items-center justify-between gap-4 border-t border-[#e8dfcf] pt-3">
+                <dt className="text-slate-500">전화번호</dt>
+                <dd className="font-medium text-slate-800">{detail.phone_number}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 border-t border-[#e8dfcf] pt-3">
+                <dt className="text-slate-500">현재 상태</dt>
+                <dd className="font-medium text-slate-800">{detail.resv_status === 'CANCELLED' ? '취소됨' : '예약됨'}</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+        <dl className="grid gap-px border-t border-slate-200 bg-slate-200 sm:grid-cols-2 xl:grid-cols-4">
+          <ReservationSummary label="예약 생성" value={formatDateTime(detail.created_at)} />
+          <ReservationSummary label="취소 일시" value={detail.cancelled_at ? formatDateTime(detail.cancelled_at) : '해당 없음'} />
+          <ReservationSummary label="1박 가격" value={won(detail.price_per_night)} />
+          <ReservationSummary emphasis label="총 예약 금액" value={won(detail.total_price)} />
+        </dl>
+      </article>
+      {canCancel ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#ead8d2] bg-[#fffaf8] p-5"><p className="text-sm text-slate-700">체크인 전날까지 예약을 취소할 수 있습니다.</p><Button className="!min-h-9 px-3 py-1.5" variant="danger" onClick={() => setConfirming(true)}>예약 취소</Button></div> : detail.resv_status === 'CANCELLED' ? <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#d7c59e] bg-[#fffdf7] p-5"><p className="text-sm text-slate-700">취소된 예약입니다. 복구하면 예약 상태가 다시 예약으로 변경됩니다.</p><Button className="!min-h-9 px-3 py-1.5" onClick={() => setConfirmingRestore(true)} size="sm">예약 복구</Button></div> : <p className="mt-6 text-sm text-error">체크인 당일부터는 예약을 취소할 수 없습니다.</p>}
+      {confirming && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="cancel-description" aria-labelledby="cancel-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="cancel-title">예약을 취소하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="cancel-description">{detail.resv_number} 예약을 취소합니다. 취소 후에는 되돌릴 수 없습니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={cancelling} variant="secondary" onClick={() => setConfirming(false)}>닫기</Button><Button disabled={cancelling} variant="danger" onClick={() => void cancel()}>{cancelling ? '취소 처리 중' : '예약 취소'}</Button></div></section></div>}
+      {confirmingRestore && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/40 p-5" role="presentation"><section aria-describedby="restore-description" aria-labelledby="restore-title" aria-modal="true" className="w-full max-w-[448px] rounded-lg bg-white p-6 shadow-xl" role="dialog"><h3 className="text-lg font-semibold text-[#172b44]" id="restore-title">예약을 복구하시겠습니까?</h3><p className="mt-3 text-sm text-slate-600" id="restore-description">{detail.resv_number} 예약을 다시 예약 상태로 변경합니다.</p><div className="mt-6 flex justify-end gap-2"><Button disabled={restoring} variant="secondary" onClick={() => setConfirmingRestore(false)}>닫기</Button><Button disabled={restoring} onClick={() => void restore()}>{restoring ? '복구 처리 중' : '예약 복구'}</Button></div></section></div>}
+    </section>
+  )
 }
 
+function PageHeading({ title, description }: { title: string; description: string }) { return <header className="mb-5 border-b border-slate-300 pb-6"><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">ADMINISTRATION</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#172b44]">{title}</h2><p className="mt-2 text-sm text-slate-600">{description}</p></header> }
 function MessageBox({ message, children }: { message: string; children?: ReactNode }) { return <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-600" role="alert"><p>{message}</p>{children}</div> }
-function DetailGroup({ title, rows }: { title: string; rows: Array<[string, string]> }) { return <section className="border-b border-slate-100 py-5"><h4 className="text-sm font-semibold text-[#172b44]">{title}</h4><dl className="mt-3 grid gap-2 text-sm sm:grid-cols-[110px_1fr]"><>{rows.map(([label, value]) => <div className="contents" key={label}><dt className="text-slate-500">{label}</dt><dd className="m-0 text-slate-800">{value}</dd></div>)}</></dl></section> }
+function ReservationMetric({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4"><dt className="text-[10px] font-medium tracking-[0.08em] text-slate-500">{label}</dt><dd className="mt-2 text-sm font-semibold text-[#172b44]">{value}</dd></div>
+}
+function ReservationSummary({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) {
+  return <div className="bg-slate-50 px-6 py-5"><dt className="text-[10px] font-medium tracking-[0.08em] text-slate-500">{label}</dt><dd className={`mt-2 text-sm font-semibold ${emphasis ? 'text-[#a77f3b]' : 'text-slate-800'}`}>{value}</dd></div>
+}
