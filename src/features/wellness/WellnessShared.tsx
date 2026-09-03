@@ -46,57 +46,67 @@ export function TrendChart({ points }: { points: WellnessTrendPoint[] }) {
   const chartPoints = normalized.length
     ? normalized.map((point, index) => ({
         ...point,
-        x: normalized.length === 1 ? 50 : 8 + (index * 84) / (normalized.length - 1),
-        y: 12 + point.totalScore * 0.7,
+        x: ((index + 0.5) / normalized.length) * 100,
+        y: 82 - point.totalScore * 0.7,
       }))
     : []
   const polyline = chartPoints.map((point) => `${point.x},${point.y}`).join(' ')
 
   return (
     <div>
-      <svg
-        className="h-[220px] w-full overflow-visible"
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        role="img"
-        aria-label="마음 부담도 변화 그래프"
-      >
-        {[15, 45, 75].map((y) => (
-          <line key={y} x1="4" x2="96" y1={y} y2={y} stroke="#e7e0d5" strokeWidth="0.5" />
-        ))}
-        {chartPoints.length > 1 && (
-          <polyline
-            fill="none"
-            points={polyline}
-            stroke="#b79a67"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.4"
-            vectorEffect="non-scaling-stroke"
-          />
-        )}
-        {chartPoints.map((point, index) => (
-          <circle
-            key={point.checkId}
-            cx={point.x}
-            cy={point.y}
-            fill={index === chartPoints.length - 1 ? '#b79a67' : '#0e2239'}
-            r="1.5"
-            vectorEffect="non-scaling-stroke"
-          />
-        ))}
-      </svg>
+      <div className="relative">
+        <span className="absolute top-2 left-0 text-[9px] tracking-[0.06em] text-muted">
+          부담 높음
+        </span>
+        <span className="absolute bottom-2 left-0 text-[9px] tracking-[0.06em] text-muted">
+          편안함
+        </span>
+        <svg
+          className="h-[220px] w-full overflow-visible"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label="마음 부담도 변화 그래프. 위로 갈수록 부담 점수가 높고 아래로 갈수록 편안한 상태입니다."
+        >
+          {[15, 45, 75].map((y) => (
+            <line key={y} x1="4" x2="96" y1={y} y2={y} stroke="#e7e0d5" strokeWidth="0.5" />
+          ))}
+          {chartPoints.length > 1 && (
+            <polyline
+              fill="none"
+              points={polyline}
+              stroke="#b79a67"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.4"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
+          {chartPoints.map((point, index) => (
+            <circle
+              key={point.checkId}
+              cx={point.x}
+              cy={point.y}
+              fill={index === chartPoints.length - 1 ? '#b79a67' : '#0e2239'}
+              r="1.5"
+              vectorEffect="non-scaling-stroke"
+            />
+          ))}
+        </svg>
+      </div>
       {normalized.length > 0 && (
         <div
-          className="mt-5 grid gap-5"
+          className="mt-5 grid"
           style={{
-            gridTemplateColumns: `repeat(${Math.min(normalized.length, 3)}, minmax(0, 1fr))`,
+            gridTemplateColumns: `repeat(${normalized.length}, minmax(0, 1fr))`,
           }}
         >
-          {normalized.slice(-3).map((point) => (
-            <div key={point.checkId}>
+          {normalized.map((point) => (
+            <div className="min-w-0 text-center" key={point.checkId}>
               <strong className="font-display text-xl font-normal">{point.totalScore}</strong>
-              <p className="mt-1 text-[11px] text-muted">{formatDate(point.checkedAt)}</p>
+              <p className="mt-1 truncate text-[10px] text-muted sm:text-[11px]">
+                {formatDate(point.checkedAt)}
+              </p>
             </div>
           ))}
         </div>

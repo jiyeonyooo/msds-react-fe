@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../../components/ui'
-import { ApiError } from '../../program/client'
+import { ApiError } from '../../../lib/apiError'
 import { answerAdminInquiry, getAdminInquiry } from './api'
 import type { InquiryResponse } from './types'
 

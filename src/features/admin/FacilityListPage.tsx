@@ -1,13 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import facilityImage1 from '../../assets/facility1.png'
-import facilityImage2 from '../../assets/facility2.png'
-import facilityImage3 from '../../assets/facility3.png'
-import facilityImage4 from '../../assets/facility4.png'
-import facilityImage5 from '../../assets/facility5.png'
-import facilityImage6 from '../../assets/facility6.png'
-import facilityImage7 from '../../assets/facility7.png'
-import facilityImage8 from '../../assets/facility8.png'
+import { resolveImageUrl } from '../../lib/imageUrl'
 import type { FacilityDetail, FacilityCategory } from './types'
 import { adminApi } from './api'
 import {
@@ -29,16 +22,6 @@ const categoryLabel: Record<FacilityCategory, string> = {
   ACCESSIBILITY: '접근성',
   ETC: '기타',
 }
-const facilityImages = [
-  facilityImage1,
-  facilityImage2,
-  facilityImage3,
-  facilityImage4,
-  facilityImage5,
-  facilityImage6,
-  facilityImage7,
-  facilityImage8,
-]
 const statusOptions = [
   { value: 'true', label: '활성' },
   { value: 'false', label: '비활성' },
@@ -122,14 +105,14 @@ export function FacilityListPage() {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((facility, index) => (
+                {shown.map((facility) => (
                   <tr
                     className="border-t border-slate-200 hover:bg-slate-50/60"
                     key={facility.facilityId}
                   >
                     <td className="px-4 py-3">
                       <ImageThumb
-                        src={facilityImages[index % facilityImages.length]}
+                        src={resolveImageUrl(facility.imageUrl)}
                         alt={`${facility.name} 편의시설`}
                       />
                     </td>
@@ -160,14 +143,14 @@ export function FacilityListPage() {
             </table>
           </div>
           <div className="grid gap-3 md:hidden">
-            {shown.map((facility, index) => (
+            {shown.map((facility) => (
               <article
                 className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                 key={facility.facilityId}
               >
                 <div className="flex gap-4">
                   <ImageThumb
-                    src={facilityImages[index % facilityImages.length]}
+                    src={resolveImageUrl(facility.imageUrl)}
                     alt={`${facility.name} 편의시설`}
                   />
                   <div className="min-w-0 flex-1">

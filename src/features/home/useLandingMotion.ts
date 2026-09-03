@@ -4,6 +4,7 @@ import { gsap } from 'gsap'
 import { CustomEase } from 'gsap/CustomEase'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { scrollLayoutReadyEvent } from '../../lib/navigation'
 
 gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, CustomEase)
 
@@ -353,6 +354,8 @@ export function useLandingMotion(scope: RefObject<HTMLElement | null>) {
         })
       })
     }, root)
+    ScrollTrigger.refresh()
+    window.dispatchEvent(new Event(scrollLayoutReadyEvent))
     return () => context.revert()
   }, [scope])
 }

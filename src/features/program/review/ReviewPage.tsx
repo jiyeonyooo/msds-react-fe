@@ -35,7 +35,7 @@ export default function ReviewPage() {
   }, []);
 
   useEffect(() => {
-    loadAll();
+    void Promise.resolve().then(loadAll);
   }, [loadAll]);
 
   const writableReservations = myReservations.filter((r) => r.status === "RESERVED" && !r.hasReview);

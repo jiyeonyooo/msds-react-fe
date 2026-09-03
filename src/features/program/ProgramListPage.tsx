@@ -14,17 +14,17 @@ export default function ProgramListPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [reservingId, setReservingId] = useState<number | null>(null);
-
-  const loadPrograms = () => {
-    setLoading(true);
-    getPrograms()
-      .then(setPrograms)
-      .catch(() => setError("프로그램 목록을 불러오지 못했습니다."))
-      .finally(() => setLoading(false));
-  };
+  const [reservedProgramIds, setReservedProgramIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    loadPrograms();
+    let active = true;
+    getPrograms()
+      .then((data) => active && setPrograms(data))
+      .catch(() => active && setError("프로그램 목록을 불러오지 못했습니다."))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
   }, []);
 
   const handleReserve = async (programId: number) => {
@@ -33,9 +33,11 @@ export default function ProgramListPage() {
     setReservingId(programId);
     try {
       await reserveProgram({ programId, quantity: 1 });
+      const refreshedPrograms = await getPrograms();
+      setPrograms(refreshedPrograms);
+      setReservedProgramIds((current) => new Set(current).add(programId));
       setNotice("예약이 완료되었습니다.");
       showToast("프로그램 신청이 완료되었습니다. 마이페이지에서 확인할 수 있습니다.");
-      loadPrograms();
     } catch (err) {
       const message =
         err instanceof ApiError && err.status === 401
@@ -76,22 +78,24 @@ export default function ProgramListPage() {
 
       <section className="bg-white px-6 py-14 md:px-[100px]">
         <div className="mx-auto max-w-[1240px]">
-          {notice && (
-            <p
-              className="mb-6 rounded-sm border border-border-accent bg-[#faf6ed] px-4 py-3 text-sm text-ink-700"
-              role="status"
-            >
-              {notice}
-            </p>
-          )}
-          {error && (
-            <p
-              className="mb-6 rounded-sm border border-error-border bg-[#f8eeeb] px-4 py-3 text-sm text-error"
-              role="alert"
-            >
-              {error}
-            </p>
-          )}
+          <div aria-live="polite" className="mb-6 min-h-[46px]">
+            {notice && (
+              <p
+                className="rounded-sm border border-border-accent bg-[#faf6ed] px-4 py-3 text-sm text-ink-700"
+                role="status"
+              >
+                {notice}
+              </p>
+            )}
+            {error && (
+              <p
+                className="rounded-sm border border-error-border bg-[#f8eeeb] px-4 py-3 text-sm text-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+          </div>
 
           {loading && (
             <SkeletonCards className="grid gap-6 md:grid-cols-2" count={4} mediaClassName="h-[200px]" />
@@ -126,11 +130,19 @@ export default function ProgramListPage() {
                       <SeatGauge capacity={p.capacity} remain={p.remain} />
                     </div>
                     <Button
-                      disabled={p.status !== "OPEN" || reservingId === p.id}
+                      disabled={
+                        p.status !== "OPEN" ||
+                        reservingId === p.id ||
+                        reservedProgramIds.has(p.id)
+                      }
                       onClick={() => handleReserve(p.id)}
                       size="sm"
                     >
-                      {reservingId === p.id ? "예약 중…" : "예약하기"}
+                      {reservingId === p.id
+                        ? "예약 중…"
+                        : reservedProgramIds.has(p.id)
+                          ? "예약 완료"
+                          : "예약하기"}
                     </Button>
                   </div>
                 </article>

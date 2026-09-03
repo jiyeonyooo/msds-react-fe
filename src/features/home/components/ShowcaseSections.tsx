@@ -1,28 +1,20 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { Facility } from '../../facility/types'
-import type { RoomSummary, RoomType } from '../../rooms/types'
+import type { RoomSummary } from '../../rooms/types'
 import { homeMedia } from '../homeMedia'
 
 type HomeContentStatus = 'loading' | 'ready' | 'error'
-
-const roomTypeCopy: Record<RoomType, string> = {
-  STAY: '균형 잡힌 기본 머무름',
-  REST: '느슨하고 조용한 휴식',
-  MEDITATE: '개인 명상과 집중',
-  RETREAT: '회복에 몰입하는 쉼',
-}
-
-const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price)
 
 const showcaseDataClass =
   'my-4 grid max-h-none gap-[7px] pr-[5px] md:max-h-[280px] md:overflow-auto'
 const stateClass = 'border-l-[3px] border-gold-500 bg-white p-5 leading-[1.7] text-ink-700'
 const dataCardClass =
-  'block gap-3 border-l-2 border-gold-500 bg-white/70 px-[14px] py-3 md:flex md:justify-between'
-const dataLabelClass = 'text-[0.64rem] tracking-[0.12em] text-gold-500'
-const dataTitleClass = 'my-0.5 font-display text-[1.2rem] font-medium'
-const dataCopyClass = 'm-0 text-xs leading-[1.45] text-ink-700'
+  'block border-l-2 border-gold-500 bg-white/70 px-[18px] py-4 transition-colors hover:bg-white'
+const dataLabelClass = 'mb-1 block text-[0.62rem] font-medium tracking-[0.14em] text-gold-500'
+const dataTitleClass = 'm-0 font-display text-[1.25rem] font-medium'
+const moreLinkClass =
+  'mt-2 inline-flex min-h-11 origin-left items-center py-3 text-xs font-medium tracking-[0.08em] text-gold-500 no-underline transition-[transform,color] duration-300 hover:scale-105 hover:text-navy-900 motion-reduce:transform-none motion-reduce:transition-none'
 
 export function RoomsShowcaseSection({
   rooms,
@@ -55,42 +47,14 @@ export function RoomsShowcaseSection({
         {status === 'ready' && rooms.length === 0 && (
           <p className={stateClass}>현재 소개할 객실 유형이 없습니다.</p>
         )}
-        {rooms.slice(0, 3).map((room) => (
-          <article className={dataCardClass} key={room.roomId}>
-            <div>
-              <small className={dataLabelClass}>{room.roomType}</small>
-              <h3 className={dataTitleClass}>{room.name}</h3>
-              <p className={dataCopyClass}>{roomTypeCopy[room.roomType]}</p>
-            </div>
-            <dl className="mt-2 min-w-[140px] md:mt-0">
-              <div className="flex justify-between gap-2 border-b border-ivory-200 text-[0.67rem]">
-                <dt>기준 / 최대</dt>
-                <dd className="m-0">
-                  {room.standardGuests} / {room.maxGuests}명
-                </dd>
-              </div>
-              <div className="flex justify-between gap-2 border-b border-ivory-200 text-[0.67rem]">
-                <dt>1박 기본가</dt>
-                <dd className="m-0">₩{formatPrice(room.basePrice)}~</dd>
-              </div>
-            </dl>
-          </article>
+        {rooms.slice(0, 2).map((room) => (
+          <Link className={dataCardClass} key={room.roomId} to={`/rooms/${room.roomId}`}>
+            <small className={dataLabelClass}>{room.roomType}</small>
+            <h3 className={dataTitleClass}>{room.name}</h3>
+          </Link>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Link
-          className="inline-flex min-h-11 items-center justify-center border border-transparent bg-navy-900 px-6 py-[13px] text-xs font-medium tracking-[0.05em] text-white no-underline transition-[transform,background-color] duration-[240ms] ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-          to="/rooms"
-        >
-          EXPLORE ROOMS
-        </Link>
-        <Link
-          className="inline-flex min-h-11 items-center justify-center border border-navy-900 px-6 py-[13px] text-xs font-medium tracking-[0.05em] text-navy-900 no-underline transition-[transform,background-color] duration-[240ms] ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-          to="/reservations"
-        >
-          CHECK AVAILABILITY
-        </Link>
-      </div>
+      <Link className={moreLinkClass} to="/rooms">객실 더보기&nbsp; →</Link>
     </ShowcaseSection>
   )
 }
@@ -125,21 +89,16 @@ export function FacilityShowcaseSection({
         )}
         {facilities.map((facility) => (
           <article className={dataCardClass} key={facility.facilityId}>
-            <div>
-              <small className={dataLabelClass}>{facility.category}</small>
-              <h3 className={dataTitleClass}>{facility.name}</h3>
-              <p className={dataCopyClass}>
-                {facility.description || '시설 상세 페이지에서 이용 정보를 확인해 주세요.'}
-              </p>
-            </div>
+            <small className={dataLabelClass}>{facility.category}</small>
+            <h3 className={dataTitleClass}>{facility.name}</h3>
           </article>
         ))}
       </div>
       <Link
-        className="inline-flex min-h-11 items-center justify-center border border-navy-900 px-6 py-[13px] text-xs font-medium tracking-[0.05em] text-navy-900 no-underline transition-[transform,background-color] duration-[240ms] ease-out hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+        className={moreLinkClass}
         to="/facility"
       >
-        VIEW ALL FACILITIES
+        편의시설 더보기&nbsp; →
       </Link>
     </ShowcaseSection>
   )
@@ -178,7 +137,7 @@ function ShowcaseSection({
           }`}
         >
           <div
-            className={`relative z-[3] order-1 max-h-none overflow-visible bg-ivory-100 p-0 md:order-0 md:self-center md:max-h-[calc(100svh_-_64px)] md:overflow-hidden md:py-[38px] ${
+            className={`relative z-[3] order-1 max-h-none overflow-visible bg-ivory-100 p-0 md:order-0 md:self-center md:overflow-visible md:py-[38px] ${
               isFacility ? 'md:col-start-2 md:pl-[42px]' : 'md:pr-[42px]'
             }`}
             data-showcase-copy

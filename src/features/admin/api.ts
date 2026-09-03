@@ -8,7 +8,9 @@ import type {
   FacilityUpdateRequest,
   RoomCreateRequest,
   RoomDetail,
+  RoomImageCreateRequest,
   RoomUpdateRequest,
+  UploadedImage,
 } from './types'
 
 export class AdminApiError extends Error {
@@ -49,6 +51,31 @@ export const adminApi = {
     request(() => authApiClient.post<ApiEnvelope<RoomDetail>>('/admin/rooms', body)),
   updateRoom: (id: number, body: RoomUpdateRequest) =>
     request(() => authApiClient.patch<ApiEnvelope<RoomDetail>>(`/admin/rooms/${id}`, body)),
+  uploadImage: (
+    file: File,
+    category: 'rooms' | 'facilities',
+    onProgress?: (percent: number) => void,
+  ) => {
+    const formData = new FormData()
+    formData.append('image', file)
+    return request(() =>
+      authApiClient.post<ApiEnvelope<UploadedImage>>(`/admin/images/${category}`, formData, {
+        headers: { 'Content-Type': undefined },
+        onUploadProgress: (event) => {
+          if (event.total && onProgress)
+            onProgress(Math.round((event.loaded * 100) / event.total))
+        },
+      }),
+    )
+  },
+  addRoomImages: (id: number, body: RoomImageCreateRequest[]) =>
+    request(() =>
+      authApiClient.post<ApiEnvelope<unknown>>(`/admin/rooms/${id}/images`, body),
+    ),
+  deleteRoomImage: (roomId: number, imageId: number) =>
+    request(() =>
+      authApiClient.delete<ApiEnvelope<unknown>>(`/admin/rooms/${roomId}/images/${imageId}`),
+    ),
   facilityList: () =>
     request(() => authApiClient.get<ApiEnvelope<FacilityDetail[]>>('/admin/facilities')),
   facilityDetail: (id: number) =>
