@@ -143,26 +143,26 @@ function AdminMemberListPage() {
           <table className="w-full min-w-[860px] border-collapse text-sm">
             <caption className="sr-only">회원 목록</caption>
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium text-slate-600">
+              <tr className="border-b border-slate-200 bg-slate-50 text-center text-xs font-medium text-slate-600">
                 <th className="px-4 py-3" scope="col">이름</th>
                 <th className="px-4 py-3" scope="col">이메일</th>
                 <th className="px-4 py-3" scope="col">전화번호</th>
                 <th className="px-4 py-3" scope="col">권한</th>
-                <th className="px-4 py-3 text-right" scope="col">예약</th>
-                <th className="px-4 py-3 text-right" scope="col">문의</th>
+                <th className="px-4 py-3" scope="col">예약</th>
+                <th className="px-4 py-3" scope="col">문의</th>
                 <th className="px-4 py-3" scope="col">가입일</th>
               </tr>
             </thead>
             <tbody>
-              {members.map((member) => <tr className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50" key={member.user_id}>
+              {members.map((member) => <tr aria-label={`${member.name} 회원 상세 보기`} className="cursor-pointer border-b border-slate-100 text-center outline-none transition-colors hover:bg-[#f5f7fa] focus-visible:bg-[#f5f7fa] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#b79a67] last:border-b-0" key={member.user_id} onClick={() => navigate(`/admin/members/${member.user_id}`)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); navigate(`/admin/members/${member.user_id}`) } }} role="button" tabIndex={0}>
                 <td className="px-4 py-3">
-                  <Link className="font-medium text-[#172b44] underline-offset-4 hover:underline" to={`/admin/members/${member.user_id}`}>{member.name}</Link>
+                  <span className="font-medium text-[#172b44]">{member.name}</span>
                 </td>
                 <td className="px-4 py-3 text-slate-700">{member.email}</td>
                 <td className="px-4 py-3 text-slate-600">{member.phone_number}</td>
                 <td className="px-4 py-3"><RoleChip role={member.role} /></td>
-                <td className="px-4 py-3 text-right text-slate-700">{member.reservation_count.toLocaleString('ko-KR')}</td>
-                <td className="px-4 py-3 text-right text-slate-700">{member.inquiry_count.toLocaleString('ko-KR')}</td>
+                <td className="px-4 py-3 text-slate-700">{member.reservation_count.toLocaleString('ko-KR')}</td>
+                <td className="px-4 py-3 text-slate-700">{member.inquiry_count.toLocaleString('ko-KR')}</td>
                 <td className="px-4 py-3 text-slate-600">{formatDateTime(member.created_at)}</td>
               </tr>)}
             </tbody>

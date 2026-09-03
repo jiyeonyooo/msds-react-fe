@@ -70,6 +70,7 @@ export function ScrollRestoration() {
   const navigationType = useNavigationType()
   const canSavePosition = useRef(false)
   const initialLocationKey = useRef(location.key)
+  const pendingInternalNavigation = useRef(false)
   const locationUrlKey = urlKey(location.pathname, location.search, location.hash)
 
   useLayoutEffect(() => {
@@ -103,6 +104,7 @@ export function ScrollRestoration() {
     }
     const scrollToTop = () => {
       flushCurrentPosition()
+      pendingInternalNavigation.current = true
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
     }
 
@@ -121,7 +123,12 @@ export function ScrollRestoration() {
 
   useLayoutEffect(() => {
     const isInitialRender = location.key === initialLocationKey.current
-    if (!isInitialRender && navigationType !== 'POP') {
+    // The app's navigation helper updates history directly, which React Router
+    // observes as POP. Keep it distinct from an actual browser back/forward
+    // navigation so stale per-entry positions are never restored.
+    const isInternalNavigation = pendingInternalNavigation.current
+    pendingInternalNavigation.current = false
+    if (isInternalNavigation || (!isInitialRender && navigationType !== 'POP')) {
       window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
       canSavePosition.current = true
       return

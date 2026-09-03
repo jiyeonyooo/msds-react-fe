@@ -90,7 +90,7 @@ export default function MyProgramReservationsPage() {
       <div className="mt-9 grid max-w-md grid-cols-2 rounded-sm border border-[#cfc7ba] bg-white p-1">
         <Link
           className="px-5 py-3 text-center text-xs font-medium text-ink-500"
-          to="/my-reservations"
+          to="/mypage/reservations"
         >
           객실 예약
         </Link>

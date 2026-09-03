@@ -26,7 +26,7 @@ export default function ProgramListPage() {
   };
 
   useEffect(() => {
-    loadAll();
+    void Promise.resolve().then(loadAll)
   }, []);
 
   const reservedProgramNames = new Set(

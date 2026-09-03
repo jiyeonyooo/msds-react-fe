@@ -122,7 +122,6 @@ export function ReservationPage() {
                 )}
               </h2>
             </div>
-            <p>표시된 금액과 잔여 객실은 서버 기준입니다. 예약 생성 시 다시 확인됩니다.</p>
           </div>
           <div className="grid grid-cols-1 gap-[14px] md:grid-cols-3 md:gap-5">
             {orderedRooms.map((room) => {
