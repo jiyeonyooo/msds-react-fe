@@ -1,5 +1,6 @@
 // program.ts
 import { authApiClient, publicApiClient } from "../../lib/apiClient.ts";
+import { normalizeProgramImagePath } from "../../lib/imageUrl.ts";
 import type { ApiResponse, ProgramResponse, ProgramCreateRequest, ReservationRequest, ReservationResponse, ProgramApplicationResponse, ProgramReservationResponse } from "./types.ts";
 
 export const getPrograms = async (): Promise<ProgramResponse[]> => {
@@ -55,7 +56,6 @@ export const uploadProgramImage = async (file: File): Promise<string> => {
   const res = await authApiClient.post<ApiResponse<string>>(
     "/meditation/admin/program/upload-image",
     formData,
-    { headers: { "Content-Type": "multipart/form-data" } },
   );
-  return res.data.data; // 예: "/images/uuid.jpg"
+  return normalizeProgramImagePath(res.data.data);
 };

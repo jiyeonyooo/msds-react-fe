@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "../../components/ui";
 import { getPrograms, reserveProgram, getMyReservations } from "./program.ts";
 import { ApiError } from "../../lib/apiError.ts";
+import { resolveProgramImageUrl } from "../../lib/imageUrl.ts";
 import type { ProgramResponse, ReservationResponse } from "./types.ts";
 
 export default function ProgramListPage() {
@@ -127,7 +128,7 @@ export default function ProgramListPage() {
                   >
                     <div className="grid h-[200px] place-items-center overflow-hidden bg-[#e8e3d9] text-[10px] text-ink-500 sm:h-full">
                       {p.pictureUrl ? (
-                        <img alt={p.name} className="size-full object-cover" src={p.pictureUrl} />
+                      <img alt={p.name} className="size-full object-cover" src={resolveProgramImageUrl(p.pictureUrl)} />
                       ) : (
                         "NO IMAGE"
                       )}

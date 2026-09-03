@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Button } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
+import { resolveProgramImageUrl } from '../../lib/imageUrl'
 import { showToast } from '../../lib/toast'
 import { SeatGauge } from './SeatGauge'
 import { getProgram, getPrograms, reserveProgram } from './program'
@@ -187,7 +188,7 @@ export default function ProgramDetailPage() {
           <img
             alt={`${program.name} 명상 공간`}
             className="h-full w-full object-cover"
-            src={program.pictureUrl || presentation.heroImage}
+            src={program.pictureUrl ? resolveProgramImageUrl(program.pictureUrl) : presentation.heroImage}
           />
           <blockquote className="absolute right-5 bottom-5 max-w-[400px] rounded-[12px] bg-white/92 px-6 py-5 shadow-card backdrop-blur-sm md:right-10 md:bottom-10">
             <p className="text-[10px] font-medium tracking-[0.14em] text-[#ab854d]">
@@ -306,7 +307,7 @@ export default function ProgramDetailPage() {
                   >
                     <img
                       className="h-[156px] w-full object-cover"
-                      src={item.pictureUrl || itemPresentation.image}
+                      src={item.pictureUrl ? resolveProgramImageUrl(item.pictureUrl) : itemPresentation.image}
                       alt=""
                     />
                     <div className="px-3.5 py-3">

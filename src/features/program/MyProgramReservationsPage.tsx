@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Button, StatusBadge } from '../../components/ui'
 import { setReturnPath } from '../auth/session'
 import { ApiError } from '../../lib/apiError'
+import { resolveProgramImageUrl } from '../../lib/imageUrl'
 import { cancelReservation, getMyProgramReservations } from './program'
 import type { ProgramReservationResponse, ProgramReservationStatus } from './types'
 
@@ -161,7 +162,7 @@ export default function MyProgramReservationsPage() {
             >
               <div className="grid size-[92px] place-items-center overflow-hidden rounded-sm bg-[#e8e3d9] text-[10px] text-ink-500">
                 {reservation.pictureUrl ? (
-                  <img alt="" className="size-full object-cover" src={reservation.pictureUrl} />
+                  <img alt="" className="size-full object-cover" src={resolveProgramImageUrl(reservation.pictureUrl)} />
                 ) : (
                   'NO IMAGE'
                 )}
