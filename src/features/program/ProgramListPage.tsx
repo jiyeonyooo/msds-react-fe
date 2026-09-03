@@ -24,7 +24,7 @@ export default function ProgramListPage() {
   };
 
   useEffect(() => {
-    loadPrograms();
+    void Promise.resolve().then(loadPrograms);
   }, []);
 
   const handleReserve = async (programId: number) => {

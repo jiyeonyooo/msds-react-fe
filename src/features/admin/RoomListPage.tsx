@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import roomImage1 from '../../assets/rooms1.png'
-import roomImage2 from '../../assets/rooms2.png'
-import roomImage3 from '../../assets/rooms3.png'
-import roomImage4 from '../../assets/rooms4.png'
+import { resolveImageUrl } from '../../lib/imageUrl'
 import type { RoomSummary } from '../rooms/types'
 import { adminApi } from './api'
 import {
@@ -17,7 +14,6 @@ import {
 
 const typeLabel = { STAY: '스테이', REST: '휴식', MEDITATE: '명상', RETREAT: '리트리트' }
 const money = new Intl.NumberFormat('ko-KR')
-const roomImages = [roomImage1, roomImage2, roomImage3, roomImage4]
 
 export function RoomListPage() {
   const [items, setItems] = useState<RoomSummary[]>([])
@@ -71,11 +67,11 @@ export function RoomListPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((room, index) => (
+                {items.map((room) => (
                   <tr className="border-t border-slate-200 hover:bg-slate-50/60" key={room.roomId}>
                     <td className="px-4 py-3">
                       <ImageThumb
-                        src={roomImages[index % roomImages.length]}
+                        src={resolveImageUrl(room.mainImageUrl)}
                         alt={`${room.name} 객실`}
                       />
                     </td>
@@ -102,14 +98,14 @@ export function RoomListPage() {
             </table>
           </div>
           <div className="grid gap-3 md:hidden">
-            {items.map((room, index) => (
+            {items.map((room) => (
               <article
                 className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                 key={room.roomId}
               >
                 <div className="flex gap-4">
                   <ImageThumb
-                    src={roomImages[index % roomImages.length]}
+                    src={resolveImageUrl(room.mainImageUrl)}
                     alt={`${room.name} 객실`}
                   />
                   <div>

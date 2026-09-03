@@ -1,23 +1,25 @@
-import { apiClient } from '../../program/client'
+import { authApiClient } from '../../../lib/apiClient'
+import { call } from '../../../lib/apiError'
+import type { AxiosResponse } from 'axios'
 import type { ApiEnvelope, InquiryResponse, InquiryStatus } from './types'
 
-async function unwrap<T>(request: Promise<ApiEnvelope<T>>) {
-  return (await request).data
+async function request<T>(run: () => Promise<AxiosResponse<ApiEnvelope<T>>>) {
+  return (await call(run)).data
 }
 
 export const getAdminInquiries = (status?: InquiryStatus) =>
-  unwrap(
-    apiClient.get<ApiEnvelope<InquiryResponse[]>>(
-      `/api/admin/inquiries${status ? `?status=${status}` : ''}`,
+  request(() =>
+    authApiClient.get<ApiEnvelope<InquiryResponse[]>>(
+      `/admin/inquiries${status ? `?status=${status}` : ''}`,
     ),
   )
 
 export const getAdminInquiry = (inquiryId: number) =>
-  unwrap(apiClient.get<ApiEnvelope<InquiryResponse>>(`/api/admin/inquiries/${inquiryId}`))
+  request(() => authApiClient.get<ApiEnvelope<InquiryResponse>>(`/admin/inquiries/${inquiryId}`))
 
 export const answerAdminInquiry = (inquiryId: number, answerContent: string) =>
-  unwrap(
-    apiClient.patch<ApiEnvelope<InquiryResponse>>(`/api/admin/inquiries/${inquiryId}/answer`, {
+  request(() =>
+    authApiClient.patch<ApiEnvelope<InquiryResponse>>(`/admin/inquiries/${inquiryId}/answer`, {
       answerContent,
     }),
   )

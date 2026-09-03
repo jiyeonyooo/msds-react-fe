@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { AdminApiError, adminApi } from './api'
+import { RoomImageEditor } from './ImageUploadFields'
+import { resolveImageUrl, uploadPendingImage, type PendingImage } from './imageUpload'
 import { AdminField, AdminPageHeader, inputClass, LoadingState, Notice } from './shared'
-import type { RoomFormValue, RoomUpdateRequest } from './types'
+import type { RoomFormValue, RoomImageType, RoomUpdateRequest } from './types'
 
 const initial: RoomFormValue = {
   name: '',
@@ -49,7 +51,12 @@ export function RoomFormPage() {
   const [pending, setPending] = useState(false)
   const [message, setMessage] = useState('')
   const [errors, setErrors] = useState<ReturnType<typeof validate>>({})
-  const dirty = JSON.stringify(form) !== JSON.stringify(base)
+  const [images, setImages] = useState<PendingImage[]>([])
+  const [createdRoomId, setCreatedRoomId] = useState<number | null>(null)
+  const [serverImages, setServerImages] = useState<
+    { imageId: number; imageUrl: string; imageType: RoomImageType; sortOrder: number }[]
+  >([])
+  const dirty = JSON.stringify(form) !== JSON.stringify(base) || images.length > 0
   const invalid = Object.keys(validate(form)).length > 0
   useEffect(() => {
     if (!edit || !id) return
@@ -68,6 +75,13 @@ export function RoomFormPage() {
         }
         setForm(v)
         setBase(v)
+        setServerImages(
+          r.images.flatMap((image) =>
+            image.imageId == null
+              ? []
+              : [{ ...image, imageId: image.imageId, imageType: image.imageType as RoomImageType }],
+          ),
+        )
       })
       .catch((e: Error) => setMessage(e.message))
       .finally(() => setLoading(false))
@@ -103,14 +117,42 @@ export function RoomFormPage() {
     setPending(true)
     setMessage('')
     try {
+      const effectiveRoomId = id ?? createdRoomId
       const result =
-        edit && id
-          ? await adminApi.updateRoom(id, patch)
+        effectiveRoomId
+          ? Object.keys(patch).length
+            ? await adminApi.updateRoom(effectiveRoomId, patch)
+            : await adminApi.roomDetail(effectiveRoomId)
           : await adminApi.createRoom({
               ...form,
               name: form.name.trim(),
               description: form.description.trim(),
             })
+      const targetRoomId = result.roomId
+      const uploaded = []
+      const failedIds = new Set<string>()
+      for (const image of images) {
+        try {
+          const file =
+            image.uploaded ??
+            (await uploadPendingImage(image, 'rooms', (change) =>
+              setImages((items) =>
+                items.map((item) =>
+                  item.clientId === image.clientId ? { ...item, ...change } : item,
+                ),
+              ),
+            ))
+          uploaded.push({
+            imageUrl: file.url,
+            imageType: image.imageType,
+            sortOrder: serverImages.length + image.sortOrder,
+          })
+        } catch {
+          failedIds.add(image.clientId)
+          // Each failed item remains visible and can be retried without re-uploading successful files.
+        }
+      }
+      if (uploaded.length) await adminApi.addRoomImages(targetRoomId, uploaded)
       const v: RoomFormValue = {
         name: result.name,
         description: result.description ?? '',
@@ -123,9 +165,25 @@ export function RoomFormPage() {
       }
       setBase(v)
       setForm(v)
+      if (failedIds.size) {
+        images
+          .filter((image) => !failedIds.has(image.clientId))
+          .forEach((image) => URL.revokeObjectURL(image.previewUrl))
+        setImages((items) => items.filter((image) => failedIds.has(image.clientId)))
+        setCreatedRoomId(targetRoomId)
+        setMessage('객실 정보는 저장했지만 일부 이미지 업로드에 실패했습니다. 실패한 이미지를 다시 시도해 주세요.')
+        return
+      }
+      images.forEach((image) => URL.revokeObjectURL(image.previewUrl))
+      setImages([])
       if (!edit) {
         navigate('/admin/rooms', { replace: true, state: { toast: '객실이 등록되었습니다.' } })
-      } else setMessage('객실 정보가 저장되었습니다.')
+      } else {
+        navigate('/admin/rooms', {
+          replace: true,
+          state: { toast: '객실 정보가 수정되었습니다.' },
+        })
+      }
     } catch (err) {
       const api = err as AdminApiError
       setMessage(api.status === 404 ? '요청한 객실을 찾을 수 없습니다.' : api.message)
@@ -234,6 +292,45 @@ export function RoomFormPage() {
               />
             </AdminField>
           </section>
+          {serverImages.length > 0 && (
+            <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+              <h2 className="m-0 border-b border-slate-100 pb-4 text-base font-semibold text-[#172b44]">등록된 객실 이미지</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {serverImages.sort((a, b) => a.sortOrder - b.sortOrder).map((image) => (
+                  <article className="overflow-hidden rounded border border-slate-200" key={image.imageId}>
+                    <img className="h-40 w-full bg-slate-100 object-cover" src={resolveImageUrl(image.imageUrl)} alt="등록된 객실 이미지" />
+                    <div className="flex items-center justify-between gap-2 p-3 text-sm">
+                      <span>{image.imageType}</span>
+                      <button
+                        type="button"
+                        className="min-h-9 rounded-sm border border-slate-300 px-3 text-xs"
+                        disabled={pending}
+                        onClick={async () => {
+                          if (!id || !confirm('이 객실 이미지를 삭제하시겠습니까?')) return
+                          setPending(true)
+                          try {
+                            await adminApi.deleteRoomImage(id, image.imageId)
+                            setServerImages((items) => items.filter((item) => item.imageId !== image.imageId))
+                          } catch (error) {
+                            setMessage(error instanceof Error ? error.message : '이미지를 삭제하지 못했습니다.')
+                          } finally {
+                            setPending(false)
+                          }
+                        }}
+                        aria-label="등록된 객실 이미지 삭제"
+                      >삭제</button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+          <RoomImageEditor
+            images={images}
+            onChange={setImages}
+            disabled={pending}
+            existingImageCount={serverImages.length}
+          />
           <div className="fixed inset-x-0 bottom-0 z-10 flex justify-end gap-2 border-t border-slate-200 bg-white p-4 shadow-lg md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none">
             <button
               type="button"
