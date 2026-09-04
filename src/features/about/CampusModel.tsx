@@ -1,12 +1,18 @@
 import { ContactShadows, Html, OrbitControls, RoundedBox, useTexture } from '@react-three/drei'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   ACESFilmicToneMapping,
   CatmullRomCurve3,
+  Color,
+  Fog,
   MathUtils,
+  RepeatWrapping,
   SRGBColorSpace,
   Vector3,
+  type AmbientLight,
+  type DirectionalLight,
   type Group,
+  type HemisphereLight,
   type Texture,
 } from 'three'
 import {
@@ -33,6 +39,21 @@ import oceanSuite from '../../assets/home/ocean-suite.png'
 import coast from '../../assets/msds-coast.png'
 
 type PlaceId = 'stay' | 'wellness' | 'meditation' | 'studio' | 'ocean'
+type CampusTimeMode = 'day' | 'sunset' | 'night'
+
+type CampusTimePreset = {
+  background: string
+  fog: string
+  ambient: number
+  hemisphereSky: string
+  hemisphereGround: string
+  hemisphereIntensity: number
+  sun: string
+  sunIntensity: number
+  sunPosition: [number, number, number]
+  fill: string
+  fillIntensity: number
+}
 
 type CampusPlace = {
   id: PlaceId
@@ -57,6 +78,55 @@ type CampusTextures = {
 }
 
 const CampusTextureContext = createContext<CampusTextures | null>(null)
+const CampusTimeContext = createContext<CampusTimeMode>('sunset')
+
+const timeOptions: Array<{ id: CampusTimeMode; label: string; symbol: string }> = [
+  { id: 'day', label: '낮', symbol: '☀' },
+  { id: 'sunset', label: '노을', symbol: '◐' },
+  { id: 'night', label: '밤', symbol: '☾' },
+]
+
+const timePresets: Record<CampusTimeMode, CampusTimePreset> = {
+  day: {
+    background: '#8ba9b8',
+    fog: '#7899aa',
+    ambient: 0.82,
+    hemisphereSky: '#edf5f5',
+    hemisphereGround: '#807361',
+    hemisphereIntensity: 0.96,
+    sun: '#fff0cd',
+    sunIntensity: 3.15,
+    sunPosition: [-8, 15, 8],
+    fill: '#b8d7e2',
+    fillIntensity: 0.95,
+  },
+  sunset: {
+    background: '#314b60',
+    fog: '#2a455b',
+    ambient: 0.56,
+    hemisphereSky: '#e5c5a2',
+    hemisphereGround: '#273440',
+    hemisphereIntensity: 0.74,
+    sun: '#ffc17d',
+    sunIntensity: 2.75,
+    sunPosition: [-11, 8, 10],
+    fill: '#789ab5',
+    fillIntensity: 0.72,
+  },
+  night: {
+    background: '#07182a',
+    fog: '#0b1d30',
+    ambient: 0.28,
+    hemisphereSky: '#67829e',
+    hemisphereGround: '#101a25',
+    hemisphereIntensity: 0.48,
+    sun: '#9ebddb',
+    sunIntensity: 1.35,
+    sunPosition: [9, 12, -8],
+    fill: '#4f7396',
+    fillIntensity: 0.58,
+  },
+}
 
 const places: CampusPlace[] = [
   {
@@ -158,6 +228,7 @@ export default function CampusModel() {
   const [selectedId, setSelectedId] = useState<PlaceId | null>(null)
   const [viewResetKey, setViewResetKey] = useState(0)
   const [zoomLevel, setZoomLevel] = useState(0)
+  const [timeMode, setTimeMode] = useState<CampusTimeMode>('sunset')
   const selectedPlace = selectedId ? placeById[selectedId] : null
 
   useEffect(() => {
@@ -226,6 +297,33 @@ export default function CampusModel() {
                 드래그 회전 · 우클릭 이동 · 휠 확대 · 공간 선택
               </span>
             </div>
+            <div
+              aria-label="3D 캠퍼스 시간대"
+              className="absolute left-4 top-[58px] z-10 flex overflow-hidden border border-white/15 bg-navy-900/45 p-1 backdrop-blur-md md:left-6 md:top-[72px]"
+              role="group"
+            >
+              {timeOptions.map((option) => {
+                const active = option.id === timeMode
+                return (
+                  <button
+                    aria-pressed={active}
+                    className={
+                      active
+                        ? 'flex items-center gap-1.5 bg-white/12 px-2.5 py-1.5 text-[9px] tracking-[0.1em] text-gold-300 shadow-inner md:px-3 md:text-[10px]'
+                        : 'flex items-center gap-1.5 px-2.5 py-1.5 text-[9px] tracking-[0.1em] text-white/55 transition-colors duration-500 hover:bg-white/5 hover:text-white md:px-3 md:text-[10px]'
+                    }
+                    key={option.id}
+                    onClick={() => setTimeMode(option.id)}
+                    type="button"
+                  >
+                    <span aria-hidden="true" className="text-[11px] text-gold-300/90">
+                      {option.symbol}
+                    </span>
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
             <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 md:right-6 md:top-6">
               <button
                 aria-label="3D 화면 축소"
@@ -269,7 +367,7 @@ export default function CampusModel() {
             </div>
 
             <Canvas
-              camera={{ far: 90, near: 0.1, position: [11, 10, 12], zoom: 52 }}
+              camera={{ far: 90, near: 0.1, position: [12, 8.2, 14], zoom: 52 }}
               dpr={[1, 1.25]}
               frameloop="demand"
               gl={{
@@ -288,11 +386,9 @@ export default function CampusModel() {
               orthographic
               shadows
             >
-              <color attach="background" args={['#102941']} />
-              <fog attach="fog" args={['#102941', 24, 42]} />
               <ContextLifecycle onStatusChange={setContextLost} />
               <Suspense fallback={null}>
-                <Scene selectedId={selectedId} onSelect={selectPlace} />
+                <Scene selectedId={selectedId} onSelect={selectPlace} timeMode={timeMode} />
               </Suspense>
               <CalmCamera
                 isTouring={isTouring}
@@ -490,9 +586,11 @@ function CalmCamera({
 function Scene({
   selectedId,
   onSelect,
+  timeMode,
 }: {
   selectedId: PlaceId | null
   onSelect: (id: PlaceId) => void
+  timeMode: CampusTimeMode
 }) {
   const [concrete, grass, metal, stone, wood] = useTexture([
     concreteTexture,
@@ -506,15 +604,163 @@ function Scene({
     [concrete, grass, metal, stone, wood],
   )
 
+  useEffect(() => {
+    const repeats: Array<[Texture, number, number]> = [
+      [concrete, 3.5, 3.5],
+      [grass, 8, 8],
+      [metal, 4, 4],
+      [stone, 5, 5],
+      [wood, 4, 4],
+    ]
+
+    repeats.forEach(([texture, x, y]) => {
+      texture.wrapS = RepeatWrapping
+      texture.wrapT = RepeatWrapping
+      texture.repeat.set(x, y)
+      texture.colorSpace = SRGBColorSpace
+      texture.anisotropy = 4
+      texture.needsUpdate = true
+    })
+  }, [concrete, grass, metal, stone, wood])
+
   return (
-    <CampusTextureContext.Provider value={textures}>
-      <ambientLight intensity={0.66} />
-      <hemisphereLight args={['#dfe8ed', '#172638', 0.8]} />
+    <CampusTimeContext.Provider value={timeMode}>
+      <CampusTextureContext.Provider value={textures}>
+        <Atmosphere timeMode={timeMode} />
+
+        <OceanStage />
+        <ContourGround />
+        <SiteCourtyards />
+        <GoldPath />
+        <WaterCourt />
+        <LandscapeDetails />
+        <TopographicGardens />
+
+        {places.map((place) => (
+          <CampusPlaceModel
+            key={place.id}
+            onSelect={onSelect}
+            place={place}
+            selectedId={selectedId}
+          />
+        ))}
+
+        {pinePositions.map(([x, y, z, scale, rotation], index) => (
+          <CoastalPine
+            key={String(x) + '-' + String(z)}
+            muted={Boolean(selectedId)}
+            position={[x, y, z]}
+            rotation={rotation}
+            scale={scale}
+            tone={index % 3}
+          />
+        ))}
+
+        <ContactShadows
+          color="#081726"
+          far={8}
+          frames={1}
+          opacity={timeMode === 'night' ? 0.34 : 0.52}
+          position={[0, 0.025, 0]}
+          resolution={512}
+          scale={25}
+        />
+      </CampusTextureContext.Provider>
+    </CampusTimeContext.Provider>
+  )
+}
+
+function Atmosphere({ timeMode }: { timeMode: CampusTimeMode }) {
+  const ambientRef = useRef<AmbientLight>(null)
+  const hemisphereRef = useRef<HemisphereLight>(null)
+  const sunRef = useRef<DirectionalLight>(null)
+  const fillRef = useRef<DirectionalLight>(null)
+  const backgroundRef = useRef<Color>(null)
+  const fogRef = useRef<Fog>(null)
+  const transitionUntil = useRef(0)
+  const { invalidate } = useThree()
+  const preset = timePresets[timeMode]
+  const targets = useMemo(
+    () => ({
+      background: new Color(preset.background),
+      fill: new Color(preset.fill),
+      fog: new Color(preset.fog),
+      ground: new Color(preset.hemisphereGround),
+      sky: new Color(preset.hemisphereSky),
+      sun: new Color(preset.sun),
+      sunPosition: new Vector3(...preset.sunPosition),
+    }),
+    [preset],
+  )
+
+  useEffect(() => {
+    transitionUntil.current = performance.now() + 1600
+    invalidate()
+  }, [invalidate, timeMode])
+
+  useFrame((_, delta) => {
+    const blend = 1 - Math.exp(-delta * 3.1)
+
+    if (backgroundRef.current) backgroundRef.current.lerp(targets.background, blend)
+    if (fogRef.current) fogRef.current.color.lerp(targets.fog, blend)
+    if (ambientRef.current) {
+      ambientRef.current.intensity = MathUtils.lerp(
+        ambientRef.current.intensity,
+        preset.ambient,
+        blend,
+      )
+    }
+    if (hemisphereRef.current) {
+      hemisphereRef.current.color.lerp(targets.sky, blend)
+      hemisphereRef.current.groundColor.lerp(targets.ground, blend)
+      hemisphereRef.current.intensity = MathUtils.lerp(
+        hemisphereRef.current.intensity,
+        preset.hemisphereIntensity,
+        blend,
+      )
+    }
+    if (sunRef.current) {
+      sunRef.current.color.lerp(targets.sun, blend)
+      sunRef.current.position.lerp(targets.sunPosition, blend)
+      sunRef.current.intensity = MathUtils.lerp(
+        sunRef.current.intensity,
+        preset.sunIntensity,
+        blend,
+      )
+    }
+    if (fillRef.current) {
+      fillRef.current.color.lerp(targets.fill, blend)
+      fillRef.current.intensity = MathUtils.lerp(
+        fillRef.current.intensity,
+        preset.fillIntensity,
+        blend,
+      )
+    }
+
+    if (performance.now() < transitionUntil.current) invalidate()
+  })
+
+  const nightGlow = timeMode === 'night' ? 2.1 : timeMode === 'sunset' ? 0.7 : 0
+
+  return (
+    <>
+      <color ref={backgroundRef} attach="background" args={['#314b60']} />
+      <fog ref={fogRef} attach="fog" args={['#2a455b', 24, 42]} />
+      <ambientLight ref={ambientRef} intensity={timePresets.sunset.ambient} />
+      <hemisphereLight
+        ref={hemisphereRef}
+        args={[
+          timePresets.sunset.hemisphereSky,
+          timePresets.sunset.hemisphereGround,
+          timePresets.sunset.hemisphereIntensity,
+        ]}
+      />
       <directionalLight
+        ref={sunRef}
         castShadow
-        color="#ffe8c0"
-        intensity={3.8}
-        position={[-8, 14, 9]}
+        color={timePresets.sunset.sun}
+        intensity={timePresets.sunset.sunIntensity}
+        position={timePresets.sunset.sunPosition}
         shadow-bias={-0.0004}
         shadow-camera-bottom={-11}
         shadow-camera-far={40}
@@ -523,47 +769,23 @@ function Scene({
         shadow-camera-top={11}
         shadow-mapSize={[1024, 1024]}
       />
-      <directionalLight color="#87a7c0" intensity={0.9} position={[10, 7, -9]} />
-
-      <OceanStage />
-      <ContourGround />
-      <GoldPath />
-      <TopographicGardens />
-
-      {places.map((place) => (
-        <CampusPlaceModel
-          key={place.id}
-          onSelect={onSelect}
-          place={place}
-          selectedId={selectedId}
-        />
-      ))}
-
-      {pinePositions.map(([x, y, z, scale, rotation], index) => (
-        <CoastalPine
-          key={String(x) + '-' + String(z)}
-          muted={Boolean(selectedId)}
-          position={[x, y, z]}
-          rotation={rotation}
-          scale={scale}
-          tone={index % 3}
-        />
-      ))}
-
-      <ContactShadows
-        color="#081726"
-        far={8}
-        frames={1}
-        opacity={0.52}
-        position={[0, 0.025, 0]}
-        resolution={512}
-        scale={25}
+      <directionalLight
+        ref={fillRef}
+        color={timePresets.sunset.fill}
+        intensity={timePresets.sunset.fillIntensity}
+        position={[10, 7, -9]}
       />
-    </CampusTextureContext.Provider>
+      <pointLight color="#eebf78" intensity={nightGlow} position={[-0.2, 2.4, -0.2]} />
+      <pointLight color="#f3c887" intensity={nightGlow * 0.75} position={[4, 2.2, -2]} />
+      <pointLight color="#d7b170" intensity={nightGlow * 0.55} position={[-3.9, 1.8, 2.4]} />
+    </>
   )
 }
 
 function OceanStage() {
+  const timeMode = useContext(CampusTimeContext)
+  const oceanColor = timeMode === 'night' ? '#071b2e' : timeMode === 'sunset' ? '#173a50' : '#2e6575'
+
   return (
     <group>
       <mesh position={[0, -0.8, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
@@ -571,7 +793,7 @@ function OceanStage() {
         <meshPhysicalMaterial
           clearcoat={0.8}
           clearcoatRoughness={0.3}
-          color="#102b43"
+          color={oceanColor}
           metalness={0.12}
           roughness={0.3}
         />
@@ -626,8 +848,46 @@ function ContourGround() {
         receiveShadow
         rotation={[0, 0.012, 0]}
       >
+        <GrassMaterial tone={0} />
+      </RoundedBox>
+    </group>
+  )
+}
+
+function SiteCourtyards() {
+  return (
+    <group>
+      <RoundedBox
+        args={[4.9, 0.055, 3.8]}
+        position={[4.05, 0.065, -2.32]}
+        radius={0.24}
+        receiveShadow
+        rotation={[0, -0.06, 0]}
+      >
         <StonePaverMaterial />
       </RoundedBox>
+      <RoundedBox
+        args={[5.05, 0.055, 3.7]}
+        position={[-0.2, 0.064, -0.18]}
+        radius={0.24}
+        receiveShadow
+        rotation={[0, 0.04, 0]}
+      >
+        <StonePaverMaterial />
+      </RoundedBox>
+      <RoundedBox
+        args={[4.55, 0.055, 2.85]}
+        position={[-0.35, 0.063, 3.35]}
+        radius={0.22}
+        receiveShadow
+        rotation={[0, -0.08, 0]}
+      >
+        <StonePaverMaterial />
+      </RoundedBox>
+      <mesh position={[-4.45, 0.066, 2.35]} receiveShadow>
+        <cylinderGeometry args={[2, 2.06, 0.055, 64]} />
+        <StonePaverMaterial />
+      </mesh>
     </group>
   )
 }
@@ -649,18 +909,158 @@ function GoldPath() {
       ]),
     [],
   )
+  const pavers = useMemo(
+    () =>
+      Array.from({ length: 38 }, (_, index) => {
+        const progress = index / 37
+        const point = curve.getPoint(progress)
+        const tangent = curve.getTangent(progress)
+        return {
+          position: [point.x, point.y + 0.015, point.z] as [number, number, number],
+          rotation: Math.atan2(tangent.x, tangent.z),
+        }
+      }),
+    [curve],
+  )
 
   return (
-    <mesh>
-      <tubeGeometry args={[curve, 128, 0.045, 10, false]} />
-      <meshStandardMaterial
-        color="#c7aa72"
-        emissive="#8c6a36"
-        emissiveIntensity={0.5}
-        metalness={0.42}
-        roughness={0.38}
-      />
-    </mesh>
+    <group>
+      {pavers.map(({ position, rotation }, index) => (
+        <mesh
+          key={index}
+          position={position}
+          receiveShadow
+          rotation={[0, rotation, 0]}
+        >
+          <boxGeometry args={[0.54, 0.045, 0.28]} />
+          <StonePaverMaterial />
+        </mesh>
+      ))}
+      <mesh>
+        <tubeGeometry args={[curve, 128, 0.026, 8, false]} />
+        <meshStandardMaterial
+          color="#c7aa72"
+          emissive="#8c6a36"
+          emissiveIntensity={0.5}
+          metalness={0.42}
+          roughness={0.38}
+        />
+      </mesh>
+      {[3, 9, 15, 21, 27, 33].map((index) => (
+        <PathLight key={index} position={pavers[index].position} />
+      ))}
+    </group>
+  )
+}
+
+function PathLight({ position }: { position: [number, number, number] }) {
+  const timeMode = useContext(CampusTimeContext)
+  const glow = timeMode === 'night' ? 3.4 : timeMode === 'sunset' ? 1.15 : 0.12
+
+  return (
+    <group position={[position[0] + 0.34, position[1], position[2] + 0.24]}>
+      <mesh castShadow position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.035, 0.055, 0.34, 12]} />
+        <meshStandardMaterial color="#263746" metalness={0.48} roughness={0.42} />
+      </mesh>
+      <mesh position={[0, 0.37, 0]}>
+        <sphereGeometry args={[0.07, 16, 12]} />
+        <meshStandardMaterial
+          color="#f6e2b2"
+          emissive="#ffd889"
+          emissiveIntensity={glow}
+          roughness={0.22}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function WaterCourt() {
+  const timeMode = useContext(CampusTimeContext)
+  const waterColor = timeMode === 'night' ? '#15354d' : timeMode === 'sunset' ? '#416b78' : '#74a7b0'
+
+  return (
+    <group position={[2.35, 0.09, 0.55]} rotation={[0, -0.08, 0]}>
+      <RoundedBox args={[2.45, 0.13, 0.92]} castShadow radius={0.08} receiveShadow>
+        <meshStandardMaterial color="#d9cdb9" roughness={0.82} />
+      </RoundedBox>
+      <mesh position={[0, 0.075, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.17, 0.67]} />
+        <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.08}
+          color={waterColor}
+          metalness={0.18}
+          opacity={0.92}
+          roughness={0.12}
+          transparent
+        />
+      </mesh>
+      {[-0.21, 0, 0.21].map((z) => (
+        <mesh key={z} position={[0, 0.081, z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[1.7, 0.007]} />
+          <meshBasicMaterial color="#d7edf1" opacity={0.42} transparent />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function LandscapeDetails() {
+  const timeMode = useContext(CampusTimeContext)
+  const shrubPositions: Array<[number, number, number, number]> = [
+    [-5.35, 0.08, -2.75, 0.8],
+    [-4.55, 0.08, -3.05, 0.58],
+    [-2.65, 0.08, -3.65, 0.72],
+    [-1.7, 0.08, -3.35, 0.52],
+    [0.35, 0.08, -3.65, 0.66],
+    [1.15, 0.08, -3.35, 0.48],
+    [5.65, 0.08, -0.35, 0.64],
+    [5.72, 0.08, 1.05, 0.52],
+    [3.1, 0.08, 1.55, 0.48],
+    [2.78, 0.08, 2.1, 0.62],
+    [-5.72, 0.08, 0.35, 0.62],
+    [-5.55, 0.08, 1.02, 0.5],
+    [-2.82, 0.08, 4.35, 0.64],
+    [1.55, 0.08, 4.72, 0.58],
+  ]
+  const foliage = timeMode === 'night' ? '#456253' : timeMode === 'sunset' ? '#71866d' : '#789775'
+
+  return (
+    <group>
+      {shrubPositions.map(([x, y, z, scale], index) => (
+        <group key={String(x) + '-' + String(z)} position={[x, y, z]} scale={scale}>
+          <mesh castShadow position={[-0.18, 0.16, 0.05]}>
+            <dodecahedronGeometry args={[0.3, 1]} />
+            <meshStandardMaterial color={foliage} roughness={0.96} />
+          </mesh>
+          <mesh castShadow position={[0.17, 0.13, -0.04]}>
+            <dodecahedronGeometry args={[0.25 + (index % 3) * 0.025, 1]} />
+            <meshStandardMaterial color={index % 2 ? '#8f9f78' : foliage} roughness={0.96} />
+          </mesh>
+        </group>
+      ))}
+      <group position={[5.82, 0.1, -3.55]} rotation={[0, -0.55, 0]}>
+        <RoundedBox args={[1.7, 0.12, 0.82]} castShadow radius={0.08} receiveShadow>
+          <LimestoneMaterial muted={false} tone="warm" />
+        </RoundedBox>
+        <mesh castShadow position={[0.48, 0.72, 0]}>
+          <boxGeometry args={[0.08, 1.25, 0.54]} />
+          <RoofMaterial muted={false} />
+        </mesh>
+        <mesh position={[0.43, 0.75, 0]}>
+          <boxGeometry args={[0.012, 0.54, 0.34]} />
+          <meshStandardMaterial
+            color="#d7bc7d"
+            emissive="#c89c4f"
+            emissiveIntensity={timeMode === 'night' ? 1.4 : 0.35}
+            metalness={0.42}
+            roughness={0.36}
+          />
+        </mesh>
+      </group>
+    </group>
   )
 }
 
@@ -844,6 +1244,12 @@ function SuiteWing({
         <boxGeometry args={[width * 0.72, height * 0.55, 0.04]} />
         <WarmGlassMaterial muted={muted} />
       </mesh>
+      <WindowMullions
+        height={height * 0.55}
+        muted={muted}
+        position={[0.05, height * 0.55, depth / 2 + 0.052]}
+        width={width * 0.72}
+      />
       <mesh castShadow position={[0.12, height + 0.17, -0.03]}>
         <boxGeometry args={[width + 0.25, 0.13, depth + 0.25]} />
         <RoofMaterial muted={muted} />
@@ -914,6 +1320,12 @@ function BuildingBlock({
         <boxGeometry args={[width * 0.68, height * 0.5, 0.04]} />
         <WarmGlassMaterial muted={muted} />
       </mesh>
+      <WindowMullions
+        height={height * 0.5}
+        muted={muted}
+        position={[0, height * 0.55, depth / 2 + 0.052]}
+        width={width * 0.68}
+      />
     </group>
   )
 }
@@ -976,6 +1388,12 @@ function ProgramStudio({ muted }: { muted: boolean }) {
         <boxGeometry args={[3.15, 0.92, 0.045]} />
         <WarmGlassMaterial muted={muted} />
       </mesh>
+      <WindowMullions
+        height={0.92}
+        muted={muted}
+        position={[0.15, 0.8, 1.04]}
+        width={3.15}
+      />
       <SlattedScreen
         count={13}
         height={1.02}
@@ -1092,12 +1510,12 @@ function CoastalPine({
 
   return (
     <group position={position} rotation={[0, rotation, 0]} scale={scale}>
-      <mesh castShadow position={[0, 0.75, 0]} rotation={[0, 0, -0.05]}>
-        <cylinderGeometry args={[0.06, 0.12, 1.5, 10]} />
+      <mesh castShadow position={[0, 0.72, 0]} rotation={[0, 0, -0.075]}>
+        <cylinderGeometry args={[0.055, 0.11, 1.44, 12]} />
         <meshStandardMaterial color={muted ? '#605d56' : '#776b5b'} roughness={0.95} />
       </mesh>
-      <mesh castShadow position={[0.12, 1.52, 0]} rotation={[0.06, 0, -0.08]}>
-        <coneGeometry args={[0.58, 0.9, 8]} />
+      <mesh castShadow position={[0.1, 1.54, 0]} scale={[0.78, 1.08, 0.7]}>
+        <dodecahedronGeometry args={[0.58, 1]} />
         <meshStandardMaterial
           color={muted ? mutedFoliage : foliage}
           opacity={muted ? 0.62 : 0.88}
@@ -1105,8 +1523,8 @@ function CoastalPine({
           transparent
         />
       </mesh>
-      <mesh castShadow position={[-0.32, 1.32, 0.04]} rotation={[0.08, 0.18, Math.PI / 2.8]}>
-        <coneGeometry args={[0.38, 0.82, 8]} />
+      <mesh castShadow position={[-0.38, 1.3, 0.06]} scale={[0.92, 0.62, 0.68]}>
+        <dodecahedronGeometry args={[0.48, 1]} />
         <meshStandardMaterial
           color={muted ? mutedFoliage : foliage}
           opacity={muted ? 0.58 : 0.82}
@@ -1114,13 +1532,59 @@ function CoastalPine({
           transparent
         />
       </mesh>
-      <mesh castShadow position={[0.46, 1.18, -0.05]} rotation={[-0.12, -0.2, -Math.PI / 2.7]}>
-        <coneGeometry args={[0.34, 0.75, 8]} />
+      <mesh castShadow position={[0.49, 1.18, -0.08]} scale={[0.96, 0.58, 0.7]}>
+        <dodecahedronGeometry args={[0.44, 1]} />
         <meshStandardMaterial
           color={muted ? mutedFoliage : foliage}
           opacity={muted ? 0.56 : 0.8}
           roughness={0.94}
           transparent
+        />
+      </mesh>
+      <mesh castShadow position={[0.25, 1.82, -0.08]} scale={[0.58, 0.72, 0.55]}>
+        <dodecahedronGeometry args={[0.4, 1]} />
+        <meshStandardMaterial
+          color={muted ? mutedFoliage : tone === 1 ? '#83977d' : '#718b75'}
+          opacity={muted ? 0.58 : 0.84}
+          roughness={0.95}
+          transparent
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function WindowMullions({
+  height,
+  muted,
+  position,
+  width,
+}: {
+  height: number
+  muted: boolean
+  position: [number, number, number]
+  width: number
+}) {
+  const divisions = Math.max(2, Math.round(width / 0.48))
+
+  return (
+    <group position={position}>
+      {Array.from({ length: divisions - 1 }, (_, index) => (
+        <mesh key={index} position={[-width / 2 + ((index + 1) * width) / divisions, 0, 0]}>
+          <boxGeometry args={[0.026, height, 0.022]} />
+          <meshStandardMaterial
+            color={muted ? '#3c464c' : '#24343e'}
+            metalness={0.55}
+            roughness={0.38}
+          />
+        </mesh>
+      ))}
+      <mesh>
+        <boxGeometry args={[width, 0.025, 0.022]} />
+        <meshStandardMaterial
+          color={muted ? '#3c464c' : '#24343e'}
+          metalness={0.55}
+          roughness={0.38}
         />
       </mesh>
     </group>
@@ -1153,21 +1617,22 @@ function WoodMaterial({ muted }: { muted: boolean }) {
 
 function RoofMaterial({ muted }: { muted: boolean }) {
   const { metal } = useCampusTextures()
+  const timeMode = useContext(CampusTimeContext)
   return (
     <meshStandardMaterial
-      color={muted ? '#aeb5b8' : '#d1dee5'}
+      color={muted ? '#879092' : timeMode === 'day' ? '#7c8a8b' : '#aeb9bb'}
       emissive={muted ? '#26333b' : '#17364f'}
-      emissiveIntensity={muted ? 0.06 : 0.18}
+      emissiveIntensity={muted ? 0.04 : timeMode === 'night' ? 0.16 : 0.06}
       map={metal}
-      metalness={0.32}
-      roughness={0.44}
+      metalness={0.46}
+      roughness={0.38}
     />
   )
 }
 
 function StonePaverMaterial() {
   const { stone } = useCampusTextures()
-  return <meshStandardMaterial color="#f1eadf" map={stone} roughness={0.9} />
+  return <meshStandardMaterial color="#d8d0c2" map={stone} roughness={0.92} />
 }
 
 function GrassMaterial({ tone }: { tone: number }) {
@@ -1177,14 +1642,19 @@ function GrassMaterial({ tone }: { tone: number }) {
 }
 
 function WarmGlassMaterial({ muted }: { muted: boolean }) {
+  const timeMode = useContext(CampusTimeContext)
+  const glow = timeMode === 'night' ? 1.75 : timeMode === 'sunset' ? 0.92 : 0.2
+
   return (
-    <meshStandardMaterial
-      color={muted ? '#334b5a' : '#274c5b'}
-      emissive={muted ? '#24313a' : '#c28b45'}
-      emissiveIntensity={muted ? 0.08 : 0.72}
-      metalness={0.1}
-      opacity={muted ? 0.72 : 0.94}
-      roughness={0.2}
+    <meshPhysicalMaterial
+      clearcoat={0.82}
+      clearcoatRoughness={0.16}
+      color={muted ? '#334b5a' : timeMode === 'day' ? '#4f7079' : '#274c5b'}
+      emissive={muted ? '#24313a' : '#d89d52'}
+      emissiveIntensity={muted ? glow * 0.16 : glow}
+      metalness={0.16}
+      opacity={muted ? 0.72 : 0.9}
+      roughness={0.14}
       transparent
     />
   )
