@@ -33,6 +33,7 @@ import {
 } from 'react'
 import {
   ACESFilmicToneMapping,
+  CatmullRomCurve3,
   Matrix4,
   PerspectiveCamera,
   SRGBColorSpace,
@@ -811,7 +812,7 @@ function Scene({
         {bollardPositions.map(([x, z]) => (
           <Bollard key={`${x}-${z}`} x={x} z={z} />
         ))}
-        <Peacock rotation={3.9} x={2.7} z={1.35} />
+        <Peacock animate={animate} />
         <Compass />
       </ModelStage>
 
@@ -1522,18 +1523,67 @@ const PEACOCK_BODY = { color: '#12586b', metalness: 0.28, roughness: 0.42 } as c
 const PEACOCK_NECK = { color: '#1a7f96', metalness: 0.32, roughness: 0.36 } as const
 const FEATHER_COUNT = 13
 
-function Peacock({ rotation, x, z }: { rotation: number; x: number; z: number }) {
+/* 공작이 도는 길. 웰니스 하우스와 프로그램 스튜디오 사이, 볼라드가 늘어선
+   좁은 마당을 한 바퀴 돈다. 건물 실루엣을 가리지 않으면서도 등이 늘 조명
+   근처에 걸리는 자리다. */
+const PEACOCK_PATH = new CatmullRomCurve3(
+  [
+    [3.15, 0, 1.15],
+    [2.3, 0, 1.95],
+    [0.9, 0, 2.05],
+    [-0.8, 0, 1.9],
+    [-1.95, 0, 1.5],
+    [-0.4, 0, 1.12],
+    [1.6, 0, 1.02],
+  ].map(([x, y, z]) => new Vector3(x, y, z)),
+  true,
+  'catmullrom',
+  0.5,
+)
+const PEACOCK_PATH_LENGTH = PEACOCK_PATH.getLength()
+const PEACOCK_SPEED = 0.34
+
+function Peacock({ animate }: { animate: boolean }) {
   const { lamps } = useStage()
+  const groupRef = useRef<Group>(null)
+  const bodyRef = useRef<Group>(null)
   const fanRef = useRef<Group>(null)
   const headRef = useRef<Group>(null)
+  const legsRef = useRef<Group>(null)
+  const travelled = useRef(0)
   const [hovered, setHovered] = useState(false)
 
-  useFrame(({ clock }) => {
-    const t = clock.elapsedTime
-    /* 깃털을 아주 조금 흔들고 고개를 천천히 돌린다. 완전히 멈춰 있으면
-       모형의 장식이 아니라 오류처럼 보인다. */
-    if (fanRef.current) fanRef.current.rotation.y = Math.sin(t * 0.32) * 0.14
-    if (headRef.current) headRef.current.rotation.y = Math.sin(t * 0.21 + 1.2) * 0.42
+  useFrame((_, delta) => {
+    const t = travelled.current
+    /* 일정한 속도로 미끄러지면 로봇처럼 보인다. 걸음에 느려지는 구간을 섞어
+       두어야 '거니는' 것으로 읽힌다. 쳐다보는 동안에는 멈춘다. */
+    if (animate && !hovered) {
+      const stride = 0.42 + 0.58 * (0.5 + 0.5 * Math.sin(t * 0.85))
+      travelled.current += delta * PEACOCK_SPEED * stride
+    }
+
+    const progress = (travelled.current / PEACOCK_PATH_LENGTH) % 1
+    const point = PEACOCK_PATH.getPointAt(progress)
+    const tangent = PEACOCK_PATH.getTangentAt(progress)
+
+    const group = groupRef.current
+    if (group) {
+      group.position.set(point.x, 0, point.z)
+      /* 몸은 진행 방향을 본다. 꽁지는 자연히 뒤로 끌리므로, 카메라를 등지고
+         걸을 때 부채가 펼쳐져 보이고 돌아올 때는 앞모습이 보인다. */
+      group.rotation.y = Math.atan2(tangent.x, tangent.z)
+    }
+    /* 걸음마다 몸이 살짝 오르내리고 좌우로 기운다. */
+    if (bodyRef.current) {
+      bodyRef.current.position.y = Math.abs(Math.sin(t * 5.2)) * 0.035
+      bodyRef.current.rotation.z = Math.sin(t * 5.2) * 0.05
+    }
+    if (legsRef.current) legsRef.current.rotation.x = Math.sin(t * 5.2) * 0.34
+    if (fanRef.current) fanRef.current.rotation.y = Math.sin(t * 1.6) * 0.12
+    if (headRef.current) {
+      headRef.current.rotation.y = Math.sin(t * 1.1 + 1.2) * 0.42
+      headRef.current.rotation.x = Math.sin(t * 5.2 + 0.6) * 0.09
+    }
   })
 
   return (
@@ -1543,85 +1593,93 @@ function Peacock({ rotation, x, z }: { rotation: number; x: number; z: number })
         event.stopPropagation()
         setHovered(true)
       }}
-      position={[x, 0, z]}
-      rotation={[0, rotation, 0]}
+      ref={groupRef}
       scale={0.86}
     >
-      {/* 다리 */}
-      {[-0.09, 0.09].map((offset) => (
-        <mesh castShadow key={offset} position={[offset, 0.16, 0.02]}>
-          <cylinderGeometry args={[0.014, 0.014, 0.32, 6]} />
-          <meshStandardMaterial {...BRASS} />
-        </mesh>
-      ))}
-
-      {/* 몸통 */}
-      <mesh castShadow position={[0, 0.42, 0]} scale={[1, 0.86, 1.35]}>
-        <sphereGeometry args={[0.26, 20, 16]} />
-        <meshStandardMaterial {...PEACOCK_BODY} />
-      </mesh>
-
-      {/* 목 — 앞으로 기울여 세운다 */}
-      <mesh castShadow position={[0, 0.72, 0.16]} rotation={[0.24, 0, 0]}>
-        <cylinderGeometry args={[0.06, 0.11, 0.44, 10]} />
-        <meshStandardMaterial {...PEACOCK_NECK} />
-      </mesh>
-
-      <group position={[0, 0.96, 0.24]} ref={headRef}>
-        <mesh castShadow>
-          <sphereGeometry args={[0.095, 16, 12]} />
-          <meshStandardMaterial {...PEACOCK_NECK} />
-        </mesh>
-        <mesh castShadow position={[0, -0.01, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
-          <coneGeometry args={[0.035, 0.11, 8]} />
-          <meshStandardMaterial {...BRASS} />
-        </mesh>
-        {/* 머리깃 세 가닥 */}
-        {[-0.05, 0, 0.05].map((offset) => (
-          <group key={offset} position={[offset, 0.09, 0.01]} rotation={[0, 0, offset * 4]}>
-            <mesh>
-              <cylinderGeometry args={[0.005, 0.005, 0.13, 4]} />
+      <group ref={bodyRef}>
+        {/* 다리 */}
+        <group position={[0, 0.32, 0.02]} ref={legsRef}>
+          {[-0.09, 0.09].map((offset, index) => (
+            <mesh
+              castShadow
+              key={offset}
+              position={[offset, -0.16, 0]}
+              rotation={[index === 0 ? 0.26 : -0.26, 0, 0]}
+            >
+              <cylinderGeometry args={[0.014, 0.014, 0.32, 6]} />
               <meshStandardMaterial {...BRASS} />
             </mesh>
-            <mesh position={[0, 0.08, 0]}>
-              <sphereGeometry args={[0.025, 8, 6]} />
-              <meshStandardMaterial
-                color="#e8d3a4"
-                emissive="#c1a36c"
-                emissiveIntensity={lamps ? 1.6 : 0.3}
-                toneMapped={false}
-              />
-            </mesh>
-          </group>
-        ))}
-      </group>
+          ))}
+        </group>
 
-      {/* 펼친 꽁지. 부채는 뒤로 조금 눕혀 세운다. */}
-      <group position={[0, 0.34, -0.2]} ref={fanRef} rotation={[-0.34, 0, 0]}>
-        {Array.from({ length: FEATHER_COUNT }, (_, index) => {
-          const spread = (index / (FEATHER_COUNT - 1) - 0.5) * 2
-          const angle = spread * 1.15
-          const length = 1.02 - Math.abs(spread) * 0.24
-          return (
-            <group key={index} rotation={[0, 0, angle]}>
-              <mesh position={[0, length / 2, 0]}>
-                <cylinderGeometry args={[0.012, 0.03, length, 5]} />
-                <meshStandardMaterial {...PEACOCK_NECK} />
+        {/* 몸통 */}
+        <mesh castShadow position={[0, 0.42, 0]} scale={[1, 0.86, 1.35]}>
+          <sphereGeometry args={[0.26, 20, 16]} />
+          <meshStandardMaterial {...PEACOCK_BODY} />
+        </mesh>
+
+        {/* 목 — 앞으로 기울여 세운다 */}
+        <mesh castShadow position={[0, 0.72, 0.16]} rotation={[0.24, 0, 0]}>
+          <cylinderGeometry args={[0.06, 0.11, 0.44, 10]} />
+          <meshStandardMaterial {...PEACOCK_NECK} />
+        </mesh>
+
+        <group position={[0, 0.96, 0.24]} ref={headRef}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.095, 16, 12]} />
+            <meshStandardMaterial {...PEACOCK_NECK} />
+          </mesh>
+          <mesh castShadow position={[0, -0.01, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.035, 0.11, 8]} />
+            <meshStandardMaterial {...BRASS} />
+          </mesh>
+          {/* 머리깃 세 가닥 */}
+          {[-0.05, 0, 0.05].map((offset) => (
+            <group key={offset} position={[offset, 0.09, 0.01]} rotation={[0, 0, offset * 4]}>
+              <mesh>
+                <cylinderGeometry args={[0.005, 0.005, 0.13, 4]} />
+                <meshStandardMaterial {...BRASS} />
               </mesh>
-              {/* 깃 끝의 눈 무늬. 저녁에는 아주 약하게 빛나 블룸이 받는다. */}
-              <mesh position={[0, length, 0]} scale={[1, 1.25, 0.4]}>
-                <sphereGeometry args={[0.062, 12, 10]} />
+              <mesh position={[0, 0.08, 0]}>
+                <sphereGeometry args={[0.025, 8, 6]} />
                 <meshStandardMaterial
-                  color="#1d6f83"
+                  color="#e8d3a4"
                   emissive="#c1a36c"
-                  emissiveIntensity={lamps ? 1.15 : 0.22}
-                  metalness={0.4}
-                  roughness={0.3}
+                  emissiveIntensity={lamps ? 1.6 : 0.3}
+                  toneMapped={false}
                 />
               </mesh>
             </group>
-          )
-        })}
+          ))}
+        </group>
+
+        {/* 펼친 꽁지. 부채는 뒤로 조금 눕혀 세운다. */}
+        <group position={[0, 0.34, -0.2]} ref={fanRef} rotation={[-0.34, 0, 0]}>
+          {Array.from({ length: FEATHER_COUNT }, (_, index) => {
+            const spread = (index / (FEATHER_COUNT - 1) - 0.5) * 2
+            const angle = spread * 1.15
+            const length = 1.02 - Math.abs(spread) * 0.24
+            return (
+              <group key={index} rotation={[0, 0, angle]}>
+                <mesh position={[0, length / 2, 0]}>
+                  <cylinderGeometry args={[0.012, 0.03, length, 5]} />
+                  <meshStandardMaterial {...PEACOCK_NECK} />
+                </mesh>
+                {/* 깃 끝의 눈 무늬. 저녁에는 아주 약하게 빛나 블룸이 받는다. */}
+                <mesh position={[0, length, 0]} scale={[1, 1.25, 0.4]}>
+                  <sphereGeometry args={[0.062, 12, 10]} />
+                  <meshStandardMaterial
+                    color="#1d6f83"
+                    emissive="#c1a36c"
+                    emissiveIntensity={lamps ? 1.15 : 0.22}
+                    metalness={0.4}
+                    roughness={0.3}
+                  />
+                </mesh>
+              </group>
+            )
+          })}
+        </group>
       </group>
 
       {hovered && (
