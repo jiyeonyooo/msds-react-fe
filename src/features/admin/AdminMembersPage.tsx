@@ -216,7 +216,6 @@ function AdminMemberDetailPage({ userId }: { userId: string }) {
   return <section>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/members">← 회원 목록</Link>
-      <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">GET /api/admin/users/{member.user_id}</code>
     </div>
     <AdminPageHeading description="회원 기본 정보와 예약·문의 활동 이력을 조회합니다." title="회원 상세" />
     {message && <p className="mb-4 rounded-sm border border-error-border bg-[#fffaf8] px-4 py-3 text-sm text-error" role="alert">{message}</p>}
