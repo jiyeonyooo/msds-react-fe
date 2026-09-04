@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="turf">
+      <feTurbulence type="fractalNoise" baseFrequency=".34" numOctaves="4" seed="13" result="n"/>
+      <feColorMatrix in="n" values=".55 0 0 0 .08  0 .72 0 0 .18  0 0 .45 0 .06  0 0 0 1 0"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" fill="#55744e"/>
+  <rect width="256" height="256" filter="url(#turf)" opacity=".7"/>
+  <g stroke="#9aab79" stroke-width="1" opacity=".2">
+    <path d="m16 42 4-9m22 101 3-11m43-65 5-10m32 120 3-9m41-98 4-12m38 132 5-11m25-88 3-10"/>
+  </g>
+</svg>
