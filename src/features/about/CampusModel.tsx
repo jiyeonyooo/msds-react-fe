@@ -1,4 +1,13 @@
-import { ContactShadows, Html, OrbitControls, RoundedBox, useTexture } from '@react-three/drei'
+import {
+  Clone,
+  ContactShadows,
+  Html,
+  OrbitControls,
+  RoundedBox,
+  useAnimations,
+  useGLTF,
+  useTexture,
+} from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   ACESFilmicToneMapping,
@@ -38,7 +47,7 @@ import meditationCourtyard from '../../assets/home/meditation-courtyard.png'
 import oceanSuite from '../../assets/home/ocean-suite.png'
 import coast from '../../assets/msds-coast.png'
 
-type PlaceId = 'stay' | 'wellness' | 'meditation' | 'studio' | 'ocean'
+type PlaceId = 'stay' | 'wellness' | 'meditation' | 'studio' | 'ocean' | 'pond'
 type CampusTimeMode = 'day' | 'sunset' | 'night'
 
 type CampusTimePreset = {
@@ -194,6 +203,19 @@ const places: CampusPlace[] = [
     focus: [3.55, 0.32, 2.6],
     radius: 1.8,
   },
+  {
+    id: 'pond',
+    index: '06',
+    label: 'POND GARDEN',
+    name: '생태 연못 정원',
+    description: '연꽃과 작은 생명이 머무는 물의 정원',
+    detail: '연꽃 사이의 물고기와 작은 수중 생물, 물가의 개구리를 확대해 살펴보세요.',
+    image: meditationCourtyard,
+    position: [2.0, 0.06, 4.65],
+    labelPosition: [0, 1.72, 0],
+    focus: [2.0, 0.22, 4.65],
+    radius: 1.85,
+  },
 ]
 
 const placeById = Object.fromEntries(places.map((place) => [place.id, place])) as Record<
@@ -203,8 +225,8 @@ const placeById = Object.fromEntries(places.map((place) => [place.id, place])) a
 
 const pinePositions: Array<[number, number, number, number, number]> = [
   [-6.7, 0, -4.25, 0.86, -0.3],
-  [-5.55, 0, -4.65, 0.72, 0.18],
-  [-4.15, 0, -4.5, 0.92, -0.12],
+  [-6.72, 0, -2.75, 0.72, 0.18],
+  [-3.35, 0, -4.85, 0.82, -0.12],
   [-2.8, 0, -4.72, 0.7, 0.2],
   [1.35, 0, -4.7, 0.8, -0.22],
   [2.85, 0, -4.55, 0.68, 0.14],
@@ -270,7 +292,7 @@ export default function CampusModel() {
 
   const changeZoom = (direction: -1 | 1) => {
     setIsTouring(false)
-    setZoomLevel((current) => Math.max(-2, Math.min(3, current + direction)))
+    setZoomLevel((current) => Math.max(-2, Math.min(7, current + direction)))
   }
 
   return (
@@ -439,7 +461,7 @@ export default function CampusModel() {
 
           <nav
             aria-label="MSDS 3D 공간 선택"
-            className="grid grid-cols-2 border-t border-white/10 md:grid-cols-5"
+            className="grid grid-cols-2 border-t border-white/10 md:grid-cols-6"
           >
             {places.map((place) => {
               const isSelected = selectedId === place.id
@@ -537,7 +559,10 @@ function CalmCamera({
     }
 
     const target = selectedPlace ? new Vector3(...selectedPlace.focus) : new Vector3(0, 0.34, 0)
-    const focusZoom = selectedPlace ? baseZoom * (compact ? 1.06 : 1.16) : baseZoom
+    const focusZoom = selectedPlace
+      ? baseZoom *
+        (selectedPlace.id === 'pond' ? (compact ? 1.14 : 1.28) : compact ? 1.06 : 1.16)
+      : baseZoom
     const targetZoom = focusZoom * Math.pow(1.18, zoomLevel)
     const initialTarget = controls.target.clone()
     const initialZoom = camera.zoom
@@ -571,7 +596,7 @@ function CalmCamera({
       enablePan
       enableZoom
       maxPolarAngle={Math.PI / 2.3}
-      maxZoom={82}
+      maxZoom={190}
       minPolarAngle={Math.PI / 7}
       minZoom={22}
       onStart={onInteractionStart}
@@ -633,8 +658,11 @@ function Scene({
         <SiteCourtyards />
         <GoldPath />
         <WaterCourt />
+        <FormalGarden />
         <LandscapeDetails />
         <TopographicGardens />
+        <WildlifeClock />
+        <WildlifeScene />
 
         {places.map((place) => (
           <CampusPlaceModel
@@ -788,7 +816,7 @@ function OceanStage() {
 
   return (
     <group>
-      <mesh position={[0, -0.8, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, -2.22, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[54, 44, 1, 1]} />
         <meshPhysicalMaterial
           clearcoat={0.8}
@@ -801,7 +829,7 @@ function OceanStage() {
       {[9.5, 12.5, 15.5].map((radius, index) => (
         <mesh
           key={radius}
-          position={[3.5, -0.775 + index * 0.002, 0]}
+          position={[3.5, -2.195 + index * 0.002, 0]}
           rotation={[-Math.PI / 2, 0, 0]}
         >
           <ringGeometry args={[radius, radius + 0.015, 128]} />
@@ -815,36 +843,18 @@ function OceanStage() {
 function ContourGround() {
   return (
     <group>
-      <RoundedBox
-        args={[18.2, 0.24, 14.8]}
-        position={[-0.15, -0.56, 0.05]}
-        radius={0.9}
-        receiveShadow
-        rotation={[0, 0.035, 0]}
-      >
-        <meshStandardMaterial color="#5d554a" roughness={0.92} />
-      </RoundedBox>
-      <RoundedBox
-        args={[17.85, 0.22, 14.35]}
-        position={[-0.28, -0.38, -0.04]}
-        radius={0.82}
-        receiveShadow
-        rotation={[0, -0.018, 0]}
-      >
-        <meshStandardMaterial color="#b7aa94" roughness={0.9} />
-      </RoundedBox>
-      <RoundedBox
-        args={[17.35, 0.28, 13.9]}
-        position={[-0.18, -0.16, 0]}
-        radius={0.72}
-        receiveShadow
-      >
-        <meshStandardMaterial color="#e6ddce" roughness={0.86} />
-      </RoundedBox>
+      <mesh castShadow position={[-0.15, -1.08, 0]} receiveShadow scale={[1.05, 1, 0.82]}>
+        <cylinderGeometry args={[8.25, 9.2, 2.12, 48, 3]} />
+        <CliffMaterial />
+      </mesh>
+      <mesh position={[-0.15, -0.025, 0]} receiveShadow scale={[1.045, 1, 0.825]}>
+        <cylinderGeometry args={[8.22, 8.22, 0.08, 48]} />
+        <meshStandardMaterial color="#5f704e" roughness={0.98} />
+      </mesh>
       <RoundedBox
         args={[15.7, 0.055, 12.35]}
-        position={[-0.35, 0.01, -0.06]}
-        radius={0.6}
+        position={[-0.35, 0.025, -0.06]}
+        radius={0.48}
         receiveShadow
         rotation={[0, 0.012, 0]}
       >
@@ -1007,11 +1017,579 @@ function WaterCourt() {
   )
 }
 
+function PondGarden({ muted }: { muted: boolean }) {
+  const timeMode = useContext(CampusTimeContext)
+  const waterColor = muted
+    ? '#344a52'
+    : timeMode === 'night'
+      ? '#123951'
+      : timeMode === 'sunset'
+        ? '#3f7884'
+        : '#4f929b'
+  const lotusPositions: Array<[number, number, number, number]> = [
+    [-0.92, 0.775, -0.28, 0.82],
+    [-0.54, 0.775, 0.34, 0.68],
+    [0.18, 0.775, -0.43, 0.76],
+    [0.72, 0.775, 0.24, 0.86],
+    [1.02, 0.775, -0.18, 0.62],
+    [-0.05, 0.775, 0.42, 0.56],
+    [0.48, 0.775, -0.04, 0.48],
+  ]
+
+  return (
+    <group>
+      <mesh castShadow position={[0, 0.38, 0]} receiveShadow scale={[1, 1, 0.64]}>
+        <cylinderGeometry args={[1.68, 1.84, 0.7, 64]} />
+        <meshStandardMaterial color="#625c50" roughness={0.98} />
+      </mesh>
+      <mesh
+        position={[0, 0.742, 0]}
+        receiveShadow
+        rotation={[-Math.PI / 2, 0, 0]}
+        scale={[1, 0.64, 1]}
+      >
+        <circleGeometry args={[1.53, 64]} />
+        <meshPhysicalMaterial
+          clearcoat={1}
+          clearcoatRoughness={0.04}
+          color={waterColor}
+          metalness={0.12}
+          reflectivity={0.82}
+          roughness={0.1}
+        />
+      </mesh>
+      <mesh position={[0, 0.748, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.64, 1]}>
+        <ringGeometry args={[0.92, 1.38, 64]} />
+        <meshBasicMaterial color="#c9e5df" opacity={muted ? 0.08 : 0.2} transparent />
+      </mesh>
+
+      {Array.from({ length: 22 }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / 22
+        const irregularity = index % 3 === 0 ? 0.08 : index % 2 === 0 ? -0.03 : 0.03
+        return (
+          <mesh
+            castShadow
+            key={index}
+            position={[
+              Math.cos(angle) * (1.64 + irregularity),
+              0.78 + (index % 4) * 0.008,
+              Math.sin(angle) * (1.04 + irregularity * 0.5),
+            ]}
+            rotation={[0, -angle, index % 2 ? 0.08 : -0.06]}
+            scale={[0.85 + (index % 3) * 0.09, 0.52 + (index % 2) * 0.08, 0.72]}
+          >
+            <dodecahedronGeometry args={[0.2, 1]} />
+            <meshStandardMaterial
+              color={index % 3 === 0 ? '#aa9d83' : index % 2 ? '#928a78' : '#b9ad94'}
+              roughness={0.98}
+            />
+          </mesh>
+        )
+      })}
+
+      {[0.5, 0.87, 1.18].map((radius, index) => (
+        <mesh
+          key={radius}
+          position={[0.12 - index * 0.08, 0.755 + index * 0.002, -0.05 + index * 0.06]}
+          rotation={[-Math.PI / 2, 0, index * 0.24]}
+          scale={[1, 0.56, 1]}
+        >
+          <ringGeometry args={[radius, radius + 0.014, 64]} />
+          <meshBasicMaterial color="#d8ece8" opacity={0.3 - index * 0.055} transparent />
+        </mesh>
+      ))}
+
+      {lotusPositions.map(([x, y, z, scale], index) => (
+        <LotusPlant key={index} position={[x, y, z]} scale={scale} />
+      ))}
+      <Frog position={[-0.64, 0.82, 0.29]} rotation={0.5} />
+      <Frog position={[0.82, 0.81, -0.24]} rotation={-0.8} />
+      <SwimmingPondCreature kind="fish" phase={0.2} radius={0.78} speed={0.42} />
+      <SwimmingPondCreature kind="fish" phase={2.4} radius={1.02} speed={0.32} />
+      <SwimmingPondCreature kind="fish" phase={4.1} radius={0.62} speed={0.48} />
+      <SwimmingPondCreature kind="squid" phase={1.25} radius={0.9} speed={0.28} />
+      <SwimmingPondCreature kind="octopus" phase={3.15} radius={0.46} speed={0.2} />
+
+      {[-1.4, -1.2, 1.23, 1.46].map((x, index) => (
+        <group key={x} position={[x, 0.67, index % 2 ? 0.25 : -0.3]}>
+          {[0, 0.12, 0.24].map((offset) => (
+            <mesh key={offset} position={[offset * 0.2, 0.34 + offset, offset - 0.1]}>
+              <cylinderGeometry args={[0.012, 0.02, 0.66, 8]} />
+              <meshStandardMaterial color="#5f7756" roughness={0.94} />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </group>
+  )
+}
+
+function LotusPlant({
+  position,
+  scale,
+}: {
+  position: [number, number, number]
+  scale: number
+}) {
+  return (
+    <group position={position} scale={scale}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.2, 24]} />
+        <meshStandardMaterial color="#5f825d" roughness={0.9} side={2} />
+      </mesh>
+      <mesh position={[0.05, 0.06, 0.01]}>
+        <sphereGeometry args={[0.055, 16, 10]} />
+        <meshStandardMaterial color="#e5b8b0" roughness={0.72} />
+      </mesh>
+      {Array.from({ length: 6 }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / 6
+        return (
+          <mesh
+            key={index}
+            position={[Math.cos(angle) * 0.065 + 0.05, 0.055, Math.sin(angle) * 0.065]}
+            rotation={[0, -angle, 0]}
+            scale={[0.75, 0.45, 1.25]}
+          >
+            <sphereGeometry args={[0.055, 12, 8]} />
+            <meshStandardMaterial color={index % 2 ? '#f3d7d3' : '#e8c2bd'} roughness={0.74} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+function Frog({ position, rotation }: { position: [number, number, number]; rotation: number }) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]} scale={0.72}>
+      <mesh castShadow scale={[1.25, 0.62, 1]}>
+        <sphereGeometry args={[0.09, 14, 10]} />
+        <meshStandardMaterial color="#668850" roughness={0.88} />
+      </mesh>
+      <mesh castShadow position={[0, 0.04, 0.1]} scale={[1, 0.76, 0.82]}>
+        <sphereGeometry args={[0.075, 14, 10]} />
+        <meshStandardMaterial color="#7ca05e" roughness={0.86} />
+      </mesh>
+      {[-0.04, 0.04].map((x) => (
+        <mesh key={x} position={[x, 0.085, 0.13]}>
+          <sphereGeometry args={[0.018, 10, 8]} />
+          <meshStandardMaterial color="#17261a" roughness={0.5} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function SwimmingPondCreature({
+  kind,
+  phase,
+  radius,
+  speed,
+}: {
+  kind: 'fish' | 'squid' | 'octopus'
+  phase: number
+  radius: number
+  speed: number
+}) {
+  const groupRef = useRef<Group>(null)
+
+  useFrame(({ clock }) => {
+    const group = groupRef.current
+    if (!group) return
+    const angle = clock.elapsedTime * speed + phase
+    group.position.x = Math.cos(angle) * radius
+    group.position.z = Math.sin(angle) * radius * 0.46
+    group.position.y = 0.78 + Math.sin(angle * 2.2) * 0.012
+    group.rotation.y = -angle + Math.PI / 2
+  })
+
+  return (
+    <group ref={groupRef} scale={kind === 'fish' ? 1 : 0.72}>
+      {kind === 'fish' && <FishModel color={phase > 3 ? '#d9a24d' : '#b96f4f'} />}
+      {kind === 'squid' && <SquidModel />}
+      {kind === 'octopus' && <OctopusModel />}
+    </group>
+  )
+}
+
+function FishModel({ color }: { color: string }) {
+  return (
+    <group scale={0.62}>
+      <mesh castShadow scale={[0.72, 0.55, 1.55]}>
+        <sphereGeometry args={[0.12, 16, 10]} />
+        <meshStandardMaterial color={color} metalness={0.06} roughness={0.58} />
+      </mesh>
+      <mesh position={[0, 0, -0.23]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.13, 0.2, 3]} />
+        <meshStandardMaterial color="#d7a35b" roughness={0.64} />
+      </mesh>
+    </group>
+  )
+}
+
+function SquidModel() {
+  return (
+    <group scale={0.65}>
+      <mesh scale={[0.68, 0.5, 1.4]}>
+        <sphereGeometry args={[0.14, 14, 10]} />
+        <meshStandardMaterial color="#c89a86" roughness={0.66} />
+      </mesh>
+      {[-0.09, -0.03, 0.03, 0.09].map((x) => (
+        <mesh key={x} position={[x, -0.01, -0.2]} rotation={[Math.PI / 2.3, 0, x * 2]}>
+          <cylinderGeometry args={[0.012, 0.022, 0.22, 8]} />
+          <meshStandardMaterial color="#d3aa99" roughness={0.7} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function OctopusModel() {
+  return (
+    <group scale={0.62}>
+      <mesh scale={[1, 0.7, 1]}>
+        <sphereGeometry args={[0.15, 16, 10]} />
+        <meshStandardMaterial color="#9b716e" roughness={0.72} />
+      </mesh>
+      {Array.from({ length: 8 }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / 8
+        return (
+          <mesh
+            key={index}
+            position={[Math.cos(angle) * 0.12, -0.05, Math.sin(angle) * 0.12]}
+            rotation={[0, -angle, Math.PI / 2.7]}
+          >
+            <cylinderGeometry args={[0.012, 0.028, 0.25, 8]} />
+            <meshStandardMaterial color="#a77b77" roughness={0.74} />
+          </mesh>
+        )
+      })}
+    </group>
+  )
+}
+
+function FormalGarden() {
+  return (
+    <group>
+      <FlowerBed position={[-2.65, 0.09, -3.65]} rotation={0.12} tone="pink" />
+      <FlowerBed position={[-1.85, 0.09, -3.95]} rotation={-0.15} tone="white" />
+      <FlowerBed position={[5.75, 0.09, 1.75]} rotation={0.22} tone="gold" />
+      <FlowerBed position={[0.45, 0.09, 5.15]} rotation={-0.12} tone="pink" />
+      <HedgeRow position={[-1.4, 0.1, -4.38]} rotation={0.02} />
+      <HedgeRow position={[4.95, 0.1, 1.55]} rotation={Math.PI / 2.1} />
+    </group>
+  )
+}
+
+function FlowerBed({
+  position,
+  rotation,
+  tone,
+}: {
+  position: [number, number, number]
+  rotation: number
+  tone: 'pink' | 'white' | 'gold'
+}) {
+  const flowerColors = {
+    pink: ['#d99ba4', '#efd1d4'],
+    white: ['#eee8db', '#d8cdb8'],
+    gold: ['#cfaa58', '#e3cd8e'],
+  }[tone]
+
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <RoundedBox args={[1.5, 0.1, 0.52]} castShadow radius={0.16} receiveShadow>
+        <meshStandardMaterial color="#574b3c" roughness={1} />
+      </RoundedBox>
+      {Array.from({ length: 11 }, (_, index) => {
+        const x = -0.62 + (index % 6) * 0.25
+        const z = index < 6 ? -0.12 : 0.12
+        return (
+          <group key={index} position={[x, 0.11, z]}>
+            <mesh position={[0, 0.11, 0]}>
+              <cylinderGeometry args={[0.008, 0.012, 0.22, 6]} />
+              <meshStandardMaterial color="#52704c" roughness={0.9} />
+            </mesh>
+            <mesh castShadow position={[0, 0.23, 0]}>
+              <sphereGeometry args={[0.045, 10, 8]} />
+              <meshStandardMaterial color={flowerColors[index % 2]} roughness={0.72} />
+            </mesh>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+function HedgeRow({
+  position,
+  rotation,
+}: {
+  position: [number, number, number]
+  rotation: number
+}) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      {Array.from({ length: 8 }, (_, index) => (
+        <mesh castShadow key={index} position={[(index - 3.5) * 0.34, 0.2, 0]}>
+          <dodecahedronGeometry args={[0.24, 1]} />
+          <meshStandardMaterial color={index % 2 ? '#486b4e' : '#587858'} roughness={0.97} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function WildlifeClock() {
+  const { invalidate } = useThree()
+
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let animationFrame = 0
+    let previous = 0
+    const tick = (time: number) => {
+      if (time - previous > 32) {
+        previous = time
+        invalidate()
+      }
+      animationFrame = requestAnimationFrame(tick)
+    }
+    animationFrame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(animationFrame)
+  }, [invalidate])
+
+  return null
+}
+
+function WildlifeScene() {
+  return (
+    <group>
+      <AnimatedDeer anchor={[-5.35, 0.12, 3.7]} phase={0.2} radius={0.52} scale={0.42} />
+      <AnimatedDeer anchor={[-4.7, 0.12, 4.2]} phase={2.2} radius={0.38} scale={0.34} />
+      <AnimatedDeer anchor={[2.75, 0.12, -4.0]} phase={4.1} radius={0.46} scale={0.38} />
+      <RoamingAnimal anchor={[5.65, 0.12, 0.8]} kind="boar" phase={0.4} radius={0.42} />
+      <RoamingAnimal anchor={[5.15, 0.12, 1.35]} kind="pig" phase={2.7} radius={0.3} />
+      <RoamingAnimal anchor={[-2.1, 0.12, -3.75]} kind="pig" phase={4.4} radius={0.34} />
+      <RoamingAnimal anchor={[-1.65, 0.12, -4.0]} kind="chicken" phase={0.8} radius={0.28} />
+      <RoamingAnimal anchor={[-1.2, 0.12, -3.72]} kind="chicken" phase={3.1} radius={0.24} />
+      <RoamingAnimal anchor={[0.05, 0.12, 5.5]} kind="peacock" phase={0.2} radius={0.26} />
+      <RoamingAnimal anchor={[4.1, 0.12, 5.35]} kind="peacock" phase={1.4} radius={0.22} />
+      <RoamingAnimal anchor={[-3.55, 0.12, 0.15]} kind="peacock" phase={2.7} radius={0.24} />
+      <RoamingAnimal anchor={[-4.05, 0.12, 1.6]} kind="peacock" phase={4.5} radius={0.2} />
+      <RoamingAnimal anchor={[1.65, 0.12, -4.05]} kind="peacock" phase={5.6} radius={0.25} />
+      <RoamingAnimal anchor={[-1.75, 0.12, 4.75]} kind="peacock" phase={3.7} radius={0.22} />
+      <RoamingAnimal anchor={[5.45, 0.12, 2.25]} kind="peacock" phase={5.1} radius={0.2} />
+    </group>
+  )
+}
+
+function AnimatedDeer({
+  anchor,
+  phase,
+  radius,
+  scale,
+}: {
+  anchor: [number, number, number]
+  phase: number
+  radius: number
+  scale: number
+}) {
+  const groupRef = useRef<Group>(null)
+  const { animations, scene } = useGLTF('/models/animals/deer.gltf')
+  const { actions, names } = useAnimations(animations, groupRef)
+
+  useEffect(() => {
+    const walkName = names.find((name) => name.toLowerCase().includes('walk')) ?? names[0]
+    const action = walkName ? actions[walkName] : undefined
+    action?.reset().fadeIn(0.35).play()
+    return () => {
+      action?.fadeOut(0.2)
+    }
+  }, [actions, names])
+
+  useFrame(({ clock }) => {
+    const group = groupRef.current
+    if (!group) return
+    const angle = clock.elapsedTime * 0.09 + phase
+    group.position.x = anchor[0] + Math.cos(angle) * radius
+    group.position.y = anchor[1]
+    group.position.z = anchor[2] + Math.sin(angle) * radius * 0.55
+    group.rotation.y = -angle + Math.PI / 2
+  })
+
+  return (
+    <group ref={groupRef} scale={scale}>
+      <Clone castShadow object={scene} receiveShadow />
+    </group>
+  )
+}
+
+function RoamingAnimal({
+  anchor,
+  kind,
+  phase,
+  radius,
+}: {
+  anchor: [number, number, number]
+  kind: 'boar' | 'pig' | 'chicken' | 'peacock'
+  phase: number
+  radius: number
+}) {
+  const groupRef = useRef<Group>(null)
+  const speed = kind === 'chicken' ? 0.22 : kind === 'peacock' ? 0.1 : 0.14
+
+  useFrame(({ clock }) => {
+    const group = groupRef.current
+    if (!group) return
+    const angle = clock.elapsedTime * speed + phase
+    group.position.x = anchor[0] + Math.cos(angle) * radius
+    group.position.y = anchor[1] + Math.sin(angle * 3) * 0.01
+    group.position.z = anchor[2] + Math.sin(angle) * radius * 0.58
+    group.rotation.y = -angle + Math.PI / 2
+  })
+
+  return (
+    <group ref={groupRef}>
+      {kind === 'boar' && <PigModel wild />}
+      {kind === 'pig' && <PigModel />}
+      {kind === 'chicken' && <ChickenModel />}
+      {kind === 'peacock' && <PeacockModel phase={phase} />}
+    </group>
+  )
+}
+
+function PigModel({ wild = false }: { wild?: boolean }) {
+  const body = wild ? '#59463a' : '#c99083'
+  return (
+    <group scale={wild ? 0.52 : 0.46}>
+      <mesh castShadow scale={[1.5, 0.85, 0.92]}>
+        <sphereGeometry args={[0.32, 18, 12]} />
+        <meshStandardMaterial color={body} roughness={0.9} />
+      </mesh>
+      <mesh castShadow position={[0, 0.02, 0.34]} scale={[0.9, 0.85, 0.75]}>
+        <sphereGeometry args={[0.22, 16, 10]} />
+        <meshStandardMaterial color={body} roughness={0.88} />
+      </mesh>
+      <mesh position={[0, -0.02, 0.53]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.1, 0.13, 0.09, 14]} />
+        <meshStandardMaterial color={wild ? '#41342c' : '#b87670'} roughness={0.82} />
+      </mesh>
+      {[-0.25, 0.25].flatMap((x) =>
+        [-0.18, 0.2].map((z) => (
+          <mesh castShadow key={String(x) + z} position={[x, -0.28, z]}>
+            <cylinderGeometry args={[0.045, 0.052, 0.35, 8]} />
+            <meshStandardMaterial color={wild ? '#3e332d' : '#a76f68'} roughness={0.9} />
+          </mesh>
+        )),
+      )}
+      {wild &&
+        [-0.11, 0.11].map((x) => (
+          <mesh key={x} position={[x, -0.02, 0.6]} rotation={[Math.PI / 2.5, 0, x * 2]}>
+            <coneGeometry args={[0.025, 0.13, 9]} />
+            <meshStandardMaterial color="#e7d8ba" roughness={0.54} />
+          </mesh>
+        ))}
+    </group>
+  )
+}
+
+function ChickenModel() {
+  return (
+    <group scale={0.36}>
+      <mesh castShadow position={[0, 0.2, 0]} scale={[0.86, 1, 1.12]}>
+        <sphereGeometry args={[0.28, 16, 12]} />
+        <meshStandardMaterial color="#e7dfcf" roughness={0.9} />
+      </mesh>
+      <mesh castShadow position={[0, 0.43, 0.22]}>
+        <sphereGeometry args={[0.15, 14, 10]} />
+        <meshStandardMaterial color="#eee6d6" roughness={0.88} />
+      </mesh>
+      <mesh position={[0, 0.41, 0.4]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.065, 0.16, 4]} />
+        <meshStandardMaterial color="#d4a23d" roughness={0.72} />
+      </mesh>
+      <mesh position={[0, 0.59, 0.22]}>
+        <sphereGeometry args={[0.055, 10, 8]} />
+        <meshStandardMaterial color="#a7463c" roughness={0.76} />
+      </mesh>
+      {[-0.08, 0.08].map((x) => (
+        <mesh key={x} position={[x, -0.06, 0]}>
+          <cylinderGeometry args={[0.018, 0.018, 0.34, 6]} />
+          <meshStandardMaterial color="#b98b3d" roughness={0.8} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function PeacockModel({ phase }: { phase: number }) {
+  return (
+    <group scale={0.58}>
+      <group position={[0, 0.28, -0.13]} rotation={[0, 0, Math.sin(phase) * 0.08]}>
+        {Array.from({ length: 11 }, (_, index) => {
+          const angle = -0.92 + (index / 10) * 1.84
+          const length = 0.78 + Math.cos(angle) * 0.22
+          return (
+            <group key={index} rotation={[0, 0, angle]}>
+              <mesh castShadow position={[0, length * 0.46, 0]} scale={[0.16, length, 0.06]}>
+                <sphereGeometry args={[0.22, 12, 8]} />
+                <meshStandardMaterial
+                  color={index % 2 ? '#39735e' : '#326b61'}
+                  metalness={0.12}
+                  roughness={0.55}
+                />
+              </mesh>
+              <mesh position={[0, length * 0.88, -0.02]} scale={[1, 0.76, 0.32]}>
+                <sphereGeometry args={[0.09, 12, 8]} />
+                <meshStandardMaterial
+                  color="#c59c42"
+                  emissive="#204e68"
+                  emissiveIntensity={0.35}
+                  metalness={0.22}
+                  roughness={0.42}
+                />
+              </mesh>
+            </group>
+          )
+        })}
+      </group>
+      <mesh castShadow position={[0, 0.32, 0.08]} scale={[0.72, 0.9, 1.1]}>
+        <sphereGeometry args={[0.22, 16, 12]} />
+        <meshStandardMaterial color="#174a61" metalness={0.18} roughness={0.48} />
+      </mesh>
+      <mesh castShadow position={[0, 0.63, 0.19]} scale={[0.52, 1.25, 0.58]}>
+        <sphereGeometry args={[0.18, 16, 12]} />
+        <meshStandardMaterial color="#1b6172" metalness={0.18} roughness={0.46} />
+      </mesh>
+      <mesh castShadow position={[0, 0.87, 0.22]}>
+        <sphereGeometry args={[0.12, 14, 10]} />
+        <meshStandardMaterial color="#285b70" metalness={0.14} roughness={0.52} />
+      </mesh>
+      <mesh position={[0, 0.86, 0.36]} rotation={[Math.PI / 2, 0, 0]}>
+        <coneGeometry args={[0.045, 0.13, 5]} />
+        <meshStandardMaterial color="#b99547" roughness={0.68} />
+      </mesh>
+      {[-0.07, 0, 0.07].map((x) => (
+        <mesh key={x} position={[x, 1.03, 0.2]}>
+          <cylinderGeometry args={[0.008, 0.012, 0.2, 6]} />
+          <meshStandardMaterial color="#315e65" roughness={0.68} />
+        </mesh>
+      ))}
+      {[-0.07, 0.07].map((x) => (
+        <mesh key={x} position={[x, 0.03, 0.09]}>
+          <cylinderGeometry args={[0.016, 0.018, 0.42, 7]} />
+          <meshStandardMaterial color="#a88a55" roughness={0.76} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function LandscapeDetails() {
   const timeMode = useContext(CampusTimeContext)
   const shrubPositions: Array<[number, number, number, number]> = [
-    [-5.35, 0.08, -2.75, 0.8],
-    [-4.55, 0.08, -3.05, 0.58],
+    [-6.05, 0.08, -0.9, 0.68],
+    [-3.15, 0.08, -2.8, 0.52],
     [-2.65, 0.08, -3.65, 0.72],
     [-1.7, 0.08, -3.35, 0.52],
     [0.35, 0.08, -3.65, 0.66],
@@ -1020,8 +1598,6 @@ function LandscapeDetails() {
     [5.72, 0.08, 1.05, 0.52],
     [3.1, 0.08, 1.55, 0.48],
     [2.78, 0.08, 2.1, 0.62],
-    [-5.72, 0.08, 0.35, 0.62],
-    [-5.55, 0.08, 1.02, 0.5],
     [-2.82, 0.08, 4.35, 0.64],
     [1.55, 0.08, 4.72, 0.58],
   ]
@@ -1067,9 +1643,9 @@ function LandscapeDetails() {
 function TopographicGardens() {
   return (
     <group>
-      <ContourGarden position={[-3.9, 0.03, -1.35]} rotation={0.25} scale={[1.65, 0.8, 0.7]} />
+      <ContourGarden position={[6.15, 0.03, 1.45]} rotation={0.25} scale={[0.86, 0.8, 0.42]} />
       <ContourGarden position={[1.9, 0.03, -2.8]} rotation={-0.2} scale={[1.3, 0.8, 0.58]} />
-      <ContourGarden position={[2.0, 0.03, 4.25]} rotation={0.14} scale={[1.1, 0.8, 0.48]} />
+      <ContourGarden position={[0.15, 0.03, 5.0]} rotation={0.14} scale={[0.82, 0.8, 0.4]} />
     </group>
   )
 }
@@ -1138,6 +1714,7 @@ function CampusPlaceModel({
         {place.id === 'meditation' && <MeditationGarden muted={muted} />}
         {place.id === 'studio' && <ProgramStudio muted={muted} />}
         {place.id === 'ocean' && <OceanDeck muted={muted} />}
+        {place.id === 'pond' && <PondGarden muted={muted} />}
       </group>
 
       <mesh position={[0, 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1258,6 +1835,11 @@ function SuiteWing({
         <boxGeometry args={[width * 0.82, 0.09, 0.58]} />
         <WoodMaterial muted={muted} />
       </mesh>
+      <BalconyRail
+        muted={muted}
+        position={[0.05, 0.38, depth / 2 + 0.62]}
+        width={width * 0.8}
+      />
     </group>
   )
 }
@@ -1291,6 +1873,17 @@ function WellnessHouse({ muted }: { muted: boolean }) {
         <boxGeometry args={[4.3, 0.14, 1.22]} />
         <RoofMaterial muted={muted} />
       </mesh>
+      {[-1.25, 0, 1.25].map((x) => (
+        <mesh key={x} position={[x, 2.16, -0.82]}>
+          <boxGeometry args={[0.62, 0.035, 0.52]} />
+          <meshPhysicalMaterial
+            clearcoat={0.9}
+            color={muted ? '#526068' : '#78939c'}
+            metalness={0.24}
+            roughness={0.16}
+          />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -1413,6 +2006,17 @@ function ProgramStudio({ muted }: { muted: boolean }) {
         <boxGeometry args={[3.35, 0.1, 0.45]} />
         <WoodMaterial muted={muted} />
       </mesh>
+      {[-1.25, -0.42, 0.42, 1.25].map((x) => (
+        <mesh key={x} position={[x, 1.72 + x * -0.055, -0.03]} rotation={[0, 0, -0.055]}>
+          <boxGeometry args={[0.55, 0.035, 1.18]} />
+          <meshPhysicalMaterial
+            clearcoat={0.88}
+            color={muted ? '#4b5960' : '#66828d'}
+            metalness={0.26}
+            roughness={0.15}
+          />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -1591,6 +2195,45 @@ function WindowMullions({
   )
 }
 
+function BalconyRail({
+  muted,
+  position,
+  width,
+}: {
+  muted: boolean
+  position: [number, number, number]
+  width: number
+}) {
+  const postCount = Math.max(3, Math.round(width / 0.36))
+
+  return (
+    <group position={position}>
+      <mesh castShadow position={[0, 0.17, 0]}>
+        <boxGeometry args={[width, 0.025, 0.025]} />
+        <meshStandardMaterial
+          color={muted ? '#566063' : '#27373d'}
+          metalness={0.58}
+          roughness={0.34}
+        />
+      </mesh>
+      {Array.from({ length: postCount }, (_, index) => (
+        <mesh
+          castShadow
+          key={index}
+          position={[-width / 2 + (index * width) / (postCount - 1), 0, 0]}
+        >
+          <boxGeometry args={[0.02, 0.36, 0.02]} />
+          <meshStandardMaterial
+            color={muted ? '#566063' : '#27373d'}
+            metalness={0.58}
+            roughness={0.34}
+          />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function useCampusTextures() {
   const textures = useContext(CampusTextureContext)
   if (!textures) throw new Error('3D 캠퍼스 텍스처가 준비되지 않았습니다.')
@@ -1601,6 +2244,18 @@ function LimestoneMaterial({ muted, tone = 'light' }: { muted: boolean; tone?: '
   const { concrete } = useCampusTextures()
   const color = muted ? '#aaa9a2' : tone === 'warm' ? '#e0d3bf' : '#f2eadf'
   return <meshStandardMaterial color={color} map={concrete} metalness={0.02} roughness={0.82} />
+}
+
+function CliffMaterial() {
+  const { concrete } = useCampusTextures()
+  return (
+    <meshStandardMaterial
+      color="#6f6252"
+      map={concrete}
+      metalness={0.02}
+      roughness={0.98}
+    />
+  )
 }
 
 function WoodMaterial({ muted }: { muted: boolean }) {
@@ -1665,3 +2320,5 @@ function GoldMaterial({ muted }: { muted: boolean }) {
     <meshStandardMaterial color={muted ? '#66645c' : '#c1a36c'} metalness={0.5} roughness={0.34} />
   )
 }
+
+useGLTF.preload('/models/animals/deer.gltf')
