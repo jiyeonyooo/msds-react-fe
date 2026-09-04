@@ -136,11 +136,17 @@ export default function CampusModel() {
   const [canvasKey, setCanvasKey] = useState(0)
   const [contextLost, setContextLost] = useState(false)
   const [selectedId, setSelectedId] = useState<PlaceId | null>(null)
+  const [viewResetKey, setViewResetKey] = useState(0)
   const selectedPlace = selectedId ? placeById[selectedId] : null
 
   const retryRenderer = () => {
     setContextLost(false)
     setCanvasKey((current) => current + 1)
+  }
+
+  const resetView = () => {
+    setSelectedId(null)
+    setViewResetKey((current) => current + 1)
   }
 
   return (
@@ -154,25 +160,24 @@ export default function CampusModel() {
             </h2>
           </div>
           <p className="max-w-[380px] text-sm leading-7 text-muted">
-            MSDS의 공간을 담은 3D 조감도입니다. 좌우로 천천히 돌려보고, 공간을 선택해 머무름의
-            장면을 만나보세요.
+            MSDS의 공간을 담은 3D 조감도입니다. 드래그해 돌리고 휠이나 핀치로 확대·축소한 뒤,
+            공간을 선택해 머무름의 장면을 만나보세요.
           </p>
         </div>
 
         <div className="mt-10 overflow-hidden border border-[#c7b78f]/40 bg-navy-900 p-2 shadow-[0_34px_90px_-42px_rgba(14,34,57,0.8)] md:p-3">
           <div className="relative h-[470px] overflow-hidden bg-[radial-gradient(circle_at_62%_18%,#28445c_0%,#142d48_34%,#0e2239_76%)] md:h-[620px]">
             <div className="pointer-events-none absolute left-4 top-4 z-10 border border-white/15 bg-navy-900/45 px-3 py-2 text-[9px] tracking-[0.16em] text-white/65 backdrop-blur-md md:left-6 md:top-6 md:text-[10px]">
-              DRAG SIDEWAYS · SELECT A PLACE
+              <span className="md:hidden">회전 · 확대 · 공간 선택</span>
+              <span className="hidden md:inline">드래그로 회전 · 휠/핀치로 확대 · 공간 선택</span>
             </div>
-            {selectedId && (
-              <button
-                className="absolute right-4 top-4 z-10 border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[9px] tracking-[0.14em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800 md:right-6 md:top-6 md:text-[10px]"
-                onClick={() => setSelectedId(null)}
-                type="button"
-              >
-                RESET VIEW
-              </button>
-            )}
+            <button
+              className="absolute right-4 top-4 z-10 border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[9px] tracking-[0.14em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800 md:right-6 md:top-6 md:text-[10px]"
+              onClick={resetView}
+              type="button"
+            >
+              시점 초기화
+            </button>
 
             <Canvas
               camera={{ far: 90, near: 0.1, position: [11, 10, 12], zoom: 52 }}
@@ -195,7 +200,7 @@ export default function CampusModel() {
               <fog attach="fog" args={['#102941', 24, 42]} />
               <ContextLifecycle onStatusChange={setContextLost} />
               <Scene selectedId={selectedId} onSelect={setSelectedId} />
-              <CalmCamera selectedPlace={selectedPlace} />
+              <CalmCamera resetKey={viewResetKey} selectedPlace={selectedPlace} />
             </Canvas>
 
             {selectedPlace && (
@@ -302,7 +307,13 @@ function ContextLifecycle({
   return null
 }
 
-function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
+function CalmCamera({
+  resetKey,
+  selectedPlace,
+}: {
+  resetKey: number
+  selectedPlace: CampusPlace | null
+}) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
   const { camera, invalidate, size } = useThree()
 
@@ -312,6 +323,12 @@ function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
 
     const compact = size.width < 640
     const baseZoom = compact ? 29 : size.width < 900 ? 40 : 52
+
+    if (resetKey > 0 && !selectedPlace) {
+      controls.reset()
+      invalidate()
+    }
+
     const target = selectedPlace ? new Vector3(...selectedPlace.focus) : new Vector3(0, 0.34, 0)
     const targetZoom = selectedPlace ? baseZoom * (compact ? 1.06 : 1.16) : baseZoom
     const initialTarget = controls.target.clone()
@@ -334,7 +351,7 @@ function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
 
     animationFrame = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(animationFrame)
-  }, [camera, invalidate, selectedPlace, size.width])
+  }, [camera, invalidate, resetKey, selectedPlace, size.width])
 
   return (
     <OrbitControls
@@ -342,12 +359,15 @@ function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
       dampingFactor={0.07}
       enableDamping
       enablePan={false}
-      enableZoom={false}
+      enableZoom
       maxAzimuthAngle={1.3}
       maxPolarAngle={Math.PI / 3.55}
+      maxZoom={82}
       minAzimuthAngle={0.18}
       minPolarAngle={Math.PI / 3.55}
+      minZoom={22}
       rotateSpeed={0.34}
+      zoomSpeed={0.65}
     />
   )
 }
