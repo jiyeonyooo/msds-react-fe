@@ -24,6 +24,7 @@ type AvailabilityResponse = AvailabilityRequest & {
     base_price: number
     total_price: number
     available: boolean
+    main_image_url?: string | null
   }>
 }
 type ReservationResponse = {
@@ -86,6 +87,7 @@ function mapAvailability(data: AvailabilityResponse): AvailabilityResult {
       total_price: room.total_price,
       available: room.available,
       nights: data.nights,
+      ...(room.main_image_url ? { image_url: room.main_image_url } : {}),
     })),
   }
 }

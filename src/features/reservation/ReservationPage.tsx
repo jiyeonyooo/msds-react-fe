@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Button, RoomMediaCard, StatusBadge } from '../../components/ui'
 import { SkeletonCards } from '../../components/motion'
 import { navigate } from '../../lib/navigation'
+import { resolveImageUrl } from '../../lib/imageUrl'
 import type { AvailabilityRequest } from './types'
 import { useReservationAvailability } from './hooks'
 import { ReservationSearchBar } from './ReservationSearchBar'
@@ -137,7 +138,7 @@ export function ReservationPage() {
                   <RoomMediaCard
                     name={room.room_name}
                     description={room.description ?? '고요한 휴식을 위한 객실입니다.'}
-                    imageUrl={room.image_url}
+                    imageUrl={resolveImageUrl(room.image_url)}
                     badge={<StatusBadge available={room.available} />}
                     footer={
                       <>
