@@ -14,6 +14,10 @@ const links = [
   { label: 'ABOUT', path: '/about' },
 ]
 
+/** 헤더 우측 버튼 한 쌍(로그인·예약)이 공유하는 크기와 모양. */
+const accountButtonClass =
+  'inline-flex min-h-[44px] items-center justify-center rounded-sm px-3.5 py-3 text-[11px] font-medium tracking-[0.4px] whitespace-nowrap transition-colors md:px-5 md:text-xs'
+
 export function Header() {
   // 실제 로그인 세션이 우선이고, DEV 도구의 인증 상태 전환도 함께 인정한다.
   const session = useSession()
@@ -49,16 +53,16 @@ export function Header() {
       }`}
       id="top"
     >
-      <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[150px_1fr_auto] items-center px-5 md:px-16">
+      <div className="mx-auto grid h-full max-w-[1440px] grid-cols-[150px_1fr_auto] items-center px-5 lg:px-16">
         <Logo />
         <nav
-          className="hidden justify-self-center md:flex md:items-center md:gap-2"
+          className="hidden justify-self-center md:flex md:items-center md:gap-0 lg:gap-2"
           aria-label="주요 메뉴"
         >
           <NavItem label={links[0].label} to={links[0].path} />
           <div className="group relative">
             <NavLink
-              className={`flex items-center gap-1.5 border-b px-4 py-3 text-xs tracking-[0.14em] transition-colors ${location.pathname.startsWith('/rooms') || location.pathname.startsWith('/facility') ? 'border-gold-500 text-navy-900' : 'border-transparent text-secondary hover:border-gold-300'}`}
+              className={`flex items-center gap-1.5 border-b px-2 py-3 text-xs tracking-[0.14em] transition-colors lg:px-4 ${location.pathname.startsWith('/rooms') || location.pathname.startsWith('/facility') ? 'border-gold-500 text-navy-900' : 'border-transparent text-secondary hover:border-gold-300'}`}
               to="/rooms"
               aria-haspopup="menu"
             >
@@ -100,25 +104,30 @@ export function Header() {
             <NavItem key={link.path} label={link.label} to={link.path} />
           ))}
         </nav>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 md:gap-3">
           {session?.user && (
-            <span className="hidden text-xs text-muted md:inline">{session.user.name}님</span>
+            <span className="hidden text-xs text-muted lg:inline">{session.user.name}님</span>
           )}
+          {/*
+            로그인(마이페이지·관리자)은 예약 버튼과 한 쌍으로 읽혀야 하므로 같은 높이·같은
+            글자 크기의 외곽선 버튼으로 둔다. 이전에는 10px 텍스트 링크였던 데다 lg 미만에서
+            숨겨져 있어, 태블릿 폭에서는 로그인으로 갈 방법이 아예 없었다.
+          */}
           <NavLink
-            className="hidden text-[10px] tracking-[0.1em] text-ink-500 hover:text-navy-900 lg:block"
+            className={`${accountButtonClass} border border-navy-900 text-navy-900 hover:bg-navy-900 hover:text-white`}
             to={accountAction.to}
           >
             {accountAction.label}
           </NavLink>
           <NavLink
-            className="rounded-sm bg-navy-900 px-5 py-3 text-xs font-medium tracking-[0.4px] text-white transition-opacity hover:opacity-80"
+            className={`${accountButtonClass} bg-navy-900 text-white hover:bg-navy-700`}
             to="/reservations"
           >
             BOOK NOW
           </NavLink>
           {session && (
             <button
-              className="border-0 bg-transparent p-0 text-[0.625rem] tracking-[0.06em] text-muted md:text-xs"
+              className="hidden border-0 bg-transparent p-0 text-xs tracking-[0.06em] text-muted transition-colors hover:text-navy-900 lg:inline"
               onClick={() => void signOut()}
               type="button"
             >
