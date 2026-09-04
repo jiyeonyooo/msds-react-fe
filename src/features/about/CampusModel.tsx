@@ -1,4 +1,4 @@
-import { ContactShadows, Html, OrbitControls, RoundedBox } from '@react-three/drei'
+import { ContactShadows, Html, OrbitControls, RoundedBox, useTexture } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import {
   ACESFilmicToneMapping,
@@ -19,6 +19,11 @@ import {
 } from 'react'
 import facilityLounge from '../../assets/facility7.png'
 import facilityStudio from '../../assets/facility2.png'
+import concreteTexture from '../../assets/3d/concrete.svg'
+import grassTexture from '../../assets/3d/grass.svg'
+import metalTexture from '../../assets/3d/metal-panels.svg'
+import stoneTexture from '../../assets/3d/stone-pavers.svg'
+import woodTexture from '../../assets/3d/wood.svg'
 import meditationCourtyard from '../../assets/home/meditation-courtyard.png'
 import oceanSuite from '../../assets/home/ocean-suite.png'
 import coast from '../../assets/msds-coast.png'
@@ -499,7 +504,7 @@ function ContourGround() {
         receiveShadow
         rotation={[0, 0.012, 0]}
       >
-        <meshStandardMaterial color="#eee7da" roughness={0.9} />
+        <StonePaverMaterial />
       </RoundedBox>
     </group>
   )
@@ -561,7 +566,7 @@ function ContourGarden({
       {[1, 0.76, 0.52].map((radius, index) => (
         <mesh key={radius} position={[0.08 * index, 0.025 * index, 0]} receiveShadow>
           <cylinderGeometry args={[radius, radius + 0.03, 0.035, 48]} />
-          <meshStandardMaterial color={['#86917d', '#a8ad98', '#cbc7ae'][index]} roughness={0.96} />
+          <GrassMaterial tone={index} />
         </mesh>
       ))}
     </group>
@@ -1001,20 +1006,46 @@ function CoastalPine({
 }
 
 function LimestoneMaterial({ muted, tone = 'light' }: { muted: boolean; tone?: 'light' | 'warm' }) {
-  const color = muted ? '#96958e' : tone === 'warm' ? '#d4c8b4' : '#e8dfd0'
-  return <meshStandardMaterial color={color} metalness={0.02} roughness={0.82} />
+  const texture = useTexture(concreteTexture)
+  const color = muted ? '#aaa9a2' : tone === 'warm' ? '#e0d3bf' : '#f2eadf'
+  return <meshStandardMaterial color={color} map={texture} metalness={0.02} roughness={0.82} />
 }
 
 function WoodMaterial({ muted }: { muted: boolean }) {
+  const texture = useTexture(woodTexture)
   return (
-    <meshStandardMaterial color={muted ? '#716b63' : '#a47a52'} metalness={0.03} roughness={0.68} />
+    <meshStandardMaterial
+      color={muted ? '#807970' : '#c69b73'}
+      map={texture}
+      metalness={0.03}
+      roughness={0.68}
+    />
   )
 }
 
 function RoofMaterial({ muted }: { muted: boolean }) {
+  const texture = useTexture(metalTexture)
   return (
-    <meshStandardMaterial color={muted ? '#4d575d' : '#315069'} metalness={0.22} roughness={0.48} />
+    <meshStandardMaterial
+      color={muted ? '#aeb5b8' : '#d1dee5'}
+      emissive={muted ? '#26333b' : '#17364f'}
+      emissiveIntensity={muted ? 0.06 : 0.18}
+      map={texture}
+      metalness={0.32}
+      roughness={0.44}
+    />
   )
+}
+
+function StonePaverMaterial() {
+  const texture = useTexture(stoneTexture)
+  return <meshStandardMaterial color="#f1eadf" map={texture} roughness={0.9} />
+}
+
+function GrassMaterial({ tone }: { tone: number }) {
+  const texture = useTexture(grassTexture)
+  const colors = ['#91a084', '#a5ae91', '#c1bda0']
+  return <meshStandardMaterial color={colors[tone] ?? colors[0]} map={texture} roughness={0.96} />
 }
 
 function WarmGlassMaterial({ muted }: { muted: boolean }) {
