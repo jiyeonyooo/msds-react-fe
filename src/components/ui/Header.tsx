@@ -44,6 +44,8 @@ export function Header() {
         label: session?.user?.role === 'ADMIN' || devAuthState === 'admin' ? 'ADMIN' : 'MY PAGE',
       }
     : { to: '/login', label: 'LOGIN' }
+  // 아바타에 쓸 이름 첫 글자. 이름이 비어 있어도 원이 빈 채로 남지 않게 기본값을 둔다.
+  const initial = session?.user?.name?.trim().charAt(0).toUpperCase() || 'M'
   return (
     <header
       className={`sticky top-0 z-40 h-[92px] transition-[background-color,border-color,box-shadow] duration-500 ease-calm ${
@@ -106,7 +108,22 @@ export function Header() {
         </nav>
         <div className="flex items-center gap-2 md:gap-3">
           {session?.user && (
-            <span className="hidden text-xs text-muted lg:inline">{session.user.name}님</span>
+            // 이름만 흐린 글자로 두면 헤더에서 아무 무게도 갖지 못한다.
+            // 이니셜 원을 붙여 한 덩어리로 묶고, 전체 이메일은 툴팁으로 넘긴다.
+            <span
+              className="hidden items-center gap-2 lg:flex"
+              title={`${session.user.name}님 · ${session.user.email}`}
+            >
+              <span
+                aria-hidden="true"
+                className="grid size-[30px] shrink-0 place-items-center rounded-full bg-subtle text-[11px] font-medium text-navy-900 ring-1 ring-gold-300"
+              >
+                {initial}
+              </span>
+              <span className="hidden text-xs whitespace-nowrap text-secondary xl:inline">
+                {session.user.name}님
+              </span>
+            </span>
           )}
           {/*
             로그인(마이페이지·관리자)은 예약 버튼과 한 쌍으로 읽혀야 하므로 같은 높이·같은
@@ -127,11 +144,26 @@ export function Header() {
           </NavLink>
           {session && (
             <button
-              className="hidden border-0 bg-transparent p-0 text-xs tracking-[0.06em] text-muted transition-colors hover:text-navy-900 lg:inline"
+              aria-label="로그아웃"
+              className="hidden size-11 shrink-0 place-items-center rounded-sm border border-border-accent bg-transparent text-secondary transition-colors hover:border-navy-900 hover:text-navy-900 lg:grid"
               onClick={() => void signOut()}
+              title="로그아웃"
               type="button"
             >
-              LOGOUT
+              <svg
+                aria-hidden="true"
+                className="size-4"
+                fill="none"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.25"
+                viewBox="0 0 16 16"
+              >
+                <path d="M6.25 14H3.5A1.5 1.5 0 0 1 2 12.5v-9A1.5 1.5 0 0 1 3.5 2h2.75" />
+                <path d="m10.75 11 3-3-3-3" />
+                <path d="M13.75 8H6.25" />
+              </svg>
             </button>
           )}
         </div>
