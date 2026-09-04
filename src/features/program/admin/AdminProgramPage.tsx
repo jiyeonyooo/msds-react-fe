@@ -160,7 +160,7 @@ export function AdminProgramPage() {
       <div className="mt-4">
         <AdminPanel title="새 프로그램 등록">
           <form
-            className="grid gap-4 lg:grid-cols-[1fr_1fr_140px_auto] lg:items-end"
+            className="grid gap-4 lg:grid-cols-[1fr_1fr_140px_auto] lg:items-start"
             onSubmit={handleSubmit}
           >
             <label className="text-sm font-medium text-slate-700">
@@ -201,7 +201,7 @@ export function AdminProgramPage() {
                 value={form.capacity}
               />
             </label>
-            <Button className="h-11" disabled={saving} type="submit">
+            <Button className="h-11 lg:mt-7" disabled={saving} type="submit">
               {saving ? '저장 중…' : '프로그램 등록'}
             </Button>
           </form>
