@@ -146,6 +146,7 @@
   }
   body {
     @apply m-0 bg-canvas font-sans text-primary antialiased;
+    word-break: keep-all;
   }
   button,
   input,
