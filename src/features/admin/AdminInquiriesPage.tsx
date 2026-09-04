@@ -215,7 +215,6 @@ function AdminInquiryDetailPage({ inquiryId }: { inquiryId: string }) {
   return <section>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/inquiries">← 문의 목록</Link>
-      <code className="rounded-sm border border-[#d7c59e] bg-white px-3 py-2 text-[11px] text-[#172b44]">PATCH /api/admin/inquiries/{inquiry.inquiryId}/answer</code>
     </div>
     <AdminPageHeading description="회원 문의를 확인하고 답변을 등록합니다. 등록한 답변은 회원 문의 상세에서 바로 보입니다." title="문의 상세 · 답변" />
     {message && <p className="mb-4 rounded-sm border border-error-border bg-[#fffaf8] px-4 py-3 text-sm text-error" role="alert">{message}</p>}
