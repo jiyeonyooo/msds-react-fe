@@ -1,12 +1,15 @@
 import { ContactShadows, Html, OrbitControls, RoundedBox } from '@react-three/drei'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import {
   ACESFilmicToneMapping,
   CatmullRomCurve3,
   MathUtils,
+  PCFShadowMap,
   SRGBColorSpace,
   Vector3,
   type Group,
+  type Mesh,
+  type MeshBasicMaterial,
 } from 'three'
 import {
   useEffect,
@@ -136,7 +139,49 @@ export default function CampusModel() {
   const [canvasKey, setCanvasKey] = useState(0)
   const [contextLost, setContextLost] = useState(false)
   const [selectedId, setSelectedId] = useState<PlaceId | null>(null)
+  const [touring, setTouring] = useState(false)
   const selectedPlace = selectedId ? placeById[selectedId] : null
+
+  const selectPlace = (id: PlaceId | null) => {
+    setTouring(false)
+    setSelectedId(id)
+  }
+
+  const moveSelection = (step: number) => {
+    const currentIndex = selectedId ? places.findIndex((place) => place.id === selectedId) : -1
+    const nextIndex = (currentIndex + step + places.length) % places.length
+    selectPlace(places[nextIndex].id)
+  }
+
+  const toggleTour = () => {
+    setTouring((current) => {
+      if (!current && !selectedId) setSelectedId(places[0].id)
+      return !current
+    })
+  }
+
+  useEffect(() => {
+    if (!touring) return
+    const timer = window.setInterval(() => {
+      setSelectedId((current) => {
+        const currentIndex = current ? places.findIndex((place) => place.id === current) : -1
+        return places[(currentIndex + 1) % places.length].id
+      })
+    }, 4200)
+    return () => window.clearInterval(timer)
+  }, [touring])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.matches('input, textarea, select, [contenteditable="true"]')) return
+      if (event.key === 'ArrowRight') moveSelection(1)
+      if (event.key === 'ArrowLeft') moveSelection(-1)
+      if (event.key === 'Escape') selectPlace(null)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  })
 
   const retryRenderer = () => {
     setContextLost(false)
@@ -153,31 +198,46 @@ export default function CampusModel() {
               머무름의 모든 장면을 한눈에
             </h2>
           </div>
-          <p className="max-w-[380px] text-sm leading-7 text-muted">
-            MSDS의 공간을 담은 3D 조감도입니다. 좌우로 천천히 돌려보고, 공간을 선택해 머무름의
-            장면을 만나보세요.
+          <p className="max-w-[420px] text-sm leading-7 text-muted">
+            MSDS의 공간을 담은 3D 조감도입니다. 드래그로 시선을 움직이고 휠로 가까이 다가가며,
+            공간마다 다른 머무름의 장면을 만나보세요.
           </p>
         </div>
 
         <div className="mt-10 overflow-hidden border border-[#c7b78f]/40 bg-navy-900 p-2 shadow-[0_34px_90px_-42px_rgba(14,34,57,0.8)] md:p-3">
-          <div className="relative h-[470px] overflow-hidden bg-[radial-gradient(circle_at_62%_18%,#28445c_0%,#142d48_34%,#0e2239_76%)] md:h-[620px]">
-            <div className="pointer-events-none absolute left-4 top-4 z-10 border border-white/15 bg-navy-900/45 px-3 py-2 text-[9px] tracking-[0.16em] text-white/65 backdrop-blur-md md:left-6 md:top-6 md:text-[10px]">
-              DRAG SIDEWAYS · SELECT A PLACE
+          <div className="relative h-[min(680px,calc(100vh-140px))] min-h-[560px] overflow-hidden bg-[radial-gradient(circle_at_62%_18%,#28445c_0%,#142d48_34%,#0e2239_76%)]">
+            <div className="pointer-events-none absolute left-6 top-6 z-10 border border-white/15 bg-navy-900/45 px-3 py-2 text-[10px] tracking-[0.16em] text-white/65 backdrop-blur-md">
+              DRAG TO ORBIT · SCROLL TO ZOOM · SELECT A PLACE
             </div>
-            {selectedId && (
+
+            <div className="absolute right-6 top-6 z-10 flex items-center gap-2">
               <button
-                className="absolute right-4 top-4 z-10 border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[9px] tracking-[0.14em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800 md:right-6 md:top-6 md:text-[10px]"
-                onClick={() => setSelectedId(null)}
+                aria-pressed={touring}
+                className={
+                  touring
+                    ? 'border border-gold-300 bg-gold-300 px-3 py-2 text-[10px] font-medium tracking-[0.14em] text-navy-900 shadow-lg transition-colors hover:bg-[#e4c98f]'
+                    : 'border border-white/15 bg-navy-900/55 px-3 py-2 text-[10px] tracking-[0.14em] text-white/75 backdrop-blur-md transition-colors hover:border-gold-300/60 hover:text-gold-300'
+                }
+                onClick={toggleTour}
                 type="button"
               >
-                RESET VIEW
+                {touring ? 'PAUSE TOUR' : 'PLAY GUIDED TOUR'}
               </button>
-            )}
+              {selectedId && (
+                <button
+                  className="border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[10px] tracking-[0.14em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800"
+                  onClick={() => selectPlace(null)}
+                  type="button"
+                >
+                  OVERVIEW
+                </button>
+              )}
+            </div>
 
             <Canvas
               camera={{ far: 90, near: 0.1, position: [11, 10, 12], zoom: 52 }}
               dpr={[1, 1.5]}
-              frameloop="demand"
+              frameloop="always"
               gl={{
                 antialias: true,
                 outputColorSpace: SRGBColorSpace,
@@ -187,37 +247,47 @@ export default function CampusModel() {
                 toneMappingExposure: 1.06,
               }}
               key={canvasKey}
-              onPointerMissed={() => setSelectedId(null)}
+              onPointerMissed={() => selectPlace(null)}
               orthographic
-              shadows
+              shadows={{ type: PCFShadowMap }}
             >
               <color attach="background" args={['#102941']} />
               <fog attach="fog" args={['#102941', 24, 42]} />
               <ContextLifecycle onStatusChange={setContextLost} />
-              <Scene selectedId={selectedId} onSelect={setSelectedId} />
-              <CalmCamera selectedPlace={selectedPlace} />
+              <Scene selectedId={selectedId} onSelect={(id) => selectPlace(id)} />
+              <ExperienceCamera selectedPlace={selectedPlace} stopTour={() => setTouring(false)} />
             </Canvas>
 
             {selectedPlace && (
               <aside
                 aria-live="polite"
-                className="absolute inset-x-4 bottom-4 z-10 flex max-h-[142px] overflow-hidden border border-white/15 bg-navy-900/88 text-white shadow-2xl backdrop-blur-xl md:inset-x-auto md:bottom-6 md:left-6 md:max-h-none md:w-[430px]"
+                className="absolute bottom-6 left-6 z-10 flex w-[460px] overflow-hidden border border-white/15 bg-navy-900/88 text-white shadow-2xl backdrop-blur-xl"
               >
-                <img
-                  alt=""
-                  className="w-[108px] shrink-0 object-cover md:w-[142px]"
-                  src={selectedPlace.image}
-                />
-                <div className="min-w-0 px-4 py-3 md:px-5 md:py-4">
+                <img alt="" className="w-[152px] shrink-0 object-cover" src={selectedPlace.image} />
+                <div className="min-w-0 flex-1 px-5 py-4">
                   <p className="text-[9px] tracking-[0.18em] text-gold-300">
                     {selectedPlace.index} · {selectedPlace.label}
                   </p>
-                  <h3 className="mt-1 font-display text-xl text-white md:text-2xl">
-                    {selectedPlace.name}
-                  </h3>
-                  <p className="mt-1 text-[11px] leading-5 text-white/65 md:mt-2 md:text-xs">
-                    {selectedPlace.detail}
-                  </p>
+                  <h3 className="mt-1 font-display text-2xl text-white">{selectedPlace.name}</h3>
+                  <p className="mt-2 text-xs leading-5 text-white/65">{selectedPlace.detail}</p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      aria-label="이전 공간"
+                      className="border border-white/15 px-2.5 py-1 text-[10px] text-white/60 transition-colors hover:border-gold-300/50 hover:text-gold-300"
+                      onClick={() => moveSelection(-1)}
+                      type="button"
+                    >
+                      ← PREV
+                    </button>
+                    <button
+                      aria-label="다음 공간"
+                      className="border border-white/15 px-2.5 py-1 text-[10px] text-white/60 transition-colors hover:border-gold-300/50 hover:text-gold-300"
+                      onClick={() => moveSelection(1)}
+                      type="button"
+                    >
+                      NEXT →
+                    </button>
+                  </div>
                 </div>
               </aside>
             )}
@@ -236,10 +306,7 @@ export default function CampusModel() {
             )}
           </div>
 
-          <nav
-            aria-label="MSDS 3D 공간 선택"
-            className="grid grid-cols-2 border-t border-white/10 md:grid-cols-5"
-          >
+          <nav aria-label="MSDS 3D 공간 선택" className="grid grid-cols-5 border-t border-white/10">
             {places.map((place) => {
               const isSelected = selectedId === place.id
               return (
@@ -247,11 +314,11 @@ export default function CampusModel() {
                   aria-pressed={isSelected}
                   className={
                     isSelected
-                      ? 'border-b border-gold-300 bg-white/10 px-4 py-4 text-left text-gold-300 md:border-b-0 md:border-t'
-                      : 'border-b border-white/10 px-4 py-4 text-left text-white/55 transition-colors hover:bg-white/5 hover:text-white md:border-b-0'
+                      ? 'border-t border-gold-300 bg-white/10 px-4 py-4 text-left text-gold-300'
+                      : 'px-4 py-4 text-left text-white/55 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/5 hover:text-white'
                   }
                   key={place.id}
-                  onClick={() => setSelectedId(isSelected ? null : place.id)}
+                  onClick={() => selectPlace(isSelected ? null : place.id)}
                   type="button"
                 >
                   <span className="block text-[9px] tracking-[0.16em] text-gold-300/75">
@@ -302,7 +369,13 @@ function ContextLifecycle({
   return null
 }
 
-function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
+function ExperienceCamera({
+  selectedPlace,
+  stopTour,
+}: {
+  selectedPlace: CampusPlace | null
+  stopTour: () => void
+}) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
   const { camera, invalidate, size } = useThree()
 
@@ -310,10 +383,9 @@ function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
     const controls = controlsRef.current
     if (!controls || !('zoom' in camera)) return
 
-    const compact = size.width < 640
-    const baseZoom = compact ? 29 : size.width < 900 ? 40 : 52
+    const baseZoom = MathUtils.clamp(size.width / 20, 52, 62)
     const target = selectedPlace ? new Vector3(...selectedPlace.focus) : new Vector3(0, 0.34, 0)
-    const targetZoom = selectedPlace ? baseZoom * (compact ? 1.06 : 1.16) : baseZoom
+    const targetZoom = selectedPlace ? baseZoom * 1.24 : baseZoom
     const initialTarget = controls.target.clone()
     const initialZoom = camera.zoom
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -339,15 +411,20 @@ function CalmCamera({ selectedPlace }: { selectedPlace: CampusPlace | null }) {
   return (
     <OrbitControls
       ref={controlsRef}
-      dampingFactor={0.07}
+      autoRotate={!selectedPlace}
+      autoRotateSpeed={0.34}
+      dampingFactor={0.055}
       enableDamping
       enablePan={false}
-      enableZoom={false}
-      maxAzimuthAngle={1.3}
-      maxPolarAngle={Math.PI / 3.55}
-      minAzimuthAngle={0.18}
-      minPolarAngle={Math.PI / 3.55}
-      rotateSpeed={0.34}
+      enableZoom
+      makeDefault
+      maxPolarAngle={1.18}
+      maxZoom={125}
+      minPolarAngle={0.66}
+      minZoom={30}
+      onStart={stopTour}
+      rotateSpeed={0.52}
+      zoomSpeed={0.85}
     />
   )
 }
@@ -382,6 +459,7 @@ function Scene({
       <ContourGround />
       <GoldPath />
       <TopographicGardens />
+      <ArchitecturalCompass />
 
       {places.map((place) => (
         <CampusPlaceModel
@@ -430,16 +508,30 @@ function OceanStage() {
         />
       </mesh>
       {[9.5, 12.5, 15.5].map((radius, index) => (
-        <mesh
-          key={radius}
-          position={[3.5, -0.775 + index * 0.002, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <ringGeometry args={[radius, radius + 0.015, 128]} />
-          <meshBasicMaterial color="#8fa9b5" opacity={0.2 - index * 0.04} transparent />
-        </mesh>
+        <OceanRing index={index} key={radius} radius={radius} />
       ))}
     </group>
+  )
+}
+
+function OceanRing({ radius, index }: { radius: number; index: number }) {
+  const ringRef = useRef<Mesh>(null)
+  const materialRef = useRef<MeshBasicMaterial>(null)
+  const elapsed = useRef(index * 1.4)
+
+  useFrame((_, delta) => {
+    elapsed.current += delta
+    const wave = (Math.sin(elapsed.current * 0.42) + 1) / 2
+    const scale = 1 + wave * 0.012
+    if (ringRef.current) ringRef.current.scale.setScalar(scale)
+    if (materialRef.current) materialRef.current.opacity = 0.08 + wave * (0.1 - index * 0.015)
+  })
+
+  return (
+    <mesh ref={ringRef} position={[3.5, -0.775 + index * 0.002, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[radius, radius + 0.018, 128]} />
+      <meshBasicMaterial color="#9fb6bf" depthWrite={false} ref={materialRef} transparent />
+    </mesh>
   )
 }
 
@@ -486,6 +578,8 @@ function ContourGround() {
 }
 
 function GoldPath() {
+  const beaconRef = useRef<Mesh>(null)
+  const elapsed = useRef(0)
   const curve = useMemo(
     () =>
       new CatmullRomCurve3([
@@ -503,17 +597,55 @@ function GoldPath() {
     [],
   )
 
+  useFrame((_, delta) => {
+    elapsed.current += delta
+    if (!beaconRef.current) return
+    const point = curve.getPointAt((elapsed.current * 0.035) % 1)
+    point.y += 0.11
+    beaconRef.current.position.copy(point)
+  })
+
   return (
-    <mesh>
-      <tubeGeometry args={[curve, 128, 0.045, 10, false]} />
-      <meshStandardMaterial
-        color="#c7aa72"
-        emissive="#8c6a36"
-        emissiveIntensity={0.5}
-        metalness={0.42}
-        roughness={0.38}
-      />
-    </mesh>
+    <group>
+      <mesh>
+        <tubeGeometry args={[curve, 128, 0.045, 10, false]} />
+        <meshStandardMaterial
+          color="#c7aa72"
+          emissive="#8c6a36"
+          emissiveIntensity={0.5}
+          metalness={0.42}
+          roughness={0.38}
+        />
+      </mesh>
+      <mesh ref={beaconRef}>
+        <sphereGeometry args={[0.105, 20, 20]} />
+        <meshBasicMaterial color="#ffe4a5" toneMapped={false} />
+        <pointLight color="#e8c27a" distance={2.4} intensity={1.2} />
+      </mesh>
+    </group>
+  )
+}
+
+function ArchitecturalCompass() {
+  return (
+    <group position={[-6.45, 0.09, 4.82]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh>
+        <ringGeometry args={[0.39, 0.405, 48]} />
+        <meshBasicMaterial color="#a98b55" opacity={0.65} transparent />
+      </mesh>
+      <mesh>
+        <boxGeometry args={[0.025, 1.08, 0.01]} />
+        <meshBasicMaterial color="#a98b55" opacity={0.7} transparent />
+      </mesh>
+      <mesh>
+        <boxGeometry args={[0.76, 0.018, 0.01]} />
+        <meshBasicMaterial color="#a98b55" opacity={0.45} transparent />
+      </mesh>
+      <mesh position={[0, 0.53, 0.012]}>
+        <coneGeometry args={[0.085, 0.24, 3]} />
+        <meshBasicMaterial color="#d7bd83" />
+      </mesh>
+    </group>
   )
 }
 
@@ -601,6 +733,7 @@ function CampusPlaceModel({
           transparent
         />
       </mesh>
+      {selected && <SelectionPulse radius={place.radius} />}
 
       <Html center position={place.labelPosition} style={{ pointerEvents: 'auto' }}>
         <button
@@ -620,6 +753,26 @@ function CampusPlaceModel({
   )
 }
 
+function SelectionPulse({ radius }: { radius: number }) {
+  const ringRef = useRef<Mesh>(null)
+  const materialRef = useRef<MeshBasicMaterial>(null)
+  const elapsed = useRef(0)
+
+  useFrame((_, delta) => {
+    elapsed.current = (elapsed.current + delta * 0.42) % 1
+    const scale = 1 + elapsed.current * 0.18
+    if (ringRef.current) ringRef.current.scale.setScalar(scale)
+    if (materialRef.current) materialRef.current.opacity = (1 - elapsed.current) * 0.48
+  })
+
+  return (
+    <mesh ref={ringRef} position={[0, 0.055, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[radius + 0.08, radius + 0.115, 72]} />
+      <meshBasicMaterial color="#e4c98f" depthWrite={false} ref={materialRef} transparent />
+    </mesh>
+  )
+}
+
 function useGentleLift(selected: boolean, hovered: boolean) {
   const groupRef = useRef<Group>(null)
   const { invalidate } = useThree()
@@ -630,6 +783,8 @@ function useGentleLift(selected: boolean, hovered: boolean) {
 
     const from = group.position.y
     const to = selected ? 0.26 : hovered ? 0.08 : 0
+    const fromScale = group.scale.x
+    const toScale = selected ? 1.035 : hovered ? 1.018 : 1
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const duration = reduceMotion ? 0 : 700
     const startedAt = performance.now()
@@ -639,6 +794,7 @@ function useGentleLift(selected: boolean, hovered: boolean) {
       const progress = duration === 0 ? 1 : Math.min((time - startedAt) / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3)
       group.position.y = MathUtils.lerp(from, to, eased)
+      group.scale.setScalar(MathUtils.lerp(fromScale, toScale, eased))
       invalidate()
       if (progress < 1) animationFrame = requestAnimationFrame(animate)
     }
