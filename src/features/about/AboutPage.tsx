@@ -71,8 +71,8 @@ export function AboutPage() {
 
       <Suspense
         fallback={
-          <section className="flex min-h-[520px] items-center justify-center bg-[#e7ede9] px-6 py-20 md:px-12">
-            <p className="animate-pulse text-sm tracking-[0.08em] text-muted">
+          <section className="flex min-h-[520px] items-center justify-center bg-navy-900 px-6 py-20 md:px-12">
+            <p className="animate-pulse text-sm tracking-[0.08em] text-white/50">
               3D 공간을 준비하고 있습니다.
             </p>
           </section>
