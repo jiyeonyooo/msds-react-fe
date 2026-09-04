@@ -15,6 +15,11 @@ import {
   SMAA,
   Vignette,
 } from '@react-three/postprocessing'
+import meditationImage from '../../assets/home/meditation-courtyard.png'
+import stayImage from '../../assets/home/ocean-suite.png'
+import oceanImage from '../../assets/facility8.png'
+import studioImage from '../../assets/facility5.png'
+import wellnessImage from '../../assets/facility7.png'
 import {
   createContext,
   useCallback,
@@ -160,6 +165,7 @@ type CampusPlace = {
   name: string
   label: string
   description: string
+  image: string
   position: [number, number, number]
   size: [number, number, number]
   floors: number
@@ -172,6 +178,7 @@ const places: CampusPlace[] = [
     name: '웰니스 하우스',
     label: 'WELLNESS HOUSE',
     description: '리셉션과 티 라운지, 스파가 이어지는 중심 동입니다.',
+    image: wellnessImage,
     position: [-0.3, 0, -0.1],
     size: [4.35, 2.45, 2.75],
     floors: 3,
@@ -182,6 +189,7 @@ const places: CampusPlace[] = [
     name: '스테이 빌리지',
     label: 'STAY VILLAGE',
     description: '오션 스위트와 숲의 객실이 낮은 채로 흩어져 있습니다.',
+    image: stayImage,
     position: [3.7, 0, -2.25],
     size: [3.9, 2.25, 3.2],
     floors: 3,
@@ -192,6 +200,7 @@ const places: CampusPlace[] = [
     name: '명상 정원',
     label: 'MEDITATION GARDEN',
     description: '호흡과 사색을 위한, 소리를 덜어낸 마당입니다.',
+    image: meditationImage,
     position: [-4.6, 0, 2.45],
     size: [2.8, 1.4, 2.55],
     floors: 2,
@@ -202,6 +211,7 @@ const places: CampusPlace[] = [
     name: '프로그램 스튜디오',
     label: 'PROGRAM STUDIO',
     description: '움직임 수업과 워크숍이 열리는 열린 공간입니다.',
+    image: studioImage,
     position: [-0.2, 0, 3.35],
     size: [3.6, 1.7, 2.35],
     floors: 2,
@@ -212,6 +222,7 @@ const places: CampusPlace[] = [
     name: '오션 데크',
     label: 'OCEAN DECK',
     description: '물 위로 뻗어 나가 바다를 마주하는 산책 데크입니다.',
+    image: oceanImage,
     position: [4.75, 0, 3.4],
     size: [2.7, 0.7, 2.2],
     floors: 1,
@@ -289,6 +300,7 @@ export default function CampusModel() {
   const [hoverId, setHoverId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [mood, setMood] = useState<Mood>('dusk')
+  const [isTouring, setIsTouring] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const stageRef = useRef<HTMLDivElement>(null)
   const reducedMotion = usePrefersReducedMotion()
@@ -296,6 +308,7 @@ export default function CampusModel() {
   /* 선택은 남고 호버는 스쳐 간다. 강조 대상은 둘 중 먼저 있는 쪽이다. */
   const activeId = hoverId ?? selectedId
   const activePlace = places.find((place) => place.id === activeId) ?? null
+  const selectedPlace = places.find((place) => place.id === selectedId) ?? null
 
   const retryRenderer = () => {
     setContextLost(false)
@@ -303,8 +316,29 @@ export default function CampusModel() {
   }
 
   const toggleSelect = useCallback((id: string) => {
+    setIsTouring(false)
     setSelectedId((current) => (current === id ? null : id))
   }, [])
+
+  /* 자동 투어. 다섯 곳을 차례로 비춘다. 직접 돌려 볼 생각이 없는 사람에게도
+     한 바퀴는 보여 주자는 것이고, 손을 대는 순간 바로 멈춘다. */
+  useEffect(() => {
+    if (!isTouring) return
+    const order = places.map((place) => place.id)
+    let index = 0
+    const timer = window.setInterval(() => {
+      index = (index + 1) % order.length
+      setSelectedId(order[index])
+    }, 4600)
+    return () => window.clearInterval(timer)
+  }, [isTouring])
+
+  const startTour = () => {
+    setIsTouring(true)
+    setSelectedId(places[0].id)
+  }
+
+  const stopTour = useCallback(() => setIsTouring(false), [])
 
   /* 화면 밖으로 나가면 렌더 루프를 아예 멈춘다. 후처리까지 도는 씬이라
      보이지 않는 동안 프레임을 계속 그리는 것은 그냥 낭비다. */
@@ -339,6 +373,8 @@ export default function CampusModel() {
 
         <div
           className="mt-10 overflow-hidden rounded-lg border border-white/12 bg-white/4 p-3 md:p-4"
+          onPointerDownCapture={stopTour}
+          onWheelCapture={stopTour}
           ref={stageRef}
         >
           <div
@@ -349,20 +385,35 @@ export default function CampusModel() {
               DRAG TO ROTATE · SCROLL TO ZOOM · CLICK TO FOCUS
             </p>
 
-            {/* 시간대 전환. 저녁의 켜진 창이 이 모형의 인상을 만든다. */}
-            <div className="absolute right-6 top-6 z-10 flex items-center gap-1 rounded-full border border-white/15 bg-navy-900/50 p-1 backdrop-blur-sm">
-              {(Object.keys(MOODS) as Mood[]).map((key) => (
-                <button
-                  className={`rounded-full px-3.5 py-1.5 text-[11px] tracking-[0.1em] transition-colors duration-200 ${
-                    mood === key ? 'bg-gold-500 text-navy-900' : 'text-white/55 hover:text-white'
-                  }`}
-                  key={key}
-                  onClick={() => setMood(key)}
-                  type="button"
-                >
-                  {MOODS[key].label}
-                </button>
-              ))}
+            <div className="absolute right-6 top-6 z-10 flex items-center gap-2">
+              <button
+                aria-pressed={isTouring}
+                className={`rounded-full border px-4 py-2 text-[11px] tracking-[0.1em] backdrop-blur-sm transition-colors duration-200 ${
+                  isTouring
+                    ? 'border-gold-500 bg-gold-500 text-navy-900'
+                    : 'border-white/15 bg-navy-900/50 text-white/60 hover:text-white'
+                }`}
+                onClick={() => (isTouring ? setIsTouring(false) : startTour())}
+                type="button"
+              >
+                {isTouring ? '투어 중지' : '자동 투어'}
+              </button>
+
+              {/* 시간대 전환. 저녁의 켜진 창이 이 모형의 인상을 만든다. */}
+              <div className="flex items-center gap-1 rounded-full border border-white/15 bg-navy-900/50 p-1 backdrop-blur-sm">
+                {(Object.keys(MOODS) as Mood[]).map((key) => (
+                  <button
+                    className={`rounded-full px-3.5 py-1.5 text-[11px] tracking-[0.1em] transition-colors duration-200 ${
+                      mood === key ? 'bg-gold-500 text-navy-900' : 'text-white/55 hover:text-white'
+                    }`}
+                    key={key}
+                    onClick={() => setMood(key)}
+                    type="button"
+                  >
+                    {MOODS[key].label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* 선택 상태 표시 겸 해제. 3D를 클릭해 들어온 사용자에게 나가는 길을 준다. */}
@@ -376,16 +427,28 @@ export default function CampusModel() {
               </button>
             )}
 
-            {/* 강조된 공간의 설명을 캔버스 안에 겹쳐 둔다. 눈이 모형을 떠나지 않게. */}
+            {/* 강조된 공간의 설명을 캔버스 안에 겹쳐 둔다. 눈이 모형을 떠나지 않게.
+                사진은 '선택'했을 때만 붙인다 — 스쳐 가는 호버마다 2MB를 받아오면
+                마우스를 움직이는 것만으로 네트워크가 출렁인다. */}
             {activePlace && (
-              <div className="pointer-events-none absolute bottom-6 left-6 z-10 max-w-[330px] border-l-2 border-gold-500 bg-navy-900/60 py-3 pl-4 pr-5 backdrop-blur-sm">
-                <p className="text-[10px] tracking-[0.18em] text-gold-300">{activePlace.label}</p>
-                <p className="mt-1.5 font-display text-[26px] leading-tight text-white">
-                  {activePlace.name}
-                </p>
-                <p className="mt-2 text-[13px] leading-6 break-keep text-white/70">
-                  {activePlace.description}
-                </p>
+              <div className="pointer-events-none absolute bottom-6 left-6 z-10 w-[330px] border-l-2 border-gold-500 bg-navy-900/65 backdrop-blur-sm">
+                {selectedPlace && (
+                  <img
+                    alt=""
+                    className="h-[150px] w-full object-cover opacity-90"
+                    key={selectedPlace.id}
+                    src={selectedPlace.image}
+                  />
+                )}
+                <div className="py-3 pl-4 pr-5">
+                  <p className="text-[10px] tracking-[0.18em] text-gold-300">{activePlace.label}</p>
+                  <p className="mt-1.5 font-display text-[26px] leading-tight text-white">
+                    {activePlace.name}
+                  </p>
+                  <p className="mt-2 text-[13px] leading-6 break-keep text-white/70">
+                    {activePlace.description}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -748,6 +811,8 @@ function Scene({
         {bollardPositions.map(([x, z]) => (
           <Bollard key={`${x}-${z}`} x={x} z={z} />
         ))}
+        <Peacock rotation={3.9} x={2.7} z={1.35} />
+        <Compass />
       </ModelStage>
 
       <ContactShadows
@@ -1449,6 +1514,150 @@ function OceanDeck({ muted }: { muted: boolean }) {
 }
 
 /* 모형 수목. 실제 모형이 그렇듯 초록이 아니라 아주 탈색된 세이지 톤이다. */
+/* 명상 정원 옆 잔디의 공작. 모형 전체가 절제된 톤이라 색을 가진 것이 하나쯤
+   있으면 눈이 머물 자리가 생긴다. 공작의 청록·황동은 마침 브랜드 팔레트와
+   같은 계열이라 이질감 없이 들어간다. 찾아내는 재미를 위한 것이므로 안내는
+   호버했을 때만 붙는다. */
+const PEACOCK_BODY = { color: '#12586b', metalness: 0.28, roughness: 0.42 } as const
+const PEACOCK_NECK = { color: '#1a7f96', metalness: 0.32, roughness: 0.36 } as const
+const FEATHER_COUNT = 13
+
+function Peacock({ rotation, x, z }: { rotation: number; x: number; z: number }) {
+  const { lamps } = useStage()
+  const fanRef = useRef<Group>(null)
+  const headRef = useRef<Group>(null)
+  const [hovered, setHovered] = useState(false)
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    /* 깃털을 아주 조금 흔들고 고개를 천천히 돌린다. 완전히 멈춰 있으면
+       모형의 장식이 아니라 오류처럼 보인다. */
+    if (fanRef.current) fanRef.current.rotation.y = Math.sin(t * 0.32) * 0.14
+    if (headRef.current) headRef.current.rotation.y = Math.sin(t * 0.21 + 1.2) * 0.42
+  })
+
+  return (
+    <group
+      onPointerOut={() => setHovered(false)}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        setHovered(true)
+      }}
+      position={[x, 0, z]}
+      rotation={[0, rotation, 0]}
+      scale={0.86}
+    >
+      {/* 다리 */}
+      {[-0.09, 0.09].map((offset) => (
+        <mesh castShadow key={offset} position={[offset, 0.16, 0.02]}>
+          <cylinderGeometry args={[0.014, 0.014, 0.32, 6]} />
+          <meshStandardMaterial {...BRASS} />
+        </mesh>
+      ))}
+
+      {/* 몸통 */}
+      <mesh castShadow position={[0, 0.42, 0]} scale={[1, 0.86, 1.35]}>
+        <sphereGeometry args={[0.26, 20, 16]} />
+        <meshStandardMaterial {...PEACOCK_BODY} />
+      </mesh>
+
+      {/* 목 — 앞으로 기울여 세운다 */}
+      <mesh castShadow position={[0, 0.72, 0.16]} rotation={[0.24, 0, 0]}>
+        <cylinderGeometry args={[0.06, 0.11, 0.44, 10]} />
+        <meshStandardMaterial {...PEACOCK_NECK} />
+      </mesh>
+
+      <group position={[0, 0.96, 0.24]} ref={headRef}>
+        <mesh castShadow>
+          <sphereGeometry args={[0.095, 16, 12]} />
+          <meshStandardMaterial {...PEACOCK_NECK} />
+        </mesh>
+        <mesh castShadow position={[0, -0.01, 0.11]} rotation={[Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.035, 0.11, 8]} />
+          <meshStandardMaterial {...BRASS} />
+        </mesh>
+        {/* 머리깃 세 가닥 */}
+        {[-0.05, 0, 0.05].map((offset) => (
+          <group key={offset} position={[offset, 0.09, 0.01]} rotation={[0, 0, offset * 4]}>
+            <mesh>
+              <cylinderGeometry args={[0.005, 0.005, 0.13, 4]} />
+              <meshStandardMaterial {...BRASS} />
+            </mesh>
+            <mesh position={[0, 0.08, 0]}>
+              <sphereGeometry args={[0.025, 8, 6]} />
+              <meshStandardMaterial
+                color="#e8d3a4"
+                emissive="#c1a36c"
+                emissiveIntensity={lamps ? 1.6 : 0.3}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
+        ))}
+      </group>
+
+      {/* 펼친 꽁지. 부채는 뒤로 조금 눕혀 세운다. */}
+      <group position={[0, 0.34, -0.2]} ref={fanRef} rotation={[-0.34, 0, 0]}>
+        {Array.from({ length: FEATHER_COUNT }, (_, index) => {
+          const spread = (index / (FEATHER_COUNT - 1) - 0.5) * 2
+          const angle = spread * 1.15
+          const length = 1.02 - Math.abs(spread) * 0.24
+          return (
+            <group key={index} rotation={[0, 0, angle]}>
+              <mesh position={[0, length / 2, 0]}>
+                <cylinderGeometry args={[0.012, 0.03, length, 5]} />
+                <meshStandardMaterial {...PEACOCK_NECK} />
+              </mesh>
+              {/* 깃 끝의 눈 무늬. 저녁에는 아주 약하게 빛나 블룸이 받는다. */}
+              <mesh position={[0, length, 0]} scale={[1, 1.25, 0.4]}>
+                <sphereGeometry args={[0.062, 12, 10]} />
+                <meshStandardMaterial
+                  color="#1d6f83"
+                  emissive="#c1a36c"
+                  emissiveIntensity={lamps ? 1.15 : 0.22}
+                  metalness={0.4}
+                  roughness={0.3}
+                />
+              </mesh>
+            </group>
+          )
+        })}
+      </group>
+
+      {hovered && (
+        <Html center distanceFactor={9} position={[0, 2.3, 0]} style={{ pointerEvents: 'none' }}>
+          <div className="w-max rounded-full border border-gold-500/40 bg-navy-900/85 px-3 py-1 text-[10px] tracking-[0.16em] text-gold-300 backdrop-blur-sm">
+            공작
+          </div>
+        </Html>
+      )}
+    </group>
+  )
+}
+
+/* 받침대 모서리의 방위 표시. 조감도를 보는 사람이 가장 먼저 찾는 정보다. */
+function Compass() {
+  return (
+    <group
+      position={[PLINTH_CENTER_X - PLINTH_WIDTH / 2 + 1.05, -0.035, PLINTH_DEPTH / 2 - 1.05]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <mesh>
+        <ringGeometry args={[0.34, 0.36, 48]} />
+        <meshStandardMaterial {...BRASS} />
+      </mesh>
+      <mesh position={[0, 0.14, 0]}>
+        <circleGeometry args={[0.09, 3]} />
+        <meshStandardMaterial {...BRASS} />
+      </mesh>
+      <mesh position={[0, -0.14, 0]} rotation={[0, 0, Math.PI]}>
+        <circleGeometry args={[0.06, 3]} />
+        <meshStandardMaterial color="#7e8894" metalness={0.4} roughness={0.5} />
+      </mesh>
+    </group>
+  )
+}
+
 function ModelTree({ form, scale, x, z }: { form: number; scale: number; x: number; z: number }) {
   return (
     <group position={[x, 0, z]} rotation={[0, x * 0.41, 0]} scale={scale}>
