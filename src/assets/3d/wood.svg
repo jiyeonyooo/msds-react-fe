@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".012 .24" numOctaves="3" seed="7" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="7" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <linearGradient id="warm" x2="1">
+      <stop stop-color="#76513a"/><stop offset=".35" stop-color="#a16f48"/><stop offset=".7" stop-color="#81573d"/><stop offset="1" stop-color="#a87850"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#warm)"/>
+  <g fill="none" stroke-linecap="round" filter="url(#grain)">
+    <path d="M-8 20c45 10 78-10 126 1s93-8 151 2M-12 46c58-12 92 13 144 0s77 9 137-2M-8 80c39 8 74-12 128 0s95-7 145 1M-4 119c52-9 85 13 131 1s82 7 141-2M-10 157c52 11 83-9 135 1s93-7 142 2M-7 197c44-8 79 12 129 0s93 9 145-1M-5 232c56 11 96-11 142 0s79-5 129 1" stroke="#4d3024" stroke-width="2" opacity=".33"/>
+    <path d="M-6 31c49 8 90-9 137 0s79-5 135 1M-3 95c54-8 82 8 134-1s87 7 136 0M-7 178c48 7 89-10 136 0s83-8 139 0" stroke="#dfae75" stroke-width="1" opacity=".35"/>
+  </g>
+  <path d="M0 64h256M0 128h256M0 192h256" stroke="#412a21" opacity=".28"/>
+</svg>

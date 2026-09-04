@@ -1,4 +1,7 @@
 import hero from '../../assets/rooms5.png'
+import { lazy, Suspense } from 'react'
+
+const CampusModel = lazy(() => import('./CampusModel'))
 
 const mapUrl =
   'https://map.naver.com/p/search/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C%20%EC%86%A1%ED%8C%8C%EA%B5%AC%20%EC%98%AC%EB%A6%BC%ED%94%BD%EB%A1%9C35%EA%B8%B8%20125'
@@ -65,6 +68,18 @@ export function AboutPage() {
           </div>
         </div>
       </section>
+
+      <Suspense
+        fallback={
+          <section className="flex min-h-[520px] items-center justify-center bg-[#e7ede9] px-6 py-20 md:px-12">
+            <p className="animate-pulse text-sm tracking-[0.08em] text-muted">
+              3D 공간을 준비하고 있습니다.
+            </p>
+          </section>
+        }
+      >
+        <CampusModel />
+      </Suspense>
 
       <section className="bg-subtle px-6 py-20 md:px-12 md:py-[112px]">
         <div className="mx-auto max-w-[1088px]">

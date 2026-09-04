@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <filter id="stone">
+      <feTurbulence type="fractalNoise" baseFrequency=".09" numOctaves="3" seed="21" result="n"/>
+      <feBlend in="SourceGraphic" in2="n" mode="soft-light"/>
+    </filter>
+  </defs>
+  <rect width="256" height="256" fill="#c8c1b3"/>
+  <g stroke="#8f887c" stroke-width="2" filter="url(#stone)">
+    <path d="M0 0h82v55H0zm86 0h101v55H86zm105 0h65v55h-65z" fill="#cfc7b8"/>
+    <path d="M0 59h48v67H0zm52 0h112v67H52zm116 0h88v67h-88z" fill="#bdb5a7"/>
+    <path d="M0 130h105v51H0zm109 0h69v51h-69zm73 0h74v51h-74z" fill="#d2cabc"/>
+    <path d="M0 185h66v71H0zm70 0h116v71H70zm120 0h66v71h-66z" fill="#c1b9aa"/>
+  </g>
+</svg>
