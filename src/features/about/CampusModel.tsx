@@ -7,9 +7,13 @@ import {
   SRGBColorSpace,
   Vector3,
   type Group,
+  type Texture,
 } from 'three'
 import {
+  createContext,
+  Suspense,
   useEffect,
+  useContext,
   useMemo,
   useRef,
   useState,
@@ -43,6 +47,16 @@ type CampusPlace = {
   focus: [number, number, number]
   radius: number
 }
+
+type CampusTextures = {
+  concrete: Texture
+  grass: Texture
+  metal: Texture
+  stone: Texture
+  wood: Texture
+}
+
+const CampusTextureContext = createContext<CampusTextures | null>(null)
 
 const places: CampusPlace[] = [
   {
@@ -140,9 +154,26 @@ const pinePositions: Array<[number, number, number, number, number]> = [
 export default function CampusModel() {
   const [canvasKey, setCanvasKey] = useState(0)
   const [contextLost, setContextLost] = useState(false)
+  const [isTouring, setIsTouring] = useState(false)
   const [selectedId, setSelectedId] = useState<PlaceId | null>(null)
   const [viewResetKey, setViewResetKey] = useState(0)
+  const [zoomLevel, setZoomLevel] = useState(0)
   const selectedPlace = selectedId ? placeById[selectedId] : null
+
+  useEffect(() => {
+    if (!isTouring) return
+
+    const advanceTour = () => {
+      setSelectedId((current) => {
+        const currentIndex = places.findIndex((place) => place.id === current)
+        return places[(currentIndex + 1 + places.length) % places.length].id
+      })
+    }
+
+    advanceTour()
+    const interval = window.setInterval(advanceTour, 3600)
+    return () => window.clearInterval(interval)
+  }, [isTouring])
 
   const retryRenderer = () => {
     setContextLost(false)
@@ -150,8 +181,25 @@ export default function CampusModel() {
   }
 
   const resetView = () => {
+    setIsTouring(false)
     setSelectedId(null)
+    setZoomLevel(0)
     setViewResetKey((current) => current + 1)
+  }
+
+  const selectPlace = (id: PlaceId) => {
+    setIsTouring(false)
+    setSelectedId(id)
+  }
+
+  const togglePlace = (id: PlaceId) => {
+    setIsTouring(false)
+    setSelectedId((current) => (current === id ? null : id))
+  }
+
+  const changeZoom = (direction: -1 | 1) => {
+    setIsTouring(false)
+    setZoomLevel((current) => Math.max(-2, Math.min(3, current + direction)))
   }
 
   return (
@@ -173,20 +221,56 @@ export default function CampusModel() {
         <div className="mt-10 overflow-hidden border border-[#c7b78f]/40 bg-navy-900 p-2 shadow-[0_34px_90px_-42px_rgba(14,34,57,0.8)] md:p-3">
           <div className="relative h-[470px] overflow-hidden bg-[radial-gradient(circle_at_62%_18%,#28445c_0%,#142d48_34%,#0e2239_76%)] md:h-[620px]">
             <div className="pointer-events-none absolute left-4 top-4 z-10 border border-white/15 bg-navy-900/45 px-3 py-2 text-[9px] tracking-[0.16em] text-white/65 backdrop-blur-md md:left-6 md:top-6 md:text-[10px]">
-              <span className="md:hidden">회전 · 확대 · 공간 선택</span>
-              <span className="hidden md:inline">드래그로 회전 · 휠/핀치로 확대 · 공간 선택</span>
+              <span className="md:hidden">회전 · 확대 · 두 손가락 이동</span>
+              <span className="hidden md:inline">
+                드래그 회전 · 우클릭 이동 · 휠 확대 · 공간 선택
+              </span>
             </div>
-            <button
-              className="absolute right-4 top-4 z-10 border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[9px] tracking-[0.14em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800 md:right-6 md:top-6 md:text-[10px]"
-              onClick={resetView}
-              type="button"
-            >
-              시점 초기화
-            </button>
+            <div className="absolute right-4 top-4 z-10 flex items-center gap-1.5 md:right-6 md:top-6">
+              <button
+                aria-label="3D 화면 축소"
+                className="flex size-8 items-center justify-center border border-white/15 bg-navy-900/55 text-base text-white/75 backdrop-blur-md transition-colors hover:border-gold-300/45 hover:text-gold-300"
+                onClick={() => changeZoom(-1)}
+                type="button"
+              >
+                −
+              </button>
+              <button
+                aria-label="3D 화면 확대"
+                className="flex size-8 items-center justify-center border border-white/15 bg-navy-900/55 text-base text-white/75 backdrop-blur-md transition-colors hover:border-gold-300/45 hover:text-gold-300"
+                onClick={() => changeZoom(1)}
+                type="button"
+              >
+                +
+              </button>
+              <button
+                aria-label={isTouring ? '자동 투어 멈춤' : '자동 투어 시작'}
+                aria-pressed={isTouring}
+                className={
+                  isTouring
+                    ? 'border border-gold-300 bg-gold-300 px-3 py-2 text-[9px] tracking-[0.12em] text-navy-900 shadow-lg md:text-[10px]'
+                    : 'border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[9px] tracking-[0.12em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800 md:text-[10px]'
+                }
+                onClick={() => setIsTouring((current) => !current)}
+                type="button"
+              >
+                <span className="sm:hidden">{isTouring ? '■' : '▶'}</span>
+                <span className="hidden sm:inline">{isTouring ? '투어 멈춤' : '자동 투어'}</span>
+              </button>
+              <button
+                aria-label="3D 시점 초기화"
+                className="border border-gold-300/35 bg-navy-900/55 px-3 py-2 text-[9px] tracking-[0.12em] text-gold-300 backdrop-blur-md transition-colors hover:bg-navy-800 md:text-[10px]"
+                onClick={resetView}
+                type="button"
+              >
+                <span className="sm:hidden">↺</span>
+                <span className="hidden sm:inline">시점 초기화</span>
+              </button>
+            </div>
 
             <Canvas
               camera={{ far: 90, near: 0.1, position: [11, 10, 12], zoom: 52 }}
-              dpr={[1, 1.5]}
+              dpr={[1, 1.25]}
               frameloop="demand"
               gl={{
                 antialias: true,
@@ -197,15 +281,26 @@ export default function CampusModel() {
                 toneMappingExposure: 1.06,
               }}
               key={canvasKey}
-              onPointerMissed={() => setSelectedId(null)}
+              onPointerMissed={() => {
+                setIsTouring(false)
+                setSelectedId(null)
+              }}
               orthographic
               shadows
             >
               <color attach="background" args={['#102941']} />
               <fog attach="fog" args={['#102941', 24, 42]} />
               <ContextLifecycle onStatusChange={setContextLost} />
-              <Scene selectedId={selectedId} onSelect={setSelectedId} />
-              <CalmCamera resetKey={viewResetKey} selectedPlace={selectedPlace} />
+              <Suspense fallback={null}>
+                <Scene selectedId={selectedId} onSelect={selectPlace} />
+              </Suspense>
+              <CalmCamera
+                isTouring={isTouring}
+                onInteractionStart={() => setIsTouring(false)}
+                resetKey={viewResetKey}
+                selectedPlace={selectedPlace}
+                zoomLevel={zoomLevel}
+              />
             </Canvas>
 
             {selectedPlace && (
@@ -261,7 +356,7 @@ export default function CampusModel() {
                       : 'border-b border-white/10 px-4 py-4 text-left text-white/55 transition-colors hover:bg-white/5 hover:text-white md:border-b-0'
                   }
                   key={place.id}
-                  onClick={() => setSelectedId(isSelected ? null : place.id)}
+                  onClick={() => togglePlace(place.id)}
                   type="button"
                 >
                   <span className="block text-[9px] tracking-[0.16em] text-gold-300/75">
@@ -292,11 +387,15 @@ function ContextLifecycle({
 
   useEffect(() => {
     const canvas = gl.domElement
+    let lostTimer = 0
+
     const handleLost = (event: Event) => {
       event.preventDefault()
-      onStatusChange(true)
+      window.clearTimeout(lostTimer)
+      lostTimer = window.setTimeout(() => onStatusChange(true), 350)
     }
     const handleRestored = () => {
+      window.clearTimeout(lostTimer)
       onStatusChange(false)
       invalidate()
     }
@@ -304,6 +403,7 @@ function ContextLifecycle({
     canvas.addEventListener('webglcontextlost', handleLost)
     canvas.addEventListener('webglcontextrestored', handleRestored)
     return () => {
+      window.clearTimeout(lostTimer)
       canvas.removeEventListener('webglcontextlost', handleLost)
       canvas.removeEventListener('webglcontextrestored', handleRestored)
     }
@@ -313,11 +413,17 @@ function ContextLifecycle({
 }
 
 function CalmCamera({
+  isTouring,
+  onInteractionStart,
   resetKey,
   selectedPlace,
+  zoomLevel,
 }: {
+  isTouring: boolean
+  onInteractionStart: () => void
   resetKey: number
   selectedPlace: CampusPlace | null
+  zoomLevel: number
 }) {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
   const { camera, invalidate, size } = useThree()
@@ -335,7 +441,8 @@ function CalmCamera({
     }
 
     const target = selectedPlace ? new Vector3(...selectedPlace.focus) : new Vector3(0, 0.34, 0)
-    const targetZoom = selectedPlace ? baseZoom * (compact ? 1.06 : 1.16) : baseZoom
+    const focusZoom = selectedPlace ? baseZoom * (compact ? 1.06 : 1.16) : baseZoom
+    const targetZoom = focusZoom * Math.pow(1.18, zoomLevel)
     const initialTarget = controls.target.clone()
     const initialZoom = camera.zoom
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -356,22 +463,25 @@ function CalmCamera({
 
     animationFrame = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(animationFrame)
-  }, [camera, invalidate, resetKey, selectedPlace, size.width])
+  }, [camera, invalidate, resetKey, selectedPlace, size.width, zoomLevel])
 
   return (
     <OrbitControls
       ref={controlsRef}
+      autoRotate={isTouring}
+      autoRotateSpeed={0.45}
       dampingFactor={0.07}
       enableDamping
-      enablePan={false}
+      enablePan
       enableZoom
-      maxAzimuthAngle={1.3}
-      maxPolarAngle={Math.PI / 3.55}
+      maxPolarAngle={Math.PI / 2.3}
       maxZoom={82}
-      minAzimuthAngle={0.18}
-      minPolarAngle={Math.PI / 3.55}
+      minPolarAngle={Math.PI / 7}
       minZoom={22}
+      onStart={onInteractionStart}
+      panSpeed={0.55}
       rotateSpeed={0.34}
+      screenSpacePanning
       zoomSpeed={0.65}
     />
   )
@@ -384,8 +494,20 @@ function Scene({
   selectedId: PlaceId | null
   onSelect: (id: PlaceId) => void
 }) {
+  const [concrete, grass, metal, stone, wood] = useTexture([
+    concreteTexture,
+    grassTexture,
+    metalTexture,
+    stoneTexture,
+    woodTexture,
+  ])
+  const textures = useMemo(
+    () => ({ concrete, grass, metal, stone, wood }),
+    [concrete, grass, metal, stone, wood],
+  )
+
   return (
-    <>
+    <CampusTextureContext.Provider value={textures}>
       <ambientLight intensity={0.66} />
       <hemisphereLight args={['#dfe8ed', '#172638', 0.8]} />
       <directionalLight
@@ -399,7 +521,7 @@ function Scene({
         shadow-camera-left={-12}
         shadow-camera-right={12}
         shadow-camera-top={11}
-        shadow-mapSize={[1536, 1536]}
+        shadow-mapSize={[1024, 1024]}
       />
       <directionalLight color="#87a7c0" intensity={0.9} position={[10, 7, -9]} />
 
@@ -434,10 +556,10 @@ function Scene({
         frames={1}
         opacity={0.52}
         position={[0, 0.025, 0]}
-        resolution={1024}
+        resolution={512}
         scale={25}
       />
-    </>
+    </CampusTextureContext.Provider>
   )
 }
 
@@ -1005,18 +1127,24 @@ function CoastalPine({
   )
 }
 
+function useCampusTextures() {
+  const textures = useContext(CampusTextureContext)
+  if (!textures) throw new Error('3D 캠퍼스 텍스처가 준비되지 않았습니다.')
+  return textures
+}
+
 function LimestoneMaterial({ muted, tone = 'light' }: { muted: boolean; tone?: 'light' | 'warm' }) {
-  const texture = useTexture(concreteTexture)
+  const { concrete } = useCampusTextures()
   const color = muted ? '#aaa9a2' : tone === 'warm' ? '#e0d3bf' : '#f2eadf'
-  return <meshStandardMaterial color={color} map={texture} metalness={0.02} roughness={0.82} />
+  return <meshStandardMaterial color={color} map={concrete} metalness={0.02} roughness={0.82} />
 }
 
 function WoodMaterial({ muted }: { muted: boolean }) {
-  const texture = useTexture(woodTexture)
+  const { wood } = useCampusTextures()
   return (
     <meshStandardMaterial
       color={muted ? '#807970' : '#c69b73'}
-      map={texture}
+      map={wood}
       metalness={0.03}
       roughness={0.68}
     />
@@ -1024,13 +1152,13 @@ function WoodMaterial({ muted }: { muted: boolean }) {
 }
 
 function RoofMaterial({ muted }: { muted: boolean }) {
-  const texture = useTexture(metalTexture)
+  const { metal } = useCampusTextures()
   return (
     <meshStandardMaterial
       color={muted ? '#aeb5b8' : '#d1dee5'}
       emissive={muted ? '#26333b' : '#17364f'}
       emissiveIntensity={muted ? 0.06 : 0.18}
-      map={texture}
+      map={metal}
       metalness={0.32}
       roughness={0.44}
     />
@@ -1038,14 +1166,14 @@ function RoofMaterial({ muted }: { muted: boolean }) {
 }
 
 function StonePaverMaterial() {
-  const texture = useTexture(stoneTexture)
-  return <meshStandardMaterial color="#f1eadf" map={texture} roughness={0.9} />
+  const { stone } = useCampusTextures()
+  return <meshStandardMaterial color="#f1eadf" map={stone} roughness={0.9} />
 }
 
 function GrassMaterial({ tone }: { tone: number }) {
-  const texture = useTexture(grassTexture)
+  const { grass } = useCampusTextures()
   const colors = ['#91a084', '#a5ae91', '#c1bda0']
-  return <meshStandardMaterial color={colors[tone] ?? colors[0]} map={texture} roughness={0.96} />
+  return <meshStandardMaterial color={colors[tone] ?? colors[0]} map={grass} roughness={0.96} />
 }
 
 function WarmGlassMaterial({ muted }: { muted: boolean }) {
