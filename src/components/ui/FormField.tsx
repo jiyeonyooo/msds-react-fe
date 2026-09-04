@@ -49,7 +49,7 @@ export function Select({ className = '', children, defaultValue, disabled, id, n
   return (
     <div className="relative" ref={containerRef}>
       {name && <input name={name} type="hidden" value={selectedValue} />}
-      <button aria-controls={listboxId} aria-expanded={isOpen} aria-haspopup="listbox" className={`msds-select flex items-center justify-between gap-3 text-left ${className}`} disabled={disabled} id={id} onClick={() => setIsOpen((current) => !current)} type="button" {...props}>
+      <button aria-controls={listboxId} aria-expanded={isOpen} aria-haspopup="listbox" className={`msds-select flex items-center justify-between gap-3 text-left text-navy-900 ${className}`} disabled={disabled} id={id} onClick={() => setIsOpen((current) => !current)} type="button" {...props}>
         <span className="truncate">{selectedOption?.label}</span><Chevron />
       </button>
       {isOpen && (

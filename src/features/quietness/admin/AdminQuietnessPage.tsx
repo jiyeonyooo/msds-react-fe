@@ -256,7 +256,7 @@ export function AdminQuietnessPage() {
               <EmptyState>등록된 측정 기기가 없습니다.</EmptyState>
             )}
           </div>
-          <PathNote>PATCH /devices/{'{deviceId}'}/status · ACTIVE 기기만 측정값 등록 가능</PathNote>
+          <PathNote>ACTIVE 기기만 측정값 등록 가능</PathNote>
         </Card>
 
         <Card>
@@ -285,7 +285,7 @@ export function AdminQuietnessPage() {
             ))}
             {!loading && spaces.length === 0 && <EmptyState>등록된 공간이 없습니다.</EmptyState>}
           </div>
-          <PathNote>POST /spaces · name 최대 100자 · type 필수</PathNote>
+          <PathNote>name 최대 100자 · type 필수</PathNote>
         </Card>
       </section>
 
