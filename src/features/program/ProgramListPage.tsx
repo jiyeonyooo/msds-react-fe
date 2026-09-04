@@ -65,24 +65,26 @@ export default function ProgramListPage() {
 
   return (
     <main>
-      <section className="bg-[#fbfaf6] px-6 py-16 md:px-[100px] md:py-24">
-        <div className="mx-auto max-w-[1240px]">
+      <section className="bg-subtle">
+        <div className="mx-auto max-w-[1240px] px-6 py-16 md:px-12 md:py-20">
           <p className="text-[11px] font-medium tracking-[0.17em] text-gold-500">
-            MINDFUL PROGRAMS
+            MINDFUL PROGRAMS · 마음챙김 프로그램
           </p>
-          <h1 className="mt-4 max-w-[672px] font-display text-[52px] leading-[0.95] font-semibold text-navy-900 md:text-[64px]">
-            Practice stillness,
+          <h1 className="mt-5 max-w-[620px] text-5xl font-medium leading-[1.15] tracking-[-0.035em] md:text-[62px]">
+            고요를 연습하는 하루,
             <br />
-            one day at a time.
+            나를 돌보는 시간
           </h1>
-          <p className="mt-4 max-w-[512px] text-sm leading-7 text-ink-500">
-            숙박 중 참여할 수 있는 명상 프로그램을 만나보세요.
+          <p className="mt-6 max-w-[620px] text-sm leading-7 text-secondary">
+            머무는 동안 몸과 마음을 천천히 가다듬어 보세요.
+            <br className="hidden md:block" />
+            숙박 중 참여할 수 있는 다양한 명상 프로그램을 안내합니다.
           </p>
           <Link
-            className="mt-6 inline-block text-xs font-medium tracking-[0.08em] text-navy-900 underline underline-offset-4 hover:text-gold-500"
+            className="mt-6 inline-flex min-h-11 items-center rounded-sm bg-navy-900 px-6 text-xs font-medium tracking-[0.05em] text-white transition hover:bg-navy-700"
             to="/reviews"
           >
-            GUEST REVIEWS →
+            이용 후기 보기
           </Link>
         </div>
       </section>
