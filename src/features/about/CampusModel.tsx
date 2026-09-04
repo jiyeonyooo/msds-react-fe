@@ -47,7 +47,7 @@ import meditationCourtyard from '../../assets/home/meditation-courtyard.png'
 import oceanSuite from '../../assets/home/ocean-suite.png'
 import coast from '../../assets/msds-coast.png'
 
-type PlaceId = 'stay' | 'wellness' | 'meditation' | 'studio' | 'ocean' | 'pond'
+type PlaceId = 'stay' | 'wellness' | 'meditation' | 'studio' | 'ocean' | 'pond' | 'wildlife'
 type CampusTimeMode = 'day' | 'sunset' | 'night'
 
 type CampusTimePreset = {
@@ -216,6 +216,19 @@ const places: CampusPlace[] = [
     focus: [2.0, 0.22, 4.65],
     radius: 1.85,
   },
+  {
+    id: 'wildlife',
+    index: '07',
+    label: 'WILDLIFE MEADOW',
+    name: '야생동물 초지',
+    description: '동물마다 다른 속도로 움직이는 넓은 생태 구역',
+    detail: '느긋한 고양이부터 달리는 사슴과 늑대, 호랑이의 추격 동선까지 확대해 관찰해 보세요.',
+    image: coast,
+    position: [7.45, 0.06, 1.35],
+    labelPosition: [0, 2.25, 0],
+    focus: [7.2, 0.34, 1.3],
+    radius: 2.65,
+  },
 ]
 
 const placeById = Object.fromEntries(places.map((place) => [place.id, place])) as Record<
@@ -241,6 +254,20 @@ const pinePositions: Array<[number, number, number, number, number]> = [
   [-6.55, 0, 3.75, 0.76, -0.18],
   [-6.85, 0, 1.2, 0.82, 0.14],
   [-6.85, 0, -1.35, 0.7, -0.12],
+  [-9.15, 0, -5.7, 0.92, -0.2],
+  [-9.35, 0, -2.4, 0.78, 0.14],
+  [-9.4, 0, 1.15, 0.9, -0.16],
+  [-8.8, 0, 5.25, 0.82, 0.12],
+  [-5.5, 0, 6.85, 0.88, -0.1],
+  [-1.55, 0, 7.15, 0.76, 0.18],
+  [3.0, 0, 7.05, 0.9, -0.18],
+  [7.3, 0, 6.35, 0.84, 0.14],
+  [9.35, 0, 4.05, 0.92, -0.08],
+  [9.6, 0, -0.1, 0.8, 0.16],
+  [9.15, 0, -4.7, 0.88, -0.12],
+  [5.25, 0, -6.65, 0.78, 0.12],
+  [0.2, 0, -7.1, 0.84, -0.16],
+  [-5.0, 0, -6.8, 0.8, 0.16],
 ]
 
 export default function CampusModel() {
@@ -461,7 +488,7 @@ export default function CampusModel() {
 
           <nav
             aria-label="MSDS 3D 공간 선택"
-            className="grid grid-cols-2 border-t border-white/10 md:grid-cols-6"
+            className="grid grid-cols-2 border-t border-white/10 md:grid-cols-[repeat(7,minmax(0,1fr))]"
           >
             {places.map((place) => {
               const isSelected = selectedId === place.id
@@ -551,7 +578,7 @@ function CalmCamera({
     if (!controls || !('zoom' in camera)) return
 
     const compact = size.width < 640
-    const baseZoom = compact ? 29 : size.width < 900 ? 40 : 52
+    const baseZoom = compact ? 25 : size.width < 900 ? 34 : 43
 
     if (resetKey > 0 && !selectedPlace) {
       controls.reset()
@@ -659,6 +686,7 @@ function Scene({
         <GoldPath />
         <WaterCourt />
         <FormalGarden />
+        <WildlifeMeadow />
         <LandscapeDetails />
         <TopographicGardens />
         <WildlifeClock />
@@ -691,7 +719,7 @@ function Scene({
           opacity={timeMode === 'night' ? 0.34 : 0.52}
           position={[0, 0.025, 0]}
           resolution={512}
-          scale={25}
+          scale={32}
         />
       </CampusTextureContext.Provider>
     </CampusTimeContext.Provider>
@@ -843,23 +871,14 @@ function OceanStage() {
 function ContourGround() {
   return (
     <group>
-      <mesh castShadow position={[-0.15, -1.08, 0]} receiveShadow scale={[1.05, 1, 0.82]}>
-        <cylinderGeometry args={[8.25, 9.2, 2.12, 48, 3]} />
+      <mesh castShadow position={[-0.15, -1.08, 0]} receiveShadow scale={[1.04, 1, 0.82]}>
+        <cylinderGeometry args={[10.25, 11.15, 2.12, 64, 3]} />
         <CliffMaterial />
       </mesh>
-      <mesh position={[-0.15, -0.025, 0]} receiveShadow scale={[1.045, 1, 0.825]}>
-        <cylinderGeometry args={[8.22, 8.22, 0.08, 48]} />
-        <meshStandardMaterial color="#5f704e" roughness={0.98} />
-      </mesh>
-      <RoundedBox
-        args={[15.7, 0.055, 12.35]}
-        position={[-0.35, 0.025, -0.06]}
-        radius={0.48}
-        receiveShadow
-        rotation={[0, 0.012, 0]}
-      >
+      <mesh position={[-0.15, -0.025, 0]} receiveShadow scale={[1.035, 1, 0.825]}>
+        <cylinderGeometry args={[10.22, 10.22, 0.08, 64]} />
         <GrassMaterial tone={0} />
-      </RoundedBox>
+      </mesh>
     </group>
   )
 }
@@ -1109,6 +1128,7 @@ function PondGarden({ muted }: { muted: boolean }) {
       <SwimmingPondCreature kind="fish" phase={4.1} radius={0.62} speed={0.48} />
       <SwimmingPondCreature kind="squid" phase={1.25} radius={0.9} speed={0.28} />
       <SwimmingPondCreature kind="octopus" phase={3.15} radius={0.46} speed={0.2} />
+      <SwimmingCrocodile />
 
       {[-1.4, -1.2, 1.23, 1.46].map((x, index) => (
         <group key={x} position={[x, 0.67, index % 2 ? 0.25 : -0.3]}>
@@ -1268,6 +1288,55 @@ function OctopusModel() {
   )
 }
 
+function SwimmingCrocodile() {
+  const groupRef = useRef<Group>(null)
+
+  useFrame(({ clock }) => {
+    const group = groupRef.current
+    if (!group) return
+    const angle = clock.elapsedTime * 0.085 + 4.2
+    group.position.x = Math.cos(angle) * 0.86
+    group.position.y = 0.79 + Math.sin(angle * 2) * 0.008
+    group.position.z = Math.sin(angle) * 0.31
+    group.rotation.y = -angle + Math.PI / 2
+  })
+
+  return (
+    <group ref={groupRef} scale={0.48}>
+      <mesh castShadow scale={[0.64, 0.26, 1.7]}>
+        <sphereGeometry args={[0.22, 18, 12]} />
+        <meshStandardMaterial color="#526c42" roughness={0.92} />
+      </mesh>
+      <mesh castShadow position={[0, 0.01, 0.43]} scale={[0.78, 0.22, 1.2]}>
+        <boxGeometry args={[0.42, 0.24, 0.55]} />
+        <meshStandardMaterial color="#607a49" roughness={0.9} />
+      </mesh>
+      {[-0.11, 0.11].map((x) => (
+        <mesh key={x} position={[x, 0.13, 0.68]}>
+          <sphereGeometry args={[0.035, 10, 8]} />
+          <meshStandardMaterial color="#152114" roughness={0.5} />
+        </mesh>
+      ))}
+      {[-0.36, -0.15, 0.08, 0.28].map((z, index) => (
+        <mesh key={z} position={[0, 0.16, z]} rotation={[0, 0, Math.PI / 4]}>
+          <octahedronGeometry args={[0.08 - index * 0.007, 0]} />
+          <meshStandardMaterial color="#71845a" roughness={0.94} />
+        </mesh>
+      ))}
+      {[0.18, 0.4, 0.61].map((offset, index) => (
+        <mesh
+          key={offset}
+          position={[0, -0.01, -0.42 - offset]}
+          rotation={[Math.PI / 2, 0, index % 2 ? 0.18 : -0.14]}
+        >
+          <coneGeometry args={[0.13 - index * 0.025, 0.34, 8]} />
+          <meshStandardMaterial color="#49613e" roughness={0.93} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
 function FormalGarden() {
   return (
     <group>
@@ -1277,6 +1346,50 @@ function FormalGarden() {
       <FlowerBed position={[0.45, 0.09, 5.15]} rotation={-0.12} tone="pink" />
       <HedgeRow position={[-1.4, 0.1, -4.38]} rotation={0.02} />
       <HedgeRow position={[4.95, 0.1, 1.55]} rotation={Math.PI / 2.1} />
+    </group>
+  )
+}
+
+function WildlifeMeadow() {
+  const timeMode = useContext(CampusTimeContext)
+  const grassColor = timeMode === 'night' ? '#314d3b' : timeMode === 'sunset' ? '#66815c' : '#79976a'
+
+  return (
+    <group position={[7.25, 0.075, 1.3]}>
+      <mesh receiveShadow scale={[1, 1, 0.72]}>
+        <cylinderGeometry args={[2.7, 2.78, 0.08, 64]} />
+        <meshStandardMaterial color={grassColor} roughness={0.98} />
+      </mesh>
+      <mesh position={[0, 0.047, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.72, 1]}>
+        <ringGeometry args={[2.35, 2.56, 64]} />
+        <meshBasicMaterial color="#b3a77e" opacity={0.38} transparent />
+      </mesh>
+      {Array.from({ length: 24 }, (_, index) => {
+        const angle = (Math.PI * 2 * index) / 24
+        const radius = 1.25 + (index % 4) * 0.32
+        return (
+          <group
+            key={index}
+            position={[Math.cos(angle) * radius, 0.08, Math.sin(angle) * radius * 0.68]}
+            rotation={[0, -angle, 0]}
+          >
+            <mesh position={[0, 0.12, 0]}>
+              <coneGeometry args={[0.045, 0.3 + (index % 3) * 0.05, 6]} />
+              <meshStandardMaterial color={index % 2 ? '#72875d' : '#87946a'} roughness={0.96} />
+            </mesh>
+          </group>
+        )
+      })}
+      <group position={[1.55, 0.1, -0.7]} rotation={[0, -0.2, 0]}>
+        <mesh castShadow position={[0, 0.16, 0]}>
+          <boxGeometry args={[0.82, 0.14, 0.32]} />
+          <meshStandardMaterial color="#83705c" roughness={0.94} />
+        </mesh>
+        <mesh position={[0, 0.24, 0]}>
+          <boxGeometry args={[0.68, 0.035, 0.2]} />
+          <meshPhysicalMaterial color="#537e86" roughness={0.12} clearcoat={0.8} />
+        </mesh>
+      </group>
     </group>
   )
 }
@@ -1364,21 +1477,62 @@ function WildlifeClock() {
 function WildlifeScene() {
   return (
     <group>
-      <AnimatedDeer anchor={[-5.35, 0.12, 3.7]} phase={0.2} radius={0.52} scale={0.42} />
-      <AnimatedDeer anchor={[-4.7, 0.12, 4.2]} phase={2.2} radius={0.38} scale={0.34} />
-      <AnimatedDeer anchor={[2.75, 0.12, -4.0]} phase={4.1} radius={0.46} scale={0.38} />
-      <RoamingAnimal anchor={[5.65, 0.12, 0.8]} kind="boar" phase={0.4} radius={0.42} />
-      <RoamingAnimal anchor={[5.15, 0.12, 1.35]} kind="pig" phase={2.7} radius={0.3} />
-      <RoamingAnimal anchor={[-2.1, 0.12, -3.75]} kind="pig" phase={4.4} radius={0.34} />
-      <RoamingAnimal anchor={[-1.65, 0.12, -4.0]} kind="chicken" phase={0.8} radius={0.28} />
-      <RoamingAnimal anchor={[-1.2, 0.12, -3.72]} kind="chicken" phase={3.1} radius={0.24} />
-      <RoamingAnimal anchor={[0.05, 0.12, 5.5]} kind="peacock" phase={0.2} radius={0.26} />
-      <RoamingAnimal anchor={[4.1, 0.12, 5.35]} kind="peacock" phase={1.4} radius={0.22} />
-      <RoamingAnimal anchor={[-3.55, 0.12, 0.15]} kind="peacock" phase={2.7} radius={0.24} />
-      <RoamingAnimal anchor={[-4.05, 0.12, 1.6]} kind="peacock" phase={4.5} radius={0.2} />
-      <RoamingAnimal anchor={[1.65, 0.12, -4.05]} kind="peacock" phase={5.6} radius={0.25} />
-      <RoamingAnimal anchor={[-1.75, 0.12, 4.75]} kind="peacock" phase={3.7} radius={0.22} />
-      <RoamingAnimal anchor={[5.45, 0.12, 2.25]} kind="peacock" phase={5.1} radius={0.2} />
+      <AnimatedDeer anchor={[-6.9, 0.34, 4.7]} phase={0.2} radius={0.82} scale={0.5} speed={0.07} />
+      <AnimatedDeer anchor={[-5.8, 0.33, 5.2]} phase={2.2} radius={0.62} scale={0.43} speed={0.055} />
+      <AnimatedDeer anchor={[7.25, 0.35, 1.3]} phase={0.72} radius={1.62} scale={0.48} speed={0.18} />
+
+      <AnimatedAssetAnimal
+        anchor={[7.25, 0.34, 1.3]}
+        modelPath="/models/animals/wolf.gltf"
+        phase={0.24}
+        radius={1.62}
+        routeDepth={0.62}
+        scale={0.5}
+        speed={0.18}
+      />
+      <AnimatedAssetAnimal
+        anchor={[-7.65, 0.34, -3.9]}
+        modelPath="/models/animals/wolf.gltf"
+        phase={3.2}
+        radius={0.78}
+        routeDepth={0.5}
+        scale={0.46}
+        speed={0.065}
+      />
+      <AnimatedAssetAnimal
+        anchor={[-7.4, 0.31, -1.75]}
+        animationHint="idle"
+        modelPath="/models/animals/cat.gltf"
+        phase={1.5}
+        radius={0.52}
+        routeDepth={0.44}
+        scale={0.72}
+        speed={0.035}
+      />
+      <AnimatedAssetAnimal
+        anchor={[7.8, 0.31, -3.65]}
+        animationHint="idle"
+        modelPath="/models/animals/cat.gltf"
+        phase={4.6}
+        radius={0.46}
+        routeDepth={0.48}
+        scale={0.66}
+        speed={0.028}
+      />
+
+      <RoamingAnimal anchor={[7.25, 0.37, 1.3]} kind="tiger" phase={3.55} radius={2.05} speed={0.135} />
+      <RoamingAnimal anchor={[7.25, 0.34, 1.3]} kind="boar" phase={4.08} radius={2.05} speed={0.135} />
+      <RoamingAnimal anchor={[6.2, 0.32, -2.3]} kind="pig" phase={2.7} radius={0.52} />
+      <RoamingAnimal anchor={[-6.5, 0.32, 0.4]} kind="pig" phase={4.4} radius={0.5} />
+      <RoamingAnimal anchor={[-7.1, 0.31, 2.15]} kind="chicken" phase={0.8} radius={0.42} />
+      <RoamingAnimal anchor={[-6.5, 0.31, 2.0]} kind="chicken" phase={3.1} radius={0.36} />
+      <RoamingAnimal anchor={[0.05, 0.31, 5.5]} kind="peacock" phase={0.2} radius={0.4} />
+      <RoamingAnimal anchor={[4.1, 0.31, 5.35]} kind="peacock" phase={1.4} radius={0.36} />
+      <RoamingAnimal anchor={[-6.8, 0.31, -5.0]} kind="peacock" phase={2.7} radius={0.4} />
+      <RoamingAnimal anchor={[-7.45, 0.31, 1.05]} kind="peacock" phase={4.5} radius={0.34} />
+      <RoamingAnimal anchor={[2.1, 0.31, -5.55]} kind="peacock" phase={5.6} radius={0.4} />
+      <RoamingAnimal anchor={[-1.75, 0.31, 5.9]} kind="peacock" phase={3.7} radius={0.34} />
+      <RoamingAnimal anchor={[8.6, 0.31, 4.65]} kind="peacock" phase={5.1} radius={0.34} />
     </group>
   )
 }
@@ -1388,11 +1542,13 @@ function AnimatedDeer({
   phase,
   radius,
   scale,
+  speed = 0.09,
 }: {
   anchor: [number, number, number]
   phase: number
   radius: number
   scale: number
+  speed?: number
 }) {
   const groupRef = useRef<Group>(null)
   const { animations, scene } = useGLTF('/models/animals/deer.gltf')
@@ -1410,10 +1566,62 @@ function AnimatedDeer({
   useFrame(({ clock }) => {
     const group = groupRef.current
     if (!group) return
-    const angle = clock.elapsedTime * 0.09 + phase
+    const angle = clock.elapsedTime * speed + phase
     group.position.x = anchor[0] + Math.cos(angle) * radius
     group.position.y = anchor[1]
     group.position.z = anchor[2] + Math.sin(angle) * radius * 0.55
+    group.rotation.y = -angle + Math.PI / 2
+  })
+
+  return (
+    <group ref={groupRef} scale={scale}>
+      <Clone castShadow object={scene} receiveShadow />
+    </group>
+  )
+}
+
+function AnimatedAssetAnimal({
+  anchor,
+  animationHint = 'walk',
+  modelPath,
+  phase,
+  radius,
+  routeDepth,
+  scale,
+  speed,
+}: {
+  anchor: [number, number, number]
+  animationHint?: string
+  modelPath: string
+  phase: number
+  radius: number
+  routeDepth: number
+  scale: number
+  speed: number
+}) {
+  const groupRef = useRef<Group>(null)
+  const { animations, scene } = useGLTF(modelPath)
+  const { actions, names } = useAnimations(animations, groupRef)
+
+  useEffect(() => {
+    const actionName =
+      names.find((name) => name.toLowerCase().includes(animationHint)) ??
+      names.find((name) => name.toLowerCase().includes('walk')) ??
+      names[0]
+    const action = actionName ? actions[actionName] : undefined
+    action?.reset().fadeIn(0.3).play()
+    return () => {
+      action?.fadeOut(0.2)
+    }
+  }, [actions, animationHint, names])
+
+  useFrame(({ clock }) => {
+    const group = groupRef.current
+    if (!group) return
+    const angle = clock.elapsedTime * speed + phase
+    group.position.x = anchor[0] + Math.cos(angle) * radius
+    group.position.y = anchor[1] + Math.sin(angle * 2.4) * 0.012
+    group.position.z = anchor[2] + Math.sin(angle) * radius * routeDepth
     group.rotation.y = -angle + Math.PI / 2
   })
 
@@ -1429,14 +1637,16 @@ function RoamingAnimal({
   kind,
   phase,
   radius,
+  speed: speedOverride,
 }: {
   anchor: [number, number, number]
-  kind: 'boar' | 'pig' | 'chicken' | 'peacock'
+  kind: 'boar' | 'pig' | 'chicken' | 'peacock' | 'tiger'
   phase: number
   radius: number
+  speed?: number
 }) {
   const groupRef = useRef<Group>(null)
-  const speed = kind === 'chicken' ? 0.22 : kind === 'peacock' ? 0.1 : 0.14
+  const speed = speedOverride ?? (kind === 'chicken' ? 0.22 : kind === 'peacock' ? 0.1 : 0.14)
 
   useFrame(({ clock }) => {
     const group = groupRef.current
@@ -1454,6 +1664,7 @@ function RoamingAnimal({
       {kind === 'pig' && <PigModel />}
       {kind === 'chicken' && <ChickenModel />}
       {kind === 'peacock' && <PeacockModel phase={phase} />}
+      {kind === 'tiger' && <TigerModel />}
     </group>
   )
 }
@@ -1489,6 +1700,68 @@ function PigModel({ wild = false }: { wild?: boolean }) {
             <meshStandardMaterial color="#e7d8ba" roughness={0.54} />
           </mesh>
         ))}
+    </group>
+  )
+}
+
+function TigerModel() {
+  const stripePositions = [-0.42, -0.18, 0.08, 0.34]
+
+  return (
+    <group scale={0.72}>
+      <mesh castShadow position={[0, 0.32, 0]} scale={[1.55, 0.68, 0.78]}>
+        <sphereGeometry args={[0.42, 24, 16]} />
+        <meshStandardMaterial color="#ce8137" roughness={0.78} />
+      </mesh>
+      {stripePositions.map((z, index) => (
+        <mesh
+          key={z}
+          position={[index % 2 ? 0.17 : -0.12, 0.47, z]}
+          rotation={[0.05, 0, index % 2 ? 0.32 : -0.26]}
+          scale={[0.78, 0.18, 0.13]}
+        >
+          <sphereGeometry args={[0.28, 12, 8]} />
+          <meshStandardMaterial color="#29241f" roughness={0.9} />
+        </mesh>
+      ))}
+      <mesh castShadow position={[0, 0.43, 0.5]} scale={[0.94, 0.84, 0.9]}>
+        <sphereGeometry args={[0.3, 20, 14]} />
+        <meshStandardMaterial color="#d88b3f" roughness={0.76} />
+      </mesh>
+      <mesh position={[0, 0.35, 0.75]} scale={[0.82, 0.55, 0.48]}>
+        <sphereGeometry args={[0.22, 18, 12]} />
+        <meshStandardMaterial color="#e2b27a" roughness={0.8} />
+      </mesh>
+      {[-0.2, 0.2].map((x) => (
+        <group key={x} position={[x, 0.66, 0.45]}>
+          <mesh rotation={[0, 0, x > 0 ? -0.25 : 0.25]}>
+            <coneGeometry args={[0.11, 0.24, 5]} />
+            <meshStandardMaterial color="#bd6e31" roughness={0.82} />
+          </mesh>
+        </group>
+      ))}
+      {[-0.25, 0.25].flatMap((x) =>
+        [-0.25, 0.28].map((z) => (
+          <group key={String(x) + z} position={[x, 0.02, z]}>
+            <mesh castShadow position={[0, 0.17, 0]}>
+              <cylinderGeometry args={[0.065, 0.08, 0.46, 10]} />
+              <meshStandardMaterial color="#bd7135" roughness={0.84} />
+            </mesh>
+            <mesh position={[0, -0.04, 0.06]} scale={[1.25, 0.55, 1.65]}>
+              <sphereGeometry args={[0.075, 12, 8]} />
+              <meshStandardMaterial color="#d18a49" roughness={0.86} />
+            </mesh>
+          </group>
+        )),
+      )}
+      <group position={[0, 0.42, -0.58]} rotation={[0.18, 0, 0]}>
+        {[0, 0.22, 0.44, 0.66].map((offset, index) => (
+          <mesh key={offset} position={[0, index * 0.02, -offset]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.045 - index * 0.004, 0.055, 0.26, 9]} />
+            <meshStandardMaterial color={index % 2 ? '#2c2721' : '#c97936'} roughness={0.82} />
+          </mesh>
+        ))}
+      </group>
     </group>
   )
 }
@@ -2322,3 +2595,5 @@ function GoldMaterial({ muted }: { muted: boolean }) {
 }
 
 useGLTF.preload('/models/animals/deer.gltf')
+useGLTF.preload('/models/animals/wolf.gltf')
+useGLTF.preload('/models/animals/cat.gltf')
