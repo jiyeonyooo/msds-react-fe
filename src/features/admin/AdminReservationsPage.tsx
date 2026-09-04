@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Button, StatusBadge } from '../../components/ui'
 import { ApiError } from '../../lib/apiError'
 import { setReturnPath } from '../auth/session'
+import { AdminPageHeading } from './shared'
 import { adminReservationApi } from './reservationApi'
 import type { AdminReservation, AdminReservationDetail, AdminReservationFilters, AdminReservationStatus } from './reservationTypes'
 
@@ -133,7 +134,7 @@ function AdminReservationListPage() {
   })
 
   return <section>
-    <PageHeading title="예약 관리" description="객실별 월간 일정에서 예약 현황을 확인하고 관리합니다." />
+    <AdminPageHeading title="예약 관리" description="객실별 월간 일정에서 예약 현황을 확인하고 관리합니다." />
     <form className="rounded-lg border border-slate-200 bg-white px-4 py-3 shadow-sm" onSubmit={search} noValidate>
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex flex-1 items-center gap-3 text-xs font-medium text-slate-700"><span className="whitespace-nowrap">키워드</span><input className="h-[44px] min-w-48 flex-1 rounded-sm border border-slate-300 px-3 py-2 text-sm font-normal" value={form.keyword} onChange={(event) => updateForm('keyword', event.target.value)} placeholder="예약번호 또는 회원명" /></label>
@@ -219,11 +220,11 @@ function AdminReservationDetailPage({ resvId }: { resvId: string }) {
     } finally { setRestoring(false) }
   }
   if (loading) return <p className="py-16 text-center text-sm text-slate-600">예약 정보를 불러오는 중입니다.</p>
-  if (!detail) return <section><PageHeading title="예약 상세" description="예약 상태와 상세 정보를 확인합니다." /><MessageBox message={message || '예약 정보를 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/reservations">예약 목록으로 돌아가기</Link></MessageBox></section>
+  if (!detail) return <section><AdminPageHeading title="예약 상세" description="예약 상태와 상세 정보를 확인합니다." /><MessageBox message={message || '예약 정보를 찾을 수 없습니다.'}><Link className="mt-4 inline-block text-sm text-[#172b44] underline" to="/admin/reservations">예약 목록으로 돌아가기</Link></MessageBox></section>
   return (
     <section className="w-full">
       <Link className="text-sm text-[#172b44] underline underline-offset-4" to="/admin/reservations">← 예약 목록</Link>
-      <PageHeading title="예약 상세" description="예약 및 회원 정보를 확인하고 필요한 경우 예약을 취소합니다." />
+      <AdminPageHeading title="예약 상세" description="예약 및 회원 정보를 확인하고 필요한 경우 예약을 취소합니다." />
       {message && <p className="mb-4 text-sm text-error" role="alert">{message}</p>}
       <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <header className="grid gap-5 border-b border-slate-200 bg-slate-50 px-6 py-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:px-8">
@@ -279,7 +280,6 @@ function AdminReservationDetailPage({ resvId }: { resvId: string }) {
   )
 }
 
-function PageHeading({ title, description }: { title: string; description: string }) { return <header className="mb-5 border-b border-slate-300 pb-6"><p className="text-[11px] font-semibold tracking-[0.16em] text-[#a77f3b]">ADMINISTRATION</p><h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#172b44]">{title}</h2><p className="mt-2 text-sm text-slate-600">{description}</p></header> }
 function MessageBox({ message, children }: { message: string; children?: ReactNode }) { return <div className="mt-6 rounded-lg border border-dashed border-slate-300 bg-white px-6 py-14 text-center text-sm text-slate-600" role="alert"><p>{message}</p>{children}</div> }
 function ReservationMetric({ label, value }: { label: string; value: string }) {
   return <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-4"><dt className="text-[10px] font-medium tracking-[0.08em] text-slate-500">{label}</dt><dd className="mt-2 text-sm font-semibold text-[#172b44]">{value}</dd></div>
